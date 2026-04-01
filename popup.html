@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css" />
+    <style>
+      body {
+        padding: 10px;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      }
+      .input-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      input[type="number"] {
+        width: 60px;
+        margin-left: 10px;
+      }
+      .btn {
+        margin-top: 15px;
+        width: 100%;
+      }
+      label {
+        font-weight: 600;
+        color: #172b4d;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">
+      <div class="input-group">
+        <label for="days">Days</label>
+        <input id="days" type="number" value="0" min="0" />
+      </div>
+      <div class="input-group">
+        <label for="hours">Hours</label>
+        <input id="hours" type="number" value="0" min="0" />
+      </div>
+      <div class="input-group">
+        <label for="minutes">Minutes</label>
+        <input id="minutes" type="number" value="0" min="0" />
+      </div>
+      
+      <button id="save-btn" class="mod-primary btn">Set Due Date</button>
+      <button id="clear-btn" class="mod-danger btn" style="margin-top: 5px;">Clear</button>
+    </div>
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

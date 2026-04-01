@@ -1,0 +1,1361 @@
+
+> trello-app@0.0.0 dev
+> vite --port 5200
+
+
+  VITE v8.0.1  ready in 153 ms
+
+  ➜  Local:   http://localhost:5200/
+  ➜  Network: http://192.168.1.37:5200/
+3:58:12 PM [vite] (client) [console.warn] Trello Sync iteration failed
+3:58:12 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5507:27
+    5505 |          const promises = [];
+    5506 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5507 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5508 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5509 |          });
+ > syncTrello standalone/app.js:5506:36
+
+3:58:14 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5508:27
+    5506 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5507 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+    5508 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+         |                             ^
+    5509 |          });
+    5510 |          
+ > syncTrello standalone/app.js:5506:36
+
+3:58:14 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5508:27
+    5506 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5507 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+    5508 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+         |                             ^
+    5509 |          });
+    5510 |          
+ > syncTrello standalone/app.js:5506:36
+
+3:58:14 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5507:27
+    5505 |          const promises = [];
+    5506 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5507 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5508 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5509 |          });
+ > syncTrello standalone/app.js:5506:36
+
+4:11:26 PM [vite] (client) hmr update /standalone/style.css?direct
+4:13:39 PM [vite] (client) page reload standalone/app.js
+4:13:41 PM [vite] Internal server error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
+  Plugin: vite:import-analysis
+  File: /Users/agencygrow/Desktop/trello app/standalone/app.js:2675:175
+  2673 |          if (activeBoard.trelloBoardId && (list.trackerType !== 'ads' || !list.trelloListId)) {
+  2674 |              const isUnlink = list.trelloListId && list.trackerType !== 'ads';
+  2675 |  ...></line>` : `<polyline points="20 6 9 17 4 12"></polyline>`;
+       |                                                                 ^
+  2676 |              const text = isUnlink ? 'Unlink Trello Tracker' : 'Trello Tracker';
+  2677 |              
+      at TransformPluginContext._formatLog (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:30234:39)
+      at TransformPluginContext.error (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:30231:14)
+      at TransformPluginContext.transform (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:27483:10)
+      at async EnvironmentPluginContainer.transform (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:30023:14)
+      at async loadAndTransform (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:24152:26)
+      at async viteTransformMiddleware (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:24961:20)
+4:14:50 PM [vite] (client) page reload standalone/app.js
+4:14:53 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:14:53 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:14:56 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:01 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:06 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:11 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:16 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:21 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:26 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:31 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:36 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:41 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:15:46 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:16:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:17:03 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:18:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:19:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:20:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:21:04 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:22:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:23:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:24:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:25:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:26:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:26:23 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:26:24 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:26:27 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:31:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:36:00 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:36:00 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5515:27
+    5513 |          const promises = [];
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5517 |          });
+ > syncTrello standalone/app.js:5514:36
+
+4:36:04 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:45:43 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:45:48 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:45:54 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:46:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:47:30 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:47:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:48:25 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:48:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:49:25 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:49:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:50:25 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:50:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:51:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:52:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:53:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:54:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:55:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:56:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:57:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:58:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+4:59:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:00:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:01:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:02:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:03:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:04:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:05:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:06:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:07:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:08:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:09:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:10:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:11:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:12:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:13:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:14:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:15:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:16:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:17:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:18:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:19:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:20:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:21:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:22:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:23:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:24:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:25:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:26:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:27:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:28:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:29:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:30:59 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:31:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:32:57 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:32:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:33:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+5:48:53 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:04:27 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:15:12 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:30:24 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:30:24 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5515:27
+    5513 |          const promises = [];
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5517 |          });
+ > syncTrello standalone/app.js:5514:36
+
+6:30:24 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5516:27
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+         |                             ^
+    5517 |          });
+    5518 |          
+ > syncTrello standalone/app.js:5514:36
+
+6:30:24 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5515:27
+    5513 |          const promises = [];
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5517 |          });
+ > syncTrello standalone/app.js:5514:36
+
+6:30:24 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5516:27
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+         |                             ^
+    5517 |          });
+    5518 |          
+ > syncTrello standalone/app.js:5514:36
+
+6:37:53 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:37:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:37:58 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5515:27
+    5513 |          const promises = [];
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5517 |          });
+ > syncTrello standalone/app.js:5514:36
+
+6:37:58 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5516:27
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+         |                             ^
+    5517 |          });
+    5518 |          
+ > syncTrello standalone/app.js:5514:36
+
+6:38:01 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5515:27
+    5513 |          const promises = [];
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+         |                             ^
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+    5517 |          });
+ > syncTrello standalone/app.js:5514:36
+
+6:38:02 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch
+ > n chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15586
+ > window.fetch chrome-extension:/hoklmmgfnpapgjgcpechhaamimifchmp/frame_ant/frame_ant.js:2:15738
+ > standalone/app.js:5516:27
+    5514 |          Array.from(uniqueBoardIds).forEach(boardId => {
+    5515 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${t...
+    5516 |              promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=...
+         |                             ^
+    5517 |          });
+    5518 |          
+ > syncTrello standalone/app.js:5514:36
+
+6:38:03 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:38:05 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:48:53 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:48:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:49:04 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:50:25 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:50:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:25 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:51 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:51 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:54 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:54 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:55 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:51:58 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:01 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:02 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:05 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:07 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:07 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:11 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:52:44 PM [vite] (client) [console.warn] Trello Sync iteration failed
+6:53:35 PM [vite] (client) page reload standalone/app.js
+6:53:35 PM [vite] (client) page reload standalone/app.js
+6:59:57 PM [vite] (client) page reload standalone/index.html
+7:00:23 PM [vite] (client) page reload standalone/index.html
+7:01:31 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:01:36 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:02:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:02:09 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:02:14 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:02:47 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:03:17 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:03:22 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:03:27 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:03:32 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:03:37 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:04:26 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:04:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:05:26 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:05:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:06:26 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:06:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:06:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncPipedrive standalone/app.js:5803:40
+    5801 |      if (!curBoard) return;
+    5802 |      
+    5803 |      const mappedLists = curBoard.lists.filter(l => l.pipedriveStageId);
+         |                                          ^
+    5804 |      if (mappedLists.length === 0) return;
+    5805 |      
+
+7:08:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:09:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:09:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncPipedrive standalone/app.js:5803:40
+    5801 |      if (!curBoard) return;
+    5802 |      
+    5803 |      const mappedLists = curBoard.lists.filter(l => l.pipedriveStageId);
+         |                                          ^
+    5804 |      if (mappedLists.length === 0) return;
+    5805 |      
+
+7:10:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:11:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:12:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:12:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncPipedrive standalone/app.js:5803:40
+    5801 |      if (!curBoard) return;
+    5802 |      
+    5803 |      const mappedLists = curBoard.lists.filter(l => l.pipedriveStageId);
+         |                                          ^
+    5804 |      if (mappedLists.length === 0) return;
+    5805 |      
+
+7:13:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:14:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:15:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:15:56 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncPipedrive standalone/app.js:5803:40
+    5801 |      if (!curBoard) return;
+    5802 |      
+    5803 |      const mappedLists = curBoard.lists.filter(l => l.pipedriveStageId);
+         |                                          ^
+    5804 |      if (mappedLists.length === 0) return;
+    5805 |      
+
+7:16:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:17:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5497:40
+    5495 |      if (!curBoard) return;
+    5496 |      
+    5497 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5498 |      if (mappedLists.length === 0) return;
+    5499 |      
+
+7:17:48 PM [vite] (client) page reload standalone/app.js
+7:17:50 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5492:40
+    5490 |      if (!curBoard) return;
+    5491 |      
+    5492 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5493 |      if (mappedLists.length === 0) return;
+    5494 |      
+
+7:17:50 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5492:40
+    5490 |      if (!curBoard) return;
+    5491 |      
+    5492 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5493 |      if (mappedLists.length === 0) return;
+    5494 |      
+
+7:17:51 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncPipedrive standalone/app.js:5798:40
+    5796 |      if (!curBoard) return;
+    5797 |      
+    5798 |      const mappedLists = curBoard.lists.filter(l => l.pipedriveStageId);
+         |                                          ^
+    5799 |      if (mappedLists.length === 0) return;
+    5800 |      
+
+7:17:55 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5492:40
+    5490 |      if (!curBoard) return;
+    5491 |      
+    5492 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5493 |      if (mappedLists.length === 0) return;
+    5494 |      
+
+7:18:00 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5492:40
+    5490 |      if (!curBoard) return;
+    5491 |      
+    5492 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5493 |      if (mappedLists.length === 0) return;
+    5494 |      
+
+7:18:05 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5492:40
+    5490 |      if (!curBoard) return;
+    5491 |      
+    5492 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5493 |      if (mappedLists.length === 0) return;
+    5494 |      
+
+7:18:07 PM [vite] (client) page reload standalone/app.js
+7:18:09 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:09 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:09 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncPipedrive standalone/app.js:5797:40
+    5795 |      if (!curBoard) return;
+    5796 |      
+    5797 |      const mappedLists = curBoard.lists.filter(l => l.pipedriveStageId);
+         |                                          ^
+    5798 |      if (mappedLists.length === 0) return;
+    5799 |      
+
+7:18:14 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:19 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:24 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:29 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:34 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:18:42 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5491:40
+    5489 |      if (!curBoard) return;
+    5490 |      
+    5491 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5492 |      if (mappedLists.length === 0) return;
+    5493 |      
+
+7:28:25 PM [vite] (client) page reload standalone/app.js
+7:31:49 PM [vite] (client) page reload standalone/index.html
+7:32:55 PM [vite] (client) page reload standalone/app.js
+7:33:38 PM [vite] (client) page reload standalone/app.js
+7:37:11 PM [vite] (client) page reload standalone/app.js
+7:37:27 PM [vite] (client) page reload standalone/app.js
+7:41:12 PM [vite] (client) page reload standalone/app.js
+7:42:21 PM [vite] (client) page reload standalone/app.js
+7:44:16 PM [vite] (client) page reload standalone/app.js
+7:44:38 PM [vite] (client) page reload standalone/app.js
+7:50:01 PM [vite] (client) page reload standalone/app.js
+7:54:17 PM [vite] (client) page reload standalone/app.js
+7:54:32 PM [vite] (client) page reload standalone/app.js
+7:56:47 PM [vite] (client) page reload standalone/app.js
+7:57:27 PM [vite] (client) hmr update /standalone/style.css?direct
+7:58:38 PM [vite] (client) page reload standalone/app.js
+8:01:29 PM [vite] (client) page reload standalone/app.js
+8:07:23 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:07:27 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:07:33 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:07:38 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:07:42 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:07:47 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:07:52 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:08:00 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:08:05 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:08:10 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:08:44 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:08:53 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:09:03 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:09:18 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:09:53 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:05 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:13 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:18 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:23 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:49 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:54 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:10:59 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:11:33 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:11:47 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:11:52 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:12:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:12:58 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:13:07 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:13:12 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:13:17 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:13:22 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:14:04 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:14:19 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:14:35 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:14:40 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:14:45 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:15:17 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:15:43 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:16:08 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:16:24 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:16:29 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:16:34 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:16:39 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:17:20 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:17:32 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:17:37 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:17:42 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:17:47 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:18:25 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:18:45 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:18:53 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:18:58 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:19:03 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:19:08 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:19:39 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:20:30 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:20:35 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:20:40 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:20:45 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:20:50 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:20:59 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:21:27 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:22:09 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:22:44 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:23:18 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:23:23 PM [vite] (client) [Unhandled rejection] TypeError: Cannot read properties of undefined (reading 'filter')
+ > syncTrello standalone/app.js:5653:40
+    5651 |      if (!curBoard) return;
+    5652 |      
+    5653 |      const mappedLists = curBoard.lists.filter(l => l.trelloListId || l.trelloTasksListId);
+         |                                          ^
+    5654 |      if (mappedLists.length === 0) return;
+    5655 |      
+
+8:26:09 PM [vite] (client) page reload standalone/app.js
+8:27:06 PM [vite] (client) page reload standalone/app.js
+8:29:50 PM [vite] (client) page reload standalone/app.js
+8:30:10 PM [vite] (client) page reload standalone/app.js
+8:33:59 PM [vite] (client) page reload standalone/app.js
+8:41:34 PM [vite] (client) page reload standalone/app.js
+8:43:37 PM [vite] (client) page reload standalone/app.js
+8:45:19 PM [vite] (client) page reload standalone/app.js
+8:48:01 PM [vite] (client) page reload standalone/app.js
+8:53:16 PM [vite] (client) page reload standalone/app.js
+8:53:17 PM [vite] Internal server error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you are using JSX, make sure to name the file with the .jsx or .tsx extension.
+  Plugin: vite:import-analysis
+  File: /Users/agencygrow/Desktop/trello app/standalone/app.js:1:0
+  1  |  // Migration & State initialization
+     |  ^
+  2  |  let rawListsData = localStorage.getItem('ai_accounts_lists');
+  3  |  let boards = [];
+      at TransformPluginContext._formatLog (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:30234:39)
+      at TransformPluginContext.error (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:30231:14)
+      at TransformPluginContext.transform (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:27483:10)
+      at async EnvironmentPluginContainer.transform (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:30023:14)
+      at async loadAndTransform (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:24152:26)
+      at async viteTransformMiddleware (file:///Users/agencygrow/Desktop/trello%20app/node_modules/vite/dist/node/chunks/node.js:24961:20)
+8:54:24 PM [vite] (client) page reload standalone/app.js
+9:00:49 PM [vite] (client) page reload standalone/app.js
+9:03:52 PM [vite] (client) page reload standalone/app.js
+9:05:57 PM [vite] (client) page reload standalone/app.js
+9:09:02 PM [vite] (client) page reload standalone/app.js
+9:09:43 PM [vite] (client) page reload standalone/app.js
+9:09:44 PM [vite] (client) [console.warn] Trello Sync iteration failed
+9:11:08 PM [vite] (client) page reload standalone/app.js
