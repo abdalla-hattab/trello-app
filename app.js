@@ -14,17 +14,36 @@ if (!firebase.apps.length) {
 const db = firebase.database();
 
 let boards = [];
+let localBoards = [];
+let cloudBoards = [];
 let activeBoardId = localStorage.getItem('ai_active_board');
 let activeCardId = null;
 let activeTargetListId = null;
 let isGlobalDragging = false;
 let isApplyingFirebaseSync = false;
 
-// Attempt to load from localStorage first for faster initial render
-let rawListsData = localStorage.getItem('ai_accounts_lists');
-if (rawListsData) {
-    boards = JSON.parse(rawListsData);
+// Migration from the old mixed storage 'ai_accounts_lists'
+let rawOldListsData = localStorage.getItem('ai_accounts_lists');
+let rawPrivate = localStorage.getItem('ai_private_boards');
+
+if (rawPrivate) {
+    localBoards = JSON.parse(rawPrivate);
+} else if (rawOldListsData) {
+    // One time migration: extract private boards from old mixed storage
+    let oldBoards = JSON.parse(rawOldListsData);
+    localBoards = oldBoards.filter(b => b.type !== 'social_scheduler');
+    localStorage.setItem('ai_private_boards', JSON.stringify(localBoards));
 }
+
+// Initial hydration from what we have
+function syncBoardsArray() {
+    if (window.IS_EMPLOYEE) {
+        boards = [...cloudBoards];
+    } else {
+        boards = [...localBoards, ...cloudBoards];
+    }
+}
+syncBoardsArray();
 
 // Migrate Kanban structure
 function ensureBoardStructure() {
@@ -56,29 +75,33 @@ function ensureBoardStructure() {
 
 ensureBoardStructure();
 
-// Setup Firebase real-time listener
-db.ref('ai_accounts_lists').on('value', (snapshot) => {
+// Setup Firebase real-time listener for Social Scheduler ONLY
+db.ref('ai_social_lists').on('value', (snapshot) => {
     isApplyingFirebaseSync = true;
     const data = snapshot.val();
     if (data) {
-        boards = data;
+        cloudBoards = data;
+        syncBoardsArray();
         ensureBoardStructure();
         if (typeof render === 'function') render();
     } else {
-        // First ever load: push our local data to Firebase
-        if (boards.length > 0) {
-            db.ref('ai_accounts_lists').set(boards);
-        } else {
-            boards = [{ id: 'board-default', title: 'Account', type: 'timer', cards: [] }];
-            db.ref('ai_accounts_lists').set(boards);
-            ensureBoardStructure();
+        // Initial Firebase migration (extract from old local database and push)
+        if (rawOldListsData && !rawPrivate) {
+            let oldBoards = JSON.parse(rawOldListsData);
+            cloudBoards = oldBoards.filter(b => b.type === 'social_scheduler');
+            if (cloudBoards.length > 0) {
+                db.ref('ai_social_lists').set(cloudBoards);
+            }
         }
+        syncBoardsArray();
+        ensureBoardStructure();
+        if (typeof render === 'function') render();
     }
-    setTimeout(() => { isApplyingFirebaseSync = false; }, 500); // Give plenty of time to avoid echoing saveState on initial render
+    setTimeout(() => { isApplyingFirebaseSync = false; }, 500); 
 });
 
 function saveState() {
-    if (isApplyingFirebaseSync) return; // Prevent echoing back to Firebase while processing incoming syncs
+    if (isApplyingFirebaseSync) return; 
 
     boards.forEach(board => {
         if (board.lists && board.connections) {
@@ -97,12 +120,22 @@ function saveState() {
         }
     });
     
-    // Save to local cache
-    localStorage.setItem('ai_accounts_lists', JSON.stringify(boards));
-    localStorage.setItem('ai_active_board', activeBoardId);
+    // Split the arrays correctly
+    if (!window.IS_EMPLOYEE) {
+        localBoards = boards.filter(b => b.type !== 'social_scheduler');
+        localStorage.setItem('ai_private_boards', JSON.stringify(localBoards));
+        localStorage.setItem('ai_active_board', activeBoardId);
+    }
+    
+    cloudBoards = boards.filter(b => b.type === 'social_scheduler');
+    
+    // Once migrated successfully, delete the old mixed state string to save local space
+    if (localStorage.getItem('ai_accounts_lists')) {
+        localStorage.removeItem('ai_accounts_lists');
+    }
 
-    // Push to Firebase (fire and forget)
-    db.ref('ai_accounts_lists').set(boards).catch(err => console.error("Firebase Sync Error", err));
+    // Push cloud boards to Firebase
+    db.ref('ai_social_lists').set(cloudBoards).catch(err => console.error("Firebase Sync Error", err));
 }
 
 function ensureCardChecklist(card) {
@@ -211,7 +244,7 @@ function renderCardChecklistEditor(card, options = {}) {
             deleteBtn.type = 'button';
             deleteBtn.textContent = '×';
             deleteBtn.className = 'nc-del-btn';
-            deleteBtn.onclick = () => {
+            if(deleteBtn) deleteBtn.onclick = () => {
                 checklist.splice(index, 1);
                 saveState();
                 render();
@@ -236,7 +269,7 @@ function renderCardChecklistEditor(card, options = {}) {
         servicesItemInput.focus();
     };
 
-    addServicesItemBtn.onclick = handleAddService;
+    if(addServicesItemBtn) addServicesItemBtn.onclick = handleAddService;
     addServicesItemBtn.onmousedown = (e) => {
         e.preventDefault();
         handleAddService();
@@ -286,11 +319,11 @@ window.promptSecureDelete = function(bId, bTitle) {
         document.body.appendChild(dm);
         
         const btn = document.getElementById('secureDeleteBtn');
-        btn.addEventListener('keydown', (e) => {
+        if(btn) btn.addEventListener('keydown', (e) => {
             e.preventDefault();
         });
         
-        btn.onclick = (e) => {
+        if(btn) btn.onclick = (e) => {
             if (e.detail === 0 || (e.clientX === 0 && e.clientY === 0) || !e.isTrusted) {
                 return;
             }
@@ -382,8 +415,8 @@ const inputMins = document.getElementById('inputMins');
 
 [inputDays, inputHours, inputMins, newCardDays, newCardHours, newCardMins].forEach(input => {
     if (!input) return;
-    input.addEventListener('focus', function() { if (this.value === '0') this.value = ''; });
-    input.addEventListener('blur', function() { if (this.value === '') this.value = '0'; });
+    if(input) input.addEventListener('focus', function() { if (this.value === '0') this.value = ''; });
+    if(input) input.addEventListener('blur', function() { if (this.value === '') this.value = '0'; });
     input.addEventListener('input', function() {
         if (this.value.length > 1 && this.value.startsWith('0')) {
             this.value = parseInt(this.value, 10);
@@ -400,7 +433,7 @@ const closeTrelloCardDetailsModalBtn = document.getElementById('closeTrelloCardD
 const trelloHistoryDisplayArea = document.getElementById('trelloHistoryDisplayArea');
 
 if (closeTrelloCardDetailsModalBtn) {
-    closeTrelloCardDetailsModalBtn.onclick = () => trelloCardDetailsModal.classList.remove('active');
+    if(closeTrelloCardDetailsModalBtn) closeTrelloCardDetailsModalBtn.onclick = () => trelloCardDetailsModal.classList.remove('active');
 }
 
 // Trello Globals
@@ -418,7 +451,7 @@ const trelloBoardSelect = document.getElementById('trelloBoardSelect');
 const saveTrelloSettingsBtn = document.getElementById('saveTrelloSettingsBtn');
 
 if (closeTrelloSettingsModal) {
-    closeTrelloSettingsModal.onclick = () => trelloSettingsModal.classList.remove('active');
+    if(closeTrelloSettingsModal) closeTrelloSettingsModal.onclick = () => trelloSettingsModal.classList.remove('active');
 }
 
 function openTrelloSettingsModal() {
@@ -432,7 +465,7 @@ function openTrelloSettingsModal() {
 }
 
 if (fetchTrelloBoardsBtn) {
-    fetchTrelloBoardsBtn.onclick = async () => {
+    if(fetchTrelloBoardsBtn) fetchTrelloBoardsBtn.onclick = async () => {
         const key = trelloApiKeyInput.value.trim();
         const token = trelloTokenInput.value.trim();
         if(!key || !token) {
@@ -591,31 +624,31 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
     const btnClear = document.getElementById('trelloActionColorClearBtn');
     
     if (btnRed) {
-        btnRed.onclick = () => { 
+        if(btnRed) btnRed.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'red'; saveState(); render(); showToast("Card marked as Hot"); }
         };
     }
     if (btnGreen) {
-        btnGreen.onclick = () => { 
+        if(btnGreen) btnGreen.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'green'; saveState(); render(); showToast("Card marked as Ready"); }
         };
     }
     if (btnYellow) {
-        btnYellow.onclick = () => { 
+        if(btnYellow) btnYellow.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'yellow'; saveState(); render(); showToast("Card marked as Neutral"); }
         };
     }
     if (btnOrange) {
-        btnOrange.onclick = () => { 
+        if(btnOrange) btnOrange.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'orange'; saveState(); render(); showToast("Card marked as Sad"); }
         };
     }
     if (btnClear) {
-        btnClear.onclick = () => { 
+        if(btnClear) btnClear.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { delete liveCard.color; saveState(); render(); showToast("Card color cleared"); }
         };
@@ -852,7 +885,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
             }
         };
         
-        saveBtn.onclick = async () => {
+        if(saveBtn) saveBtn.onclick = async () => {
             saveBtn.textContent = 'Saving...';
             saveBtn.disabled = true;
             statusMsg.style.opacity = '0';
@@ -896,7 +929,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
         const deleteBtn = document.getElementById('trelloCardDeleteBtn');
         if (deleteBtn) {
             deleteBtn.style.display = targetLocalCard.isTrelloTask ? 'block' : 'none';
-            deleteBtn.onclick = async () => {
+            if(deleteBtn) deleteBtn.onclick = async () => {
                 if (!confirm("Are you sure you want to permanently delete this task from Trello?")) return;
                 
                 const originalText = deleteBtn.textContent;
@@ -937,7 +970,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
 };
 
 if (saveTrelloSettingsBtn) {
-    saveTrelloSettingsBtn.onclick = () => {
+    if(saveTrelloSettingsBtn) saveTrelloSettingsBtn.onclick = () => {
         const key = trelloApiKeyInput.value.trim();
         const token = trelloTokenInput.value.trim();
         localStorage.setItem('trelloKey', key);
@@ -977,7 +1010,7 @@ const closePipedriveSettingsModal = document.getElementById('closePipedriveSetti
 // On Mac trackpads, pinch-zoom triggers wheel events with ctrlKey.
 // Natively zooming a heavy grid causes paint freezing.
 // ==============================================================
-document.addEventListener('wheel', (e) => {
+if(document) document.addEventListener('wheel', (e) => {
     if ((e.ctrlKey || e.metaKey) && document.querySelector('.social-scheduler-view')) {
         e.preventDefault();
     }
@@ -1058,7 +1091,7 @@ window.showCustomConfirm = function(title, message, confirmText, cancelText, onC
     };
 
     modal.querySelector('#sm-cancel-btn').onclick = close;
-    overlay.onclick = (e) => {
+    if(overlay) overlay.onclick = (e) => {
         if (e.target === overlay) close();
     };
 };
@@ -1560,7 +1593,7 @@ const pipedrivePipelineSelect = document.getElementById('pipedrivePipelineSelect
 const savePipedriveSettingsBtn = document.getElementById('savePipedriveSettingsBtn');
 
 if (closePipedriveSettingsModal) {
-    closePipedriveSettingsModal.onclick = () => pipedriveSettingsModal.classList.remove('active');
+    if(closePipedriveSettingsModal) closePipedriveSettingsModal.onclick = () => pipedriveSettingsModal.classList.remove('active');
 }
 
 if (closeCreatePostModal && createPostModal) {
@@ -1594,10 +1627,10 @@ if (closeCreatePostModal && createPostModal) {
         if (window.clearMediaUpload) window.clearMediaUpload();
     };
 
-    closeCreatePostModal.onclick = handleModalDismiss;
+    if(closeCreatePostModal) closeCreatePostModal.onclick = handleModalDismiss;
     
     // Close modal if clicking outside the content box
-    createPostModal.addEventListener('click', (e) => {
+    if(createPostModal) createPostModal.addEventListener('click', (e) => {
         if (e.target === createPostModal) {
             handleModalDismiss();
         }
@@ -1605,19 +1638,19 @@ if (closeCreatePostModal && createPostModal) {
 
     // Also bind Cancel button inside modal body
     const cancelBtn = createPostModal.querySelector('.sm-btn-cancel');
-    if (cancelBtn) cancelBtn.onclick = handleModalDismiss;
+    if (cancelBtn) if(cancelBtn) cancelBtn.onclick = handleModalDismiss;
 
     // Bind Publish Mode toggles
     const publishToggles = createPostModal.querySelectorAll('.sm-toggle-btn');
     const optionalWrapper = document.getElementById('sm-optional-fields-wrapper');
     const primaryActionBtn = document.getElementById('sm-primary-action-btn');
     if (primaryActionBtn) {
-        primaryActionBtn.onclick = () => window.saveSocialDraft();
+        if(primaryActionBtn) primaryActionBtn.onclick = () => window.saveSocialDraft();
     }
 
     if (publishToggles.length > 0) {
         publishToggles.forEach(btn => {
-            btn.onclick = () => {
+            if(btn) btn.onclick = () => {
                 publishToggles.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
@@ -1655,7 +1688,7 @@ function openPipedriveSettingsModal() {
 }
 
 if (fetchPipedrivePipelinesBtn) {
-    fetchPipedrivePipelinesBtn.onclick = async () => {
+    if(fetchPipedrivePipelinesBtn) fetchPipedrivePipelinesBtn.onclick = async () => {
         const domain = pipedriveDomainInput.value.trim();
         const token = pipedriveTokenInput.value.trim();
         if(!domain || !token) {
@@ -1692,7 +1725,7 @@ if (fetchPipedrivePipelinesBtn) {
 }
 
 if (savePipedriveSettingsBtn) {
-    savePipedriveSettingsBtn.onclick = () => {
+    if(savePipedriveSettingsBtn) savePipedriveSettingsBtn.onclick = () => {
         const domain = pipedriveDomainInput.value.trim();
         const token = pipedriveTokenInput.value.trim();
         localStorage.setItem('pipedriveDomain', domain);
@@ -1729,7 +1762,7 @@ const trelloSelectAllBtn = document.getElementById('trelloSelectAllBtn');
 let pendingSourceList = null;
 
 if (trelloSelectAllBtn) {
-    trelloSelectAllBtn.onclick = () => {
+    if(trelloSelectAllBtn) trelloSelectAllBtn.onclick = () => {
         const checkboxes = document.querySelectorAll('.trello-tracker-cb');
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);
         checkboxes.forEach(cb => cb.checked = !allChecked);
@@ -1738,7 +1771,7 @@ if (trelloSelectAllBtn) {
 }
 
 if (closeTrelloMappingModal) {
-    closeTrelloMappingModal.onclick = () => trelloMappingModal.classList.remove('active');
+    if(closeTrelloMappingModal) closeTrelloMappingModal.onclick = () => trelloMappingModal.classList.remove('active');
 }
 
 let pendingLayoutList = null;
@@ -1947,14 +1980,14 @@ const closeTrelloTasksMappingModal = document.getElementById('closeTrelloTasksMa
 const generateTrelloTasksBtn = document.getElementById('generateTrelloTasksBtn');
 
 if (closeTrelloTasksMappingModal) {
-    closeTrelloTasksMappingModal.onclick = () => trelloTasksMappingModal.classList.remove('active');
+    if(closeTrelloTasksMappingModal) closeTrelloTasksMappingModal.onclick = () => trelloTasksMappingModal.classList.remove('active');
 }
 
 const serviceCardsModal = document.getElementById('serviceCardsModal');
 const closeServiceCardsModal = document.getElementById('closeServiceCardsModal');
 
 if (closeServiceCardsModal) {
-    closeServiceCardsModal.onclick = () => serviceCardsModal.classList.remove('active');
+    if(closeServiceCardsModal) closeServiceCardsModal.onclick = () => serviceCardsModal.classList.remove('active');
 }
 
 function openServiceCardsModal(title, icon, cards) {
@@ -2056,7 +2089,7 @@ function openServiceCardsModal(title, icon, cards) {
                 cardEl.appendChild(nameContainer);
                 cardEl.appendChild(viewBtn);
                 
-                cardEl.onclick = () => {
+                if(cardEl) cardEl.onclick = () => {
                     serviceCardsModal.classList.remove('active');
                     const activeBoard = boards.find(b => b.id === activeBoardId);
                     if (activeBoard) {
@@ -2087,7 +2120,7 @@ const trelloTasksViewModal = document.getElementById('trelloTasksViewModal');
 const closeTrelloTasksViewModal = document.getElementById('closeTrelloTasksViewModal');
 
 if (closeTrelloTasksViewModal) {
-    closeTrelloTasksViewModal.onclick = () => trelloTasksViewModal.classList.remove('active');
+    if(closeTrelloTasksViewModal) closeTrelloTasksViewModal.onclick = () => trelloTasksViewModal.classList.remove('active');
 }
 
 function openTrelloTasksViewModal(list) {
@@ -2108,7 +2141,7 @@ function openTrelloTasksViewModal(list) {
                 cardEl.style.borderLeft = '3px solid #5e6c84';
                 cardEl.style.cursor = 'pointer';
                 cardEl.style.marginBottom = '0';
-                cardEl.onclick = () => openTrelloCardDetailsModal(task.id, list.id);
+                if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(task.id, list.id);
                 
                 const titleEl = document.createElement('div');
                 titleEl.className = 'card-title';
@@ -2131,11 +2164,11 @@ const clientHappinessTargetPort = document.getElementById('clientHappinessTarget
 const generateClientHappinessTrackerBtn = document.getElementById('generateClientHappinessTrackerBtn');
 
 if (closeClientHappinessMappingModal) {
-    closeClientHappinessMappingModal.onclick = () => clientHappinessMappingModal.classList.remove('active');
+    if(closeClientHappinessMappingModal) closeClientHappinessMappingModal.onclick = () => clientHappinessMappingModal.classList.remove('active');
 }
 
 if (generateClientHappinessTrackerBtn) {
-    generateClientHappinessTrackerBtn.onclick = () => {
+    if(generateClientHappinessTrackerBtn) generateClientHappinessTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
         
         const spawnDir = clientHappinessSpawnDirection.value;
@@ -2211,7 +2244,7 @@ const moneySmellingTargetPort = document.getElementById('moneySmellingTargetPort
 const generateMoneySmellingTrackerBtn = document.getElementById('generateMoneySmellingTrackerBtn');
 
 if (closeMoneySmellingMappingModal) {
-    closeMoneySmellingMappingModal.onclick = () => moneySmellingMappingModal.classList.remove('active');
+    if(closeMoneySmellingMappingModal) closeMoneySmellingMappingModal.onclick = () => moneySmellingMappingModal.classList.remove('active');
 }
 
 const newClientsMappingModal = document.getElementById('newClientsMappingModal');
@@ -2221,11 +2254,11 @@ const newClientsTargetPort = document.getElementById('newClientsTargetPort');
 const generateNewClientsTrackerBtn = document.getElementById('generateNewClientsTrackerBtn');
 
 if (closeNewClientsMappingModal) {
-    closeNewClientsMappingModal.onclick = () => newClientsMappingModal.classList.remove('active');
+    if(closeNewClientsMappingModal) closeNewClientsMappingModal.onclick = () => newClientsMappingModal.classList.remove('active');
 }
 
 if (generateMoneySmellingTrackerBtn) {
-    generateMoneySmellingTrackerBtn.onclick = () => {
+    if(generateMoneySmellingTrackerBtn) generateMoneySmellingTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
         
         const spawnDir = moneySmellingSpawnDirection.value;
@@ -2294,7 +2327,7 @@ if (generateMoneySmellingTrackerBtn) {
 }
 
 if (generateNewClientsTrackerBtn) {
-    generateNewClientsTrackerBtn.onclick = () => {
+    if(generateNewClientsTrackerBtn) generateNewClientsTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
         
         const spawnDir = newClientsSpawnDirection.value;
@@ -2426,7 +2459,7 @@ async function openTrelloTasksMappingModal(sourceList) {
 }
 
 if (generateTrelloTasksBtn) {
-    generateTrelloTasksBtn.onclick = () => {
+    if(generateTrelloTasksBtn) generateTrelloTasksBtn.onclick = () => {
         const activeBoard = boards.find(b => b.id === activeBoardId);
         const listSelect = document.getElementById('trelloTasksMappingListSelect');
         const boardSelect = document.getElementById('trelloTasksMappingBoardSelect');
@@ -2455,11 +2488,11 @@ const generatePipedriveTrackersBtn = document.getElementById('generatePipedriveT
 const pipedriveSelectAllBtn = document.getElementById('pipedriveSelectAllBtn');
 
 if (closePipedriveMappingModal) {
-    closePipedriveMappingModal.onclick = () => pipedriveMappingModal.classList.remove('active');
+    if(closePipedriveMappingModal) closePipedriveMappingModal.onclick = () => pipedriveMappingModal.classList.remove('active');
 }
 
 if (pipedriveSelectAllBtn) {
-    pipedriveSelectAllBtn.onclick = () => {
+    if(pipedriveSelectAllBtn) pipedriveSelectAllBtn.onclick = () => {
         const cbs = document.querySelectorAll('.pipedrive-tracker-cb');
         const allChecked = Array.from(cbs).every(cb => cb.checked);
         cbs.forEach(cb => cb.checked = !allChecked);
@@ -2650,7 +2683,7 @@ async function openPipedriveMappingGenerator(sourceList) {
 }
 
 if(generateTrelloTrackersBtn) {
-    generateTrelloTrackersBtn.onclick = () => {
+    if(generateTrelloTrackersBtn) generateTrelloTrackersBtn.onclick = () => {
         try {
             const activeBoard = boards.find(b => b.id === activeBoardId);
             const checkedList = Array.from(document.querySelectorAll('.trello-tracker-cb')).filter(cb => cb.checked);
@@ -2769,7 +2802,7 @@ if(generateTrelloTrackersBtn) {
 }
 
 if(generatePipedriveTrackersBtn) {
-    generatePipedriveTrackersBtn.onclick = () => {
+    if(generatePipedriveTrackersBtn) generatePipedriveTrackersBtn.onclick = () => {
         try {
             const activeBoard = boards.find(b => b.id === activeBoardId);
             const checkedList = Array.from(document.querySelectorAll('.pipedrive-tracker-cb')).filter(cb => cb.checked);
@@ -2888,7 +2921,7 @@ if(generatePipedriveTrackersBtn) {
 }
 
 if (localStorage.getItem('nav_position') === 'right') topNavBar.classList.add('pos-right');
-toggleNavPosBtn.onclick = () => {
+if(toggleNavPosBtn) toggleNavPosBtn.onclick = () => {
     topNavBar.classList.toggle('pos-right');
     localStorage.setItem('nav_position', topNavBar.classList.contains('pos-right') ? 'right' : 'center');
 };
@@ -2950,7 +2983,7 @@ window.switchBoard = function(boardId) {
 };
 
 // Switch Boards Flow
-openSwitchBoardsBtn.onclick = () => {
+if(openSwitchBoardsBtn) openSwitchBoardsBtn.onclick = () => {
     boardListMenu.innerHTML = '';
     boards.filter(b => b.type !== 'social_scheduler').forEach(b => {
         const item = document.createElement('div');
@@ -2971,7 +3004,7 @@ openSwitchBoardsBtn.onclick = () => {
         titleSpan.style.cursor = 'text';
         titleSpan.title = 'Click to rename';
         
-        titleSpan.onclick = (e) => {
+        if(titleSpan) titleSpan.onclick = (e) => {
             e.stopPropagation();
             titleSpan.contentEditable = 'true';
             titleSpan.classList.add('editing');
@@ -3027,7 +3060,7 @@ openSwitchBoardsBtn.onclick = () => {
         dupBtn.title = 'Duplicate Workspace';
         dupBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
         
-        dupBtn.onclick = (e) => {
+        if(dupBtn) dupBtn.onclick = (e) => {
             e.stopPropagation();
             
             if (!confirm("Are you sure you want to duplicate this workspace?")) return;
@@ -3063,7 +3096,7 @@ openSwitchBoardsBtn.onclick = () => {
         deleteBtn.title = 'Delete Workspace';
         deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
         
-        deleteBtn.onclick = (e) => {
+        if(deleteBtn) deleteBtn.onclick = (e) => {
             e.stopPropagation();
             if (typeof window.promptSecureDelete === 'function') {
                 window.promptSecureDelete(b.id, b.title || 'هذه المساحة');
@@ -3079,7 +3112,7 @@ openSwitchBoardsBtn.onclick = () => {
         item.appendChild(leftWrap);
         item.appendChild(rightWrap);
 
-        item.onclick = () => switchBoard(b.id);
+        if(item) item.onclick = () => switchBoard(b.id);
         boardListMenu.appendChild(item);
     });
     
@@ -3100,7 +3133,7 @@ openSwitchBoardsBtn.onclick = () => {
             </div>
         `;
         
-        item.onclick = () => switchBoard(socialBoards[0].id);
+        if(item) item.onclick = () => switchBoard(socialBoards[0].id);
         item.style.borderTop = '1px dashed #e2e8f0';
         item.style.marginTop = '4px';
         
@@ -3109,11 +3142,11 @@ openSwitchBoardsBtn.onclick = () => {
 
     switchBoardModal.classList.add('active');
 };
-closeSwitchBoardModal.onclick = () => switchBoardModal.classList.remove('active');
+if(closeSwitchBoardModal) closeSwitchBoardModal.onclick = () => switchBoardModal.classList.remove('active');
 
 const exportBackupBtn = document.getElementById('exportBackupBtn');
 if (exportBackupBtn) {
-    exportBackupBtn.onclick = () => {
+    if(exportBackupBtn) exportBackupBtn.onclick = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(boards, null, 2));
         const dlAnchor = document.createElement('a');
         dlAnchor.setAttribute("href", dataStr);
@@ -3160,7 +3193,7 @@ if (importBackupFile) {
 }
 
 if (openAddTimerBoardBtn) {
-    openAddTimerBoardBtn.onclick = () => {
+    if(openAddTimerBoardBtn) openAddTimerBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
         newBoardTitle.value = '';
         pendingNewBoardType = 'timer';
@@ -3170,7 +3203,7 @@ if (openAddTimerBoardBtn) {
     };
 }
 if (openAddKanbanBoardBtn) {
-    openAddKanbanBoardBtn.onclick = () => {
+    if(openAddKanbanBoardBtn) openAddKanbanBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
         newBoardTitle.value = '';
         pendingNewBoardType = 'kanban';
@@ -3180,7 +3213,7 @@ if (openAddKanbanBoardBtn) {
     };
 }
 if (openAddSocialBoardBtn) {
-    openAddSocialBoardBtn.onclick = () => {
+    if(openAddSocialBoardBtn) openAddSocialBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
         const smCount = boards.filter(b => b.type === 'social_scheduler').length;
         newBoardTitle.value = 'Client ' + (smCount + 1);
@@ -3190,8 +3223,8 @@ if (openAddSocialBoardBtn) {
         setTimeout(() => newBoardTitle.focus(), 50);
     };
 }
-closeAddBoardModal.onclick = () => addBoardModal.classList.remove('active');
-confirmAddBoardBtn.onclick = () => {
+if(closeAddBoardModal) closeAddBoardModal.onclick = () => addBoardModal.classList.remove('active');
+if(confirmAddBoardBtn) confirmAddBoardBtn.onclick = () => {
     const title = newBoardTitle.value.trim();
     if (title) {
         newBoardTitle.blur();
@@ -3482,7 +3515,7 @@ function updateAllTrackersSummaries(activeBoard) {
                         summaryEl.innerHTML = finalHtml;
                         
                         summaryEl.querySelectorAll('[data-clicker="true"]').forEach(el => {
-                            el.onclick = () => {
+                            if(el) el.onclick = () => {
                                 if (typeof window.toggleSentimentFilter === 'function') {
                                     window.toggleSentimentFilter(el.dataset.pid, el.dataset.ptype, el.dataset.pcolor === 'null' ? null : el.dataset.pcolor);
                                 }
@@ -3688,7 +3721,7 @@ function renderKanbanApp(activeBoard) {
                 path.setAttribute('stroke-width', '2');
                 path.setAttribute('marker-end', 'url(#arrowhead)');
             };
-            path.onclick = (e) => {
+            if(path) path.onclick = (e) => {
                 e.stopPropagation();
                 if(confirm("Disconnect these lists?")) {
                     activeBoard.connections = activeBoard.connections.filter(c => c !== conn);
@@ -3792,7 +3825,7 @@ function renderKanbanApp(activeBoard) {
         canvas.style.backgroundPosition = `${activeBoard.camera.x}px ${activeBoard.camera.y}px`;
     };
 
-    canvas.addEventListener('wheel', (e) => {
+    if(canvas) canvas.addEventListener('wheel', (e) => {
         const isPinch = e.ctrlKey || e.metaKey;
         const scrollableList = e.target.closest('.card-list, .pinned-list');
         
@@ -3820,7 +3853,7 @@ function renderKanbanApp(activeBoard) {
         saveState();
     }, { passive: false });
 
-    canvas.addEventListener('mousedown', (e) => {
+    if(canvas) canvas.addEventListener('mousedown', (e) => {
         if (e.target === canvas || e.target === svgLayer || e.target === canvasContent) {
             isGlobalDragging = true;
             let startPanX = e.clientX - activeBoard.camera.x;
@@ -3972,7 +4005,7 @@ function renderKanbanApp(activeBoard) {
         listContainer.dataset.id = list.id;
         
         // Universal Canvas Z-Index Engine: The most recently touched container unconditionally jumps to the top relative layer
-        listContainer.addEventListener('mousedown', () => {
+        if(listContainer) listContainer.addEventListener('mousedown', () => {
             window.highestZIndex = (window.highestZIndex || 1000) + 1;
             // Native styling bypasses WebKit transition locks entirely
             listContainer.style.zIndex = window.highestZIndex;
@@ -4231,7 +4264,7 @@ function renderKanbanApp(activeBoard) {
         titleH2.className = 'editable-board-title';
         titleH2.title = 'Click to rename';
         
-        titleH2.onclick = (e) => {
+        if(titleH2) titleH2.onclick = (e) => {
             if (list.trelloListId) {
                 navigator.clipboard.writeText(list.title || titleH2.textContent).then(() => {
                     showToast("Title copied to clipboard!");
@@ -4308,7 +4341,7 @@ function renderKanbanApp(activeBoard) {
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
-            opt.onclick = (e) => {
+            if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
                 if (list.trelloListId) {
                     if(confirm("Unlink this Trello tracker layout?")) {
@@ -4331,7 +4364,7 @@ function renderKanbanApp(activeBoard) {
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
-            opt.onclick = (e) => {
+            if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
                 if (list.trelloListId && list.trackerType === 'ads') {
                     if(confirm("Unlink this Ads tracker layout?")) {
@@ -4355,7 +4388,7 @@ function renderKanbanApp(activeBoard) {
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
-            opt.onclick = (e) => {
+            if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
                 if (list.pipedriveStageId) {
                     if(confirm("Unlink this Pipedrive tracker layout?")) {
@@ -4379,7 +4412,7 @@ function renderKanbanApp(activeBoard) {
         const clientHappinessOption = document.createElement('div');
         clientHappinessOption.className = 'list-option-item';
         clientHappinessOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curHappinessIcon}</svg><span>${curHappinessText}</span>`;
-        clientHappinessOption.onclick = (e) => {
+        if(clientHappinessOption) clientHappinessOption.onclick = (e) => {
             e.stopPropagation();
             optionsMenu.style.display = 'none';
             pendingSourceList = list;
@@ -4419,7 +4452,7 @@ function renderKanbanApp(activeBoard) {
         const moneySmellingOption = document.createElement('div');
         moneySmellingOption.className = 'list-option-item';
         moneySmellingOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curMoneySmellingIcon}</svg><span>${curMoneySmellingText}</span>`;
-        moneySmellingOption.onclick = (e) => {
+        if(moneySmellingOption) moneySmellingOption.onclick = (e) => {
             e.stopPropagation();
             optionsMenu.style.display = 'none';
             pendingSourceList = list;
@@ -4459,7 +4492,7 @@ function renderKanbanApp(activeBoard) {
         const newClientsOption = document.createElement('div');
         newClientsOption.className = 'list-option-item';
         newClientsOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curNewClientsIcon}</svg><span>${curNewClientsText}</span>`;
-        newClientsOption.onclick = (e) => {
+        if(newClientsOption) newClientsOption.onclick = (e) => {
             e.stopPropagation();
             optionsMenu.style.display = 'none';
             pendingSourceList = list;
@@ -4496,7 +4529,7 @@ function renderKanbanApp(activeBoard) {
             const layoutOption = document.createElement('div');
             layoutOption.className = 'list-option-item';
             layoutOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg><span>Set Trello Layout</span>`;
-            layoutOption.onclick = (e) => {
+            if(layoutOption) layoutOption.onclick = (e) => {
                 e.stopPropagation();
                 optionsMenu.style.display = 'none';
                 openTrelloLayoutModal(list);
@@ -4506,7 +4539,7 @@ function renderKanbanApp(activeBoard) {
             const adsLayoutOption = document.createElement('div');
             adsLayoutOption.className = 'list-option-item';
             adsLayoutOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg><span>Set Ads Layout</span>`;
-            adsLayoutOption.onclick = (e) => {
+            if(adsLayoutOption) adsLayoutOption.onclick = (e) => {
                 e.stopPropagation();
                 optionsMenu.style.display = 'none';
                 openAdsLayoutModal(list);
@@ -4520,7 +4553,7 @@ function renderKanbanApp(activeBoard) {
             const tasksOption = document.createElement('div');
             tasksOption.className = 'list-option-item';
             tasksOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tasksIcon}</svg><span>${tasksText}</span>`;
-            tasksOption.onclick = (e) => {
+            if(tasksOption) tasksOption.onclick = (e) => {
                 e.stopPropagation();
                 if (list.trelloTasksListId) {
                     if(confirm("Unlink this Trello tasks list?")) {
@@ -4545,7 +4578,7 @@ function renderKanbanApp(activeBoard) {
         let themeIcon = nextTheme === 'pipedrive' ? `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>` : `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
         
         themeOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${themeIcon}</svg><span>Switch to ${themeName}</span>`;
-        themeOption.onclick = (e) => {
+        if(themeOption) themeOption.onclick = (e) => {
             e.stopPropagation();
             list.theme = nextTheme;
             saveState();
@@ -4559,7 +4592,7 @@ function renderKanbanApp(activeBoard) {
         const deleteOption = document.createElement('div');
         deleteOption.className = 'list-option-item text-danger';
         deleteOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg><span>Delete List</span>`;
-        deleteOption.onclick = (e) => {
+        if(deleteOption) deleteOption.onclick = (e) => {
             e.stopPropagation();
             if(confirm("Delete this entire list?")) {
                 const actualIndex = activeBoard.lists.findIndex(l => l.id === list.id);
@@ -4578,7 +4611,7 @@ function renderKanbanApp(activeBoard) {
         };
         optionsMenu.appendChild(deleteOption);
 
-        optionsBtn.onclick = (e) => {
+        if(optionsBtn) optionsBtn.onclick = (e) => {
             e.stopPropagation();
             document.querySelectorAll('.list-options-menu').forEach(m => {
                 if(m !== optionsMenu) m.style.display = 'none';
@@ -4586,7 +4619,7 @@ function renderKanbanApp(activeBoard) {
             optionsMenu.style.display = optionsMenu.style.display === 'none' ? 'block' : 'none';
         };
 
-        document.addEventListener('click', (e) => {
+        if(document) document.addEventListener('click', (e) => {
             if (!optionsWrap.contains(e.target)) {
                 optionsMenu.style.display = 'none';
             }
@@ -5002,7 +5035,7 @@ function renderKanbanApp(activeBoard) {
                 toggleBtn.innerHTML = iconsHtml;
                 toggleBtn.title = 'Toggle Trackers';
                 toggleBtn.onmousedown = (e) => e.stopPropagation();
-                toggleBtn.onclick = (e) => {
+                if(toggleBtn) toggleBtn.onclick = (e) => {
                     e.stopPropagation();
                     const svgNode = e.target.closest('svg');
                     if (!svgNode) return;
@@ -5136,7 +5169,7 @@ function renderKanbanApp(activeBoard) {
                 showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M6 9l6 6 6-6"></path></svg> Show Tasks (${taskCount})`;
             }
             
-            showBtn.onclick = (e) => {
+            if(showBtn) showBtn.onclick = (e) => {
                 e.stopPropagation();
                 isExpanded = !isExpanded;
                 
@@ -5240,24 +5273,24 @@ function renderKanbanApp(activeBoard) {
             }
             
             if (card.isPipedrive) {
-                cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
+                if(cardEl) cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
             } else if (card.isTrelloTask) {
-                cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
+                if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #5e6c84';
             } else if (!card.isTrello) {
                 if (list.isMoneySmelling) {
-                    cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
+                    if(cardEl) cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
                     cardEl.style.cursor = 'pointer';
                     // Since it opens PipedriveActionModal, maybe blue border like others:
                     if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #00875A'; // Smell nice green!
                 } else {
-                    cardEl.onclick = () => openTimerModal(card.id, list.id);
+                    if(cardEl) cardEl.onclick = () => openTimerModal(card.id, list.id);
                 }
             } else if (list.trackerType === 'ads') {
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
                 cardEl.style.cursor = 'default';
             } else {
-                cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
+                if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
                 cardEl.style.cursor = 'pointer';
             }
@@ -5285,7 +5318,7 @@ function renderKanbanApp(activeBoard) {
             
             if (!card.isTrello) {
                 titleTextWrap.contentEditable = 'false';
-                titleTextWrap.onclick = (e) => {
+                if(titleTextWrap) titleTextWrap.onclick = (e) => {
                     e.stopPropagation();
                     if (titleTextWrap.contentEditable !== 'true') {
                         titleTextWrap.contentEditable = 'true';
@@ -5448,7 +5481,7 @@ function renderKanbanApp(activeBoard) {
                         const waLink = document.createElement('a');
                         waLink.href = `https://wa.me/${waNum.startsWith('+') ? waNum.substring(1) : waNum}`;
                         waLink.target = '_blank';
-                        waLink.onclick = (e) => e.stopPropagation();
+                        if(waLink) waLink.onclick = (e) => e.stopPropagation();
                         waLink.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.878-.788-1.47-1.761-1.643-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
                         
                         waLink.style.display = 'flex';
@@ -5494,7 +5527,7 @@ function renderKanbanApp(activeBoard) {
                 e.stopPropagation();
             };
             
-            pinBtn.onclick = (e) => {
+            if(pinBtn) pinBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 card.isPinned = !card.isPinned;
@@ -5531,7 +5564,7 @@ function renderKanbanApp(activeBoard) {
                         const row = document.createElement('div');
                         row.className = 'nc-card-row';
                         row.onmousedown = (e) => e.stopPropagation();
-                        row.onclick = (e) => e.stopPropagation();
+                        if(row) row.onclick = (e) => e.stopPropagation();
 
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
@@ -5552,7 +5585,7 @@ function renderKanbanApp(activeBoard) {
                         text.value = item.text;
                         text.className = 'nc-card-text' + (item.checked ? ' nc-done' : '');
                         text.spellcheck = false;
-                        text.onclick = (e) => e.stopPropagation();
+                        if(text) text.onclick = (e) => e.stopPropagation();
                         text.oninput = (e) => {
                             const liveChecklist = ensureCardChecklist(card);
                             liveChecklist[index].text = e.target.value;
@@ -5730,7 +5763,7 @@ function renderKanbanApp(activeBoard) {
                     };
                     updateDrawerUI();
 
-                    addPlatformBtn.onclick = (e) => {
+                    if(addPlatformBtn) addPlatformBtn.onclick = (e) => {
                         e.stopPropagation();
                         drawerExpanded = !drawerExpanded;
                         const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
@@ -5814,7 +5847,7 @@ function renderKanbanApp(activeBoard) {
                             }
                         };
                         
-                        iconEl.onclick = (e) => {
+                        if(iconEl) iconEl.onclick = (e) => {
                             e.stopPropagation();
                             const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
                             if (liveCard) {
@@ -5983,7 +6016,7 @@ function renderKanbanApp(activeBoard) {
                                     }
                                 };
                                 
-                                childIcon.onclick = (e) => {
+                                if(childIcon) childIcon.onclick = (e) => {
                                     e.stopPropagation();
                                     const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
                                     if (liveCard && liveCard.adsMetrics) {
@@ -6059,7 +6092,7 @@ function renderKanbanApp(activeBoard) {
                             spendInput.style.margin = '0';
                             spendInput.style.textAlign = 'right';
                             
-                            spendInput.onclick = (e) => e.stopPropagation();
+                            if(spendInput) spendInput.onclick = (e) => e.stopPropagation();
                             spendInput.ondragover = (e) => e.preventDefault();
                             spendInput.ondrop = (e) => e.preventDefault();
                             
@@ -6194,7 +6227,7 @@ function renderKanbanApp(activeBoard) {
 
                     const attachTooltip = (element, text) => {
                         if (!text) return;
-                        element.addEventListener('mouseenter', () => {
+                        if(element) element.addEventListener('mouseenter', () => {
                             const tt = document.getElementById('ads-hud-tooltip');
                             if (!tt) return;
                             tt.innerHTML = text;
@@ -6203,11 +6236,11 @@ function renderKanbanApp(activeBoard) {
                             tt.style.top = rect.top + 'px';
                             tt.classList.add('active');
                         });
-                        element.addEventListener('mouseleave', () => {
+                        if(element) element.addEventListener('mouseleave', () => {
                             const tt = document.getElementById('ads-hud-tooltip');
                             if (tt) tt.classList.remove('active');
                         });
-                        element.addEventListener('click', () => {
+                        if(element) element.addEventListener('click', () => {
                             const tt = document.getElementById('ads-hud-tooltip');
                             if (tt) tt.classList.remove('active');
                         });
@@ -6234,7 +6267,7 @@ function renderKanbanApp(activeBoard) {
                             span.style.cursor = 'pointer';
                             span.style.userSelect = 'none';
                             span.title = 'Click to toggle mode';
-                            span.onclick = (e) => {
+                            if(span) span.onclick = (e) => {
                                 e.stopPropagation();
                                 onIconClick(span, inp);
                             };
@@ -6255,7 +6288,7 @@ function renderKanbanApp(activeBoard) {
                         const adjustW = () => { inp.style.width = Math.max(30, (inp.value.length * 7.5) + 5) + 'px'; };
                         adjustW();
 
-                        inp.onclick = (e) => e.stopPropagation();
+                        if(inp) inp.onclick = (e) => e.stopPropagation();
                         inp.onfocus = () => { inp.value = initVal !== undefined && initVal !== 0 ? initVal : ''; adjustW(); };
                         inp.onblur = () => { inp.value = formatNum(initVal); adjustW(); };
 
@@ -6313,7 +6346,7 @@ function renderKanbanApp(activeBoard) {
                     calculatorBadge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="14.01"></line><line x1="16" x2="16" y1="18" y2="18.01"></line><line x1="12" x2="12" y1="14" y2="14.01"></line><line x1="12" x2="12" y1="18" y2="18.01"></line><line x1="8" x2="8" y1="14" y2="14.01"></line><line x1="8" x2="8" y1="18" y2="18.01"></line></svg><span style="font-weight:600; font-size:11px; letter-spacing:0.5px;">KPI</span>`;
                     calculatorBadge.onmouseenter = () => calculatorBadge.style.background = 'rgba(9, 30, 66, 0.08)';
                     calculatorBadge.onmouseleave = () => calculatorBadge.style.background = 'rgba(9, 30, 66, 0.04)';
-                    calculatorBadge.onclick = (e) => {
+                    if(calculatorBadge) calculatorBadge.onclick = (e) => {
                         e.stopPropagation();
                         if(window.openAdsCalculatorModal) window.openAdsCalculatorModal(card.id);
                     };
@@ -6367,7 +6400,7 @@ function renderKanbanApp(activeBoard) {
                     taxBadge.style.gap = '4px';
                     attachTooltip(taxBadge, 'Add 15% Tax to Ad Spend');
                     
-                    taxBadge.onclick = (e) => {
+                    if(taxBadge) taxBadge.onclick = (e) => {
                         e.stopPropagation();
                         m.taxEnabled = !m.taxEnabled;
                         const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
@@ -6410,7 +6443,7 @@ function renderKanbanApp(activeBoard) {
                     
                     toggleBadge.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`;
 
-                    toggleBadge.onclick = (e) => {
+                    if(toggleBadge) toggleBadge.onclick = (e) => {
                         e.stopPropagation();
                         m.metricsExpanded = !m.metricsExpanded;
                         const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
@@ -6645,7 +6678,7 @@ function renderKanbanApp(activeBoard) {
                     ageBadge.innerHTML = `<span class="age-icon-lock" style="display:flex; align-items:center;">${ageEmoji}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span> <span class="clock-text" style="font-weight:600; letter-spacing:0.5px; font-size:11px;">${ageText}</span>`;
                     ageBadge.title = "Total age of card since creation. Click to set status.";
                     
-                    ageBadge.onclick = (e) => {
+                    if(ageBadge) ageBadge.onclick = (e) => {
                         e.stopPropagation();
                         
                         const isMineOpen = ageBadge.dataset.pickerOpen === 'true';
@@ -6698,7 +6731,7 @@ function renderKanbanApp(activeBoard) {
                             dot.onmouseover = () => dot.style.transform = 'scale(1.15)';
                             dot.onmouseout = () => dot.style.transform = 'scale(1)';
                             
-                            dot.onclick = (ev) => {
+                            if(dot) dot.onclick = (ev) => {
                                 ev.stopPropagation();
                                 activeBoard.cardColors[card.id] = col;
                                 saveState();
@@ -6792,7 +6825,7 @@ function renderKanbanApp(activeBoard) {
                                 }
                             };
                             
-                            manualMoInput.onclick = manualDayInput.onclick = (e) => e.stopPropagation();
+                            if(manualMoInput) manualMoInput.onclick = manualDayInput.onclick = (e) => e.stopPropagation();
                             manualMoInput.onkeydown = manualDayInput.onkeydown = handleEnter;
                             
                             picker.appendChild(manualMoInput);
@@ -6862,7 +6895,7 @@ function renderKanbanApp(activeBoard) {
                             btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
                             btn.onmouseleave = () => btn.style.transform = currentHappiness === st.val ? 'scale(1.1)' : 'scale(1)';
                             
-                            btn.onclick = (e) => {
+                            if(btn) btn.onclick = (e) => {
                                 e.stopPropagation();
                                 if (!activeBoard.cardColors) activeBoard.cardColors = {};
                                 
@@ -6960,7 +6993,7 @@ function renderKanbanApp(activeBoard) {
                 reasonInput.dir = 'auto';
                 reasonInput.style.cssText = 'width: 100%; font-size: 11.5px; padding: 6px; border: 1px solid #ffcccc; border-radius: 4px; outline: none; background: #fff5f5; color: #c9372c; resize: none; min-height: 28px; box-sizing: border-box; font-family: inherit; line-height: 1.4; overflow: hidden;';
                 
-                reasonInput.onclick = (e) => e.stopPropagation();
+                if(reasonInput) reasonInput.onclick = (e) => e.stopPropagation();
                 
                 const autoResize = () => {
                     reasonInput.style.height = 'auto';
@@ -7001,7 +7034,7 @@ function renderKanbanApp(activeBoard) {
 
         let scrollRAF = null;
         let lastScrollY = 0;
-        listContainer.addEventListener('dragover', (e) => {
+        if(listContainer) listContainer.addEventListener('dragover', (e) => {
             const rect = listContainer.getBoundingClientRect();
             let dist = 0;
             if (e.clientY < rect.top + 100) dist = -15;
@@ -7024,8 +7057,8 @@ function renderKanbanApp(activeBoard) {
                 lastScrollY = 0;
             }
         });
-        listContainer.addEventListener('dragleave', () => lastScrollY = 0);
-        listContainer.addEventListener('drop', () => lastScrollY = 0);
+        if(listContainer) listContainer.addEventListener('dragleave', () => lastScrollY = 0);
+        if(listContainer) listContainer.addEventListener('drop', () => lastScrollY = 0);
 
         const addBtn = document.createElement('button');
         addBtn.className = 'add-card-btn managing-add-btn';
@@ -7043,7 +7076,7 @@ function renderKanbanApp(activeBoard) {
             </div>
         `;
         
-        addBtn.onclick = () => {
+        if(addBtn) addBtn.onclick = () => {
             newCardTitle.value = '';
             activeTargetListId = list.id;
             
@@ -7146,7 +7179,7 @@ function renderKanbanApp(activeBoard) {
                 
                 const allTrackerCards = targets.flatMap(l => l.cards || []);
                 const titleText = trackerType === 'clientHappiness' ? 'Total Clients Tracked' : 'Total Money Tracked';
-                totalPill.onclick = () => openServiceCardsModal(titleText, '👥', allTrackerCards);
+                if(totalPill) totalPill.onclick = () => openServiceCardsModal(titleText, '👥', allTrackerCards);
                 
                 totalPill.innerHTML = `<span style="font-size:14px;">👥</span> <span>${totalCards}</span>`;
                 totalSummaryEl.appendChild(totalPill);
@@ -7202,7 +7235,7 @@ function renderKanbanApp(activeBoard) {
                     pill.onmouseenter = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1.05)'; pill.style.zIndex = '5'; } pill.style.opacity = '1'; };
                     pill.onmouseleave = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1)'; pill.style.opacity = currentFilter ? '0.4' : '1'; pill.style.zIndex = '1'; } };
                     
-                    pill.onclick = (e) => {
+                    if(pill) pill.onclick = (e) => {
                         e.stopPropagation();
                         activeBoard.happinessFilters = activeBoard.happinessFilters || {};
                         activeBoard.happinessFilters[trackerType] = activeBoard.happinessFilters[trackerType] === st.val ? null : st.val;
@@ -7245,7 +7278,7 @@ function renderKanbanApp(activeBoard) {
                 exitBtn.onmouseenter = () => { exitBtn.style.background = 'rgba(9, 30, 66, 0.15)'; exitBtn.style.color = '#172b4d'; };
                 exitBtn.onmouseleave = () => { exitBtn.style.background = 'rgba(9, 30, 66, 0.08)'; exitBtn.style.color = '#5e6c84'; };
                 
-                exitBtn.onclick = (e) => {
+                if(exitBtn) exitBtn.onclick = (e) => {
                     e.stopPropagation();
                     activeBoard.isolateCardId = null;
                     saveState();
@@ -7333,7 +7366,7 @@ function renderKanbanApp(activeBoard) {
                         pill.onmouseenter = () => { if (curSvcFilter !== svc) { pill.style.transform = 'scale(1.05)'; } pill.style.opacity = '1'; };
                         pill.onmouseleave = () => { if (curSvcFilter !== svc) { pill.style.transform = 'scale(1)'; pill.style.opacity = curSvcFilter ? '0.4' : '1'; } };
                         
-                        pill.onclick = (e) => {
+                        if(pill) pill.onclick = (e) => {
                             e.stopPropagation();
                             activeBoard.serviceFilters = activeBoard.serviceFilters || {};
                             activeBoard.serviceFilters[trackerType] = activeBoard.serviceFilters[trackerType] === svc ? null : svc;
@@ -7413,7 +7446,7 @@ function renderKanbanApp(activeBoard) {
             ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M6 9l6 6 6-6"></path></svg> Show Cards (${list.cards.length})` 
             : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M18 15l-6-6-6 6"></path></svg> Hide Cards (${list.cards.length})`;
 
-        hideCardsBtn.onclick = (e) => {
+        if(hideCardsBtn) hideCardsBtn.onclick = (e) => {
             e.stopPropagation();
             list.collapsed = !list.collapsed;
             saveState();
@@ -7657,7 +7690,7 @@ function renderKanbanApp(activeBoard) {
     const addListBtn = document.createElement('button');
     addListBtn.className = 'kanban-add-list-btn';
     addListBtn.innerHTML = `+ Add another list`;
-    addListBtn.onclick = () => {
+    if(addListBtn) addListBtn.onclick = () => {
         const rect = canvas.getBoundingClientRect();
         const screenCenterX = window.innerWidth / 2;
         const screenCenterY = window.innerHeight / 2;
@@ -7756,7 +7789,7 @@ function renderKanbanApp(activeBoard) {
     boardTitleEl.style.fontSize = '24px';
     boardTitleEl.title = 'Click to rename Workspace';
     
-    boardTitleEl.onclick = (e) => {
+    if(boardTitleEl) boardTitleEl.onclick = (e) => {
         boardTitleEl.contentEditable = 'true';
         boardTitleEl.classList.add('editing');
         boardTitleEl.focus();
@@ -7806,7 +7839,7 @@ function renderKanbanApp(activeBoard) {
     trelloSettingsBtn.innerHTML = activeBoard.trelloBoardId ? 
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Trello Link: On` : 
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Link Trello`;
-    trelloSettingsBtn.onclick = openTrelloSettingsModal;
+    if(trelloSettingsBtn) trelloSettingsBtn.onclick = openTrelloSettingsModal;
     
     const pipedriveSettingsBtn = document.createElement('button');
     pipedriveSettingsBtn.className = 'nav-btn-outline';
@@ -7816,7 +7849,7 @@ function renderKanbanApp(activeBoard) {
     pipedriveSettingsBtn.innerHTML = activeBoard.pipedrivePipelineId ? 
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> Pipedrive Link: On` :
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> Link Pipedrive`;
-    pipedriveSettingsBtn.onclick = openPipedriveSettingsModal;
+    if(pipedriveSettingsBtn) pipedriveSettingsBtn.onclick = openPipedriveSettingsModal;
     
     const rootDelBtn = document.createElement('button');
     rootDelBtn.className = 'icon-btn';
@@ -7828,7 +7861,7 @@ function renderKanbanApp(activeBoard) {
     rootDelBtn.style.background = 'transparent';
     rootDelBtn.style.marginLeft = 'auto'; // push delete to right
     rootDelBtn.innerHTML = 'Delete Workspace';
-    rootDelBtn.onclick = () => deleteBoard(activeBoard.id);
+    if(rootDelBtn) rootDelBtn.onclick = () => deleteBoard(activeBoard.id);
     
     rootBoardHeader.appendChild(boardTitleEl);
     rootBoardHeader.appendChild(trelloSettingsBtn);
@@ -8012,8 +8045,8 @@ function renderSocialSchedulerApp(activeBoard) {
             document.body.appendChild(rnModal);
             
             const inputEl = document.getElementById('renameClientInput');
-            inputEl.addEventListener('focus', () => inputEl.style.borderColor = '#f97316');
-            inputEl.addEventListener('blur', () => inputEl.style.borderColor = '#cbd5e0');
+            if(inputEl) inputEl.addEventListener('focus', () => inputEl.style.borderColor = '#f97316');
+            if(inputEl) inputEl.addEventListener('blur', () => inputEl.style.borderColor = '#cbd5e0');
             
             inputEl.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
@@ -8425,7 +8458,7 @@ function renderSocialSchedulerApp(activeBoard) {
 
     const tabs = appContainer.querySelectorAll('.sm-tab');
     tabs.forEach(tab => {
-        tab.onclick = () => {
+        if(tab) tab.onclick = () => {
             window.activeSocialTab = tab.dataset.tab;
             renderSocialSchedulerApp(activeBoard);
         };
@@ -8437,7 +8470,7 @@ function renderSocialSchedulerApp(activeBoard) {
         const sidebarDateFull = appContainer.querySelector('.sm-selected-date-text p');
         
         cells.forEach(cell => {
-            cell.onclick = () => {
+            if(cell) cell.onclick = () => {
                 cells.forEach(c => c.classList.remove('selected'));
                 cell.classList.add('selected');
                 
@@ -8689,8 +8722,8 @@ function renderSocialSchedulerApp(activeBoard) {
         if (typeof window.openCreatePostModal === 'function') window.openCreatePostModal();
     };
     
-    if (createBtn) createBtn.onclick = openModal;
-    if (addEmptyBtn) addEmptyBtn.onclick = openModal;
+    if (createBtn) if(createBtn) createBtn.onclick = openModal;
+    if (addEmptyBtn) if(addEmptyBtn) addEmptyBtn.onclick = openModal;
 }
 
 function renderTimerApp(activeBoard) {
@@ -8711,7 +8744,7 @@ function renderTimerApp(activeBoard) {
     titleH2.className = 'editable-board-title';
     titleH2.title = 'Click to rename';
     
-    titleH2.onclick = (e) => {
+    if(titleH2) titleH2.onclick = (e) => {
         titleH2.contentEditable = 'true';
         titleH2.classList.add('editing');
         titleH2.focus();
@@ -8755,7 +8788,7 @@ function renderTimerApp(activeBoard) {
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'icon-btn';
-    deleteBtn.onclick = () => deleteBoard(activeBoard.id);
+    if(deleteBtn) deleteBtn.onclick = () => deleteBoard(activeBoard.id);
     deleteBtn.title = 'Delete Board';
     deleteBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 
@@ -8770,7 +8803,7 @@ function renderTimerApp(activeBoard) {
     activeBoard.cards.forEach(card => {
         const cardEl = document.createElement('div');
         cardEl.className = 'card';
-        cardEl.onclick = () => openTimerModal(card.id, null);
+        if(cardEl) cardEl.onclick = () => openTimerModal(card.id, null);
 
         const titleEl = document.createElement('div');
         titleEl.className = 'card-title';
@@ -8825,7 +8858,7 @@ function renderTimerApp(activeBoard) {
 
     let scrollRAF = null;
     let lastScrollY = 0;
-    listContainer.addEventListener('dragover', (e) => {
+    if(listContainer) listContainer.addEventListener('dragover', (e) => {
         const rect = listContainer.getBoundingClientRect();
         let dist = 0;
         if (e.clientY < rect.top + 100) dist = -15;
@@ -8848,8 +8881,8 @@ function renderTimerApp(activeBoard) {
             lastScrollY = 0;
         }
     });
-    listContainer.addEventListener('dragleave', () => lastScrollY = 0);
-    listContainer.addEventListener('drop', () => lastScrollY = 0);
+    if(listContainer) listContainer.addEventListener('dragleave', () => lastScrollY = 0);
+    if(listContainer) listContainer.addEventListener('drop', () => lastScrollY = 0);
 
     const addBtn = document.createElement('button');
     addBtn.className = 'add-card-btn';
@@ -8860,7 +8893,7 @@ function renderTimerApp(activeBoard) {
             </span>
         `;
 
-    addBtn.onclick = () => {
+    if(addBtn) addBtn.onclick = () => {
         newCardTitle.value = '';
         if (newCardDays) newCardDays.value = 0;
         if (newCardHours) newCardHours.value = 0;
@@ -8943,7 +8976,7 @@ function renderTimerApp(activeBoard) {
         clearBtn.onmouseenter = () => clearBtn.style.background = '#0052cc';
         clearBtn.onmouseleave = () => clearBtn.style.background = '#0c66e4';
         
-        clearBtn.onclick = () => {
+        if(clearBtn) clearBtn.onclick = () => {
             activeBoard.happinessFilters = {};
             activeBoard.serviceFilters = {};
             saveState();
@@ -8954,11 +8987,11 @@ function renderTimerApp(activeBoard) {
 }
 
 // Add Card Flow
-closeAddModal.onclick = () => addCardModal.classList.remove('active');
+if(closeAddModal) closeAddModal.onclick = () => addCardModal.classList.remove('active');
 
 const modalLinkAccountsBtn = document.getElementById('modalLinkAccountsBtn');
 if (modalLinkAccountsBtn) {
-    modalLinkAccountsBtn.onclick = () => {
+    if(modalLinkAccountsBtn) modalLinkAccountsBtn.onclick = () => {
         const popup = document.getElementById('createPostModal');
         if (popup) popup.classList.remove('active');
         window.activeSocialTab = 'accounts';
@@ -8966,7 +8999,7 @@ if (modalLinkAccountsBtn) {
         if (activeBoard) renderSocialSchedulerApp(activeBoard);
     };
 }
-confirmAddBtn.onclick = async () => {
+if(confirmAddBtn) confirmAddBtn.onclick = async () => {
     const title = newCardTitle.value.trim();
     if (title) {
         const activeBoard = boards.find(b => b.id === activeBoardId);
@@ -9507,7 +9540,7 @@ function openAdsCalculatorModal(cardId) {
     document.getElementById('closeAdsCalculatorModalBtn').onclick = () => {
         modal.classList.remove('active');
     };
-    modal.onclick = (e) => {
+    if(modal) modal.onclick = (e) => {
         if (e.target === modal) modal.classList.remove('active');
     };
 }
@@ -9627,7 +9660,7 @@ function openPipedriveActionModal(cardId, listId) {
                     delBtn.style.fontWeight = 'bold';
                     delBtn.style.cursor = 'pointer';
                     delBtn.style.padding = '0 4px';
-                    delBtn.onclick = () => {
+                    if(delBtn) delBtn.onclick = () => {
                         card.services.splice(idx, 1);
                         saveState();
                         render();
@@ -9645,7 +9678,7 @@ function openPipedriveActionModal(cardId, listId) {
         renderChecklist();
         
         if (addNewServiceBtn && newServiceInput) {
-            addNewServiceBtn.onclick = () => {
+            if(addNewServiceBtn) addNewServiceBtn.onclick = () => {
                 const val = newServiceInput.value.trim();
                 if (val) {
                     card.services.push({ name: val, checked: false });
@@ -9692,17 +9725,17 @@ function setPipedriveColor(color) {
 }
 
 const pipedriveActionColorRedBtn = document.getElementById('pipedriveActionColorRedBtn');
-if (pipedriveActionColorRedBtn) pipedriveActionColorRedBtn.onclick = () => setPipedriveColor('red');
+if (pipedriveActionColorRedBtn) if(pipedriveActionColorRedBtn) pipedriveActionColorRedBtn.onclick = () => setPipedriveColor('red');
 
 const pipedriveActionColorGreenBtn = document.getElementById('pipedriveActionColorGreenBtn');
-if (pipedriveActionColorGreenBtn) pipedriveActionColorGreenBtn.onclick = () => setPipedriveColor('green');
+if (pipedriveActionColorGreenBtn) if(pipedriveActionColorGreenBtn) pipedriveActionColorGreenBtn.onclick = () => setPipedriveColor('green');
 
 const pipedriveActionColorClearBtn = document.getElementById('pipedriveActionColorClearBtn');
-if (pipedriveActionColorClearBtn) pipedriveActionColorClearBtn.onclick = () => setPipedriveColor(null);
+if (pipedriveActionColorClearBtn) if(pipedriveActionColorClearBtn) pipedriveActionColorClearBtn.onclick = () => setPipedriveColor(null);
 
 const closePipedriveActionModalBtn = document.getElementById('closePipedriveActionModalBtn');
 if (closePipedriveActionModalBtn) {
-    closePipedriveActionModalBtn.onclick = () => {
+    if(closePipedriveActionModalBtn) closePipedriveActionModalBtn.onclick = () => {
         document.getElementById('pipedriveActionModal').classList.remove('active');
     };
 }
@@ -9858,7 +9891,7 @@ if (pipedriveActionNoteInput) {
 
 const pipedriveEditDealValueSaveBtn = document.getElementById('pipedriveEditDealValueSaveBtn');
 if (pipedriveEditDealValueSaveBtn) {
-    pipedriveEditDealValueSaveBtn.onclick = async () => {
+    if(pipedriveEditDealValueSaveBtn) pipedriveEditDealValueSaveBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         const valInput = document.getElementById('pipedriveEditDealValueInput');
         if (!valInput) return;
@@ -9917,7 +9950,7 @@ if (pipedriveEditDealValueSaveBtn) {
 
 const pipedriveActionWonBtn = document.getElementById('pipedriveActionWonBtn');
 if (pipedriveActionWonBtn) {
-    pipedriveActionWonBtn.onclick = async () => {
+    if(pipedriveActionWonBtn) pipedriveActionWonBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         
         try {
@@ -9986,7 +10019,7 @@ if (pipedriveActionWonBtn) {
 
 const pipedriveActionDuplicateBtn = document.getElementById('pipedriveActionDuplicateBtn');
 if (pipedriveActionDuplicateBtn) {
-    pipedriveActionDuplicateBtn.onclick = async () => {
+    if(pipedriveActionDuplicateBtn) pipedriveActionDuplicateBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         
         try {
@@ -10045,7 +10078,7 @@ if (pipedriveActionDuplicateBtn) {
 
 const pipedriveActionDeleteBtn = document.getElementById('pipedriveActionDeleteBtn');
 if (pipedriveActionDeleteBtn) {
-    pipedriveActionDeleteBtn.onclick = () => {
+    if(pipedriveActionDeleteBtn) pipedriveActionDeleteBtn.onclick = () => {
         document.getElementById('pipedriveActionDeleteConfirmContainer').style.display = 'block';
         document.getElementById('pipedriveActionDeleteBtn').parentElement.style.display = 'none';
     };
@@ -10053,7 +10086,7 @@ if (pipedriveActionDeleteBtn) {
 
 const pipedriveActionDeleteCancelBtn = document.getElementById('pipedriveActionDeleteCancelBtn');
 if (pipedriveActionDeleteCancelBtn) {
-    pipedriveActionDeleteCancelBtn.onclick = () => {
+    if(pipedriveActionDeleteCancelBtn) pipedriveActionDeleteCancelBtn.onclick = () => {
         document.getElementById('pipedriveActionDeleteConfirmContainer').style.display = 'none';
         document.getElementById('pipedriveActionDeleteBtn').parentElement.style.display = 'flex';
     };
@@ -10061,7 +10094,7 @@ if (pipedriveActionDeleteCancelBtn) {
 
 const pipedriveActionDeleteConfirmBtn = document.getElementById('pipedriveActionDeleteConfirmBtn');
 if (pipedriveActionDeleteConfirmBtn) {
-    pipedriveActionDeleteConfirmBtn.onclick = async () => {
+    if(pipedriveActionDeleteConfirmBtn) pipedriveActionDeleteConfirmBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         
         try {
@@ -10126,7 +10159,7 @@ if (pipedriveActionDeleteConfirmBtn) {
 
 const pipedriveActionLostBtn = document.getElementById('pipedriveActionLostBtn');
 if (pipedriveActionLostBtn) {
-    pipedriveActionLostBtn.onclick = () => {
+    if(pipedriveActionLostBtn) pipedriveActionLostBtn.onclick = () => {
         document.getElementById('pipedriveActionPrimaryBtns').style.display = 'none';
         document.getElementById('pipedriveActionLostReasonContainer').style.display = 'block';
         document.getElementById('pipedriveActionLostReasonInput').focus();
@@ -10135,7 +10168,7 @@ if (pipedriveActionLostBtn) {
 
 const pipedriveActionCancelLostBtn = document.getElementById('pipedriveActionCancelLostBtn');
 if (pipedriveActionCancelLostBtn) {
-    pipedriveActionCancelLostBtn.onclick = () => {
+    if(pipedriveActionCancelLostBtn) pipedriveActionCancelLostBtn.onclick = () => {
         document.getElementById('pipedriveActionLostReasonContainer').style.display = 'none';
         document.getElementById('pipedriveActionPrimaryBtns').style.display = 'flex';
     };
@@ -10143,7 +10176,7 @@ if (pipedriveActionCancelLostBtn) {
 
 const pipedriveActionTemplateDropshippingBtn = document.getElementById('pipedriveActionTemplateDropshippingBtn');
 if (pipedriveActionTemplateDropshippingBtn) {
-    pipedriveActionTemplateDropshippingBtn.onclick = () => {
+    if(pipedriveActionTemplateDropshippingBtn) pipedriveActionTemplateDropshippingBtn.onclick = () => {
         const input = document.getElementById('pipedriveActionLostReasonInput');
         if (input) {
             input.value = "Dropshipping";
@@ -10154,7 +10187,7 @@ if (pipedriveActionTemplateDropshippingBtn) {
 
 const pipedriveActionTemplateNoResponseBtn = document.getElementById('pipedriveActionTemplateNoResponseBtn');
 if (pipedriveActionTemplateNoResponseBtn) {
-    pipedriveActionTemplateNoResponseBtn.onclick = () => {
+    if(pipedriveActionTemplateNoResponseBtn) pipedriveActionTemplateNoResponseBtn.onclick = () => {
         const input = document.getElementById('pipedriveActionLostReasonInput');
         if (input) {
             input.value = "No Response";
@@ -10165,7 +10198,7 @@ if (pipedriveActionTemplateNoResponseBtn) {
 
 const pipedriveActionSubmitLostBtn = document.getElementById('pipedriveActionSubmitLostBtn');
 if (pipedriveActionSubmitLostBtn) {
-    pipedriveActionSubmitLostBtn.onclick = async () => {
+    if(pipedriveActionSubmitLostBtn) pipedriveActionSubmitLostBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         const reason = document.getElementById('pipedriveActionLostReasonInput').value.trim();
         
@@ -10195,9 +10228,9 @@ if (pipedriveActionSubmitLostBtn) {
     };
 }
 
-closeTimerModal.onclick = () => { timerModal.classList.remove('active'); activeCardId = null; activeTargetListId = null; };
+if(closeTimerModal) closeTimerModal.onclick = () => { timerModal.classList.remove('active'); activeCardId = null; activeTargetListId = null; };
 
-saveTimerBtn.onclick = () => {
+if(saveTimerBtn) saveTimerBtn.onclick = () => {
     if (!activeCardId) return;
     const d = parseInt(inputDays.value) || 0;
     const h = parseInt(inputHours.value) || 0;
@@ -10222,7 +10255,7 @@ saveTimerBtn.onclick = () => {
     }
 };
 
-removeTimerBtn.onclick = () => {
+if(removeTimerBtn) removeTimerBtn.onclick = () => {
     if (!activeCardId) return;
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if(activeBoard.type === 'timer') {
@@ -10237,7 +10270,7 @@ removeTimerBtn.onclick = () => {
     timerModal.classList.remove('active');
 };
 
-deleteCardBtn.onclick = () => {
+if(deleteCardBtn) deleteCardBtn.onclick = () => {
     if (!activeCardId) return;
     
     if (!deleteCardBtn.classList.contains('confirm-state')) {
@@ -10841,7 +10874,7 @@ function restartSyncTimers() {
     syncPipedriveInterval = setInterval(syncPipedrive, currentPipedriveSyncInterval);
 }
 
-document.addEventListener("visibilitychange", () => {
+if(document) document.addEventListener("visibilitychange", () => {
     isAppVisible = document.visibilityState === "visible";
     currentTrelloSyncInterval = isAppVisible ? 5000 : 30000; // 5s visible, 30s background
     currentPipedriveSyncInterval = isAppVisible ? 60000 : 180000; // 60s visible, 3m background
@@ -10980,12 +11013,12 @@ window.showConfirmModal = function(callback, titleText, descText) {
     
     modal.classList.add('active');
     
-    newBtnYes.onclick = function() {
+    if(newBtnYes) newBtnYes.onclick = function() {
         modal.classList.remove('active');
         if(callback) callback();
     };
     
-    newBtnCancel.onclick = function() {
+    if(newBtnCancel) newBtnCancel.onclick = function() {
         modal.classList.remove('active');
     };
 };
@@ -11275,9 +11308,9 @@ window.viewMediaFull = function(src, type) {
     };
     
     // allow clicking on backdrop or X to close
-    overlay.onclick = closeOverlay;
+    if(overlay) overlay.onclick = closeOverlay;
     const closeBtn = overlay.querySelector('button');
-    if (closeBtn) closeBtn.onclick = closeOverlay;
+    if (closeBtn) if(closeBtn) closeBtn.onclick = closeOverlay;
 };
 
 window.deleteSocialPost = function(postId) {
@@ -11302,7 +11335,7 @@ window.deleteSocialPost = function(postId) {
     }, "حذف المنشور", "هل أنت متأكد من رغبتك في حذف هذا المنشور؟ لا يمكن التراجع عن هذا الإجراء.");
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+if(document) document.addEventListener('DOMContentLoaded', () => {
     const gallery = document.getElementById('smMediaGallery');
     if (gallery && typeof Sortable !== 'undefined') {
         new Sortable(gallery, {
