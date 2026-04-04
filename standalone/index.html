@@ -60,6 +60,18 @@
                 <button class="save-btn" id="openAddSocialBoardBtn" style="width: 100%; padding: 12px; background: #f97316; border: none; font-weight: 600; transition: all 0.2s;">
                     + Social Media Scheduler (New)
                 </button>
+                <div style="height: 1px; background: #dfe1e6; margin: 8px 0;"></div>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <button class="nav-btn-outline" id="exportBackupBtn" style="flex: 1; padding: 8px; font-size: 12px; font-weight: 600; color: #4a5568; border-color: #dfe1e6; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export Backup
+                    </button>
+                    <button class="nav-btn-outline" id="importBackupBtn" style="flex: 1; padding: 8px; font-size: 12px; font-weight: 600; color: #4a5568; border-color: #dfe1e6; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="document.getElementById('importBackupFile').click()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Import Backup
+                    </button>
+                    <input type="file" id="importBackupFile" accept=".json" style="display: none;" />
+                </div>
             </div>
         </div>
     </div>
@@ -158,8 +170,12 @@
                 </div>
             </div>
             <div id="servicesSection" style="display:none; flex-direction:column; gap:12px; margin-bottom: 24px; align-items: flex-start;">
-                <h4 style="margin: 0 0 6px 0; color:var(--text-color); font-size:14px; width: 100%;">Provided Services</h4>
+                <h4 id="servicesSectionTitle" style="margin: 0 0 6px 0; color:var(--text-color); font-size:14px; width: 100%;">Provided Services</h4>
                 <div id="servicesList" style="display:flex; flex-direction:column; gap:12px; width: 100%;"></div>
+                <div id="servicesAddRow" style="display:none; gap:8px; width:100%;">
+                    <input type="text" id="servicesItemInput" placeholder="Service">
+                    <button id="addServicesItemBtn">Add</button>
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="danger-btn" id="removeTimerBtn">Clear Timer</button>
@@ -452,6 +468,44 @@
         </div>
     </div>
 
+    <!-- Modal for New Clients Spawning -->
+    <div class="modal-overlay" id="newClientsMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect New Clients Tracker</h3>
+                <button class="close-btn" id="closeNewClientsMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Configure the flow layout for this new tracker.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Geometric Flow Path</label>
+                    <select id="newClientsSpawnDirection" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="right">Spawn Right (Side)</option>
+                        <option value="top">Spawn Above (Top)</option>
+                        <option value="bottom">Spawn Below (Bottom)</option>
+                        <option value="left">Spawn Left (Side)</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Tracker Entry Port</label>
+                    <select id="newClientsTargetPort" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="auto">Auto (Opposite Side)</option>
+                        <option value="left">Left</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generateNewClientsTrackerBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; background: #2563eb; color: white; border: none; width: 100%; transition: background 0.2s;">Create Tracker</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Trello Tracker Spawning -->
     <div class="modal-overlay" id="trelloMappingModal">
         <div class="modal-content" style="max-width: 420px;">
@@ -683,6 +737,17 @@
                     <div id="pipedriveActionNoteStatus" style="font-size: 11px; color: #5e6c84; height: 16px; min-height: 16px; line-height: 16px;"></div>
                 </div>
 
+                <div style="margin-bottom: 24px;" id="localServicesChecklistContainer">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Agreed Services Checklist</label>
+                    <div id="servicesChecklistItems" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                        <!-- Checkboxes will be rendered here dynamically -->
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="newServiceInput" placeholder="Add a service..." style="flex:1; padding:10px 12px; border:2px solid #dfe1e6; border-radius:6px; font-size:14px; outline:none; transition:border-color 0.2s;">
+                        <button id="addNewServiceBtn" style="background:#091e42; color:white; border:none; border-radius:6px; padding:10px 16px; font-weight:600; font-size:14px; cursor:pointer; transition:background 0.2s;">Add</button>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 24px;">
                     <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Local Focus Highlight</label>
                     <div style="display:flex; gap:8px;">
@@ -697,7 +762,8 @@
                     <button id="pipedriveActionLostBtn" style="flex:1; background:#ae2e24; color:white; border:none; border-radius:8px; padding:16px; font-weight:700; font-size:16px; cursor:pointer; box-shadow:0 4px 12px rgba(174,46,36,0.3); transition:all 0.2s;">❌ Mark Lost</button>
                 </div>
                 
-                <div style="display:flex;">
+                <div style="display:flex; gap: 12px;">
+                    <button id="pipedriveActionDuplicateBtn" style="flex:1; background:#e9f2ff; color:#0c66e4; border:1px solid #c7dfff; border-radius:8px; padding:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s;">📋 Duplicate Deal</button>
                     <button id="pipedriveActionDeleteBtn" style="flex:1; background:#f4f5f7; color:#5e6c84; border:1px solid #dfe1e6; border-radius:8px; padding:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s;">🗑️ Delete Deal</button>
                 </div>
 
@@ -891,13 +957,338 @@
                 <button class="close-btn" id="closeCreatePostModal">&times;</button>
                 <div class="sm-head-title">
                     <h3>إنشاء منشور</h3>
-                    <p>أنشئ وانشر محتواك على منصاتك</p>
+                    <p id="createPostSubtitle">أنشئ وانشر محتواك على منصاتك</p>
                 </div>
             </div>
             
             <div class="sm-modal-body">
                 <!-- Content Column (First in DOM due to RTL flowing from right) -->
                 <div class="sm-modal-right-col">
+                    <!-- Format Selectors Wrapper for Overlapping Animation -->
+                    <div id="formatSelectorsWrapper" style="display: grid; grid-template-columns: 1fr; margin-bottom: 0px; transition: margin-bottom 0.4s ease;">
+                        <!-- IG Format Selector -->
+                        <div id="igFormatSelector" style="grid-area: 1/1; max-height: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-height 0.4s ease, opacity 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-top: 4px;">
+                            <h4 style="margin:0; font-size: 14px; font-weight: 600; color: #1e293b;">اختر شكل المحتوى لـ <span style="color: #e1306c;">إنستغرام</span>:</h4>
+                            <span style="font-size: 13px; color: #64748b; cursor: pointer;" onclick="resetSocialPlatforms()">إلغاء</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                            <!-- Post -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">📝</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">منشور</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">نص وصور وفيديو</span>
+                            </div>
+                            
+                            <!-- Carousel -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">🎠</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">كاروسيل</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">عدة صور/فيديوهات (حتى 10)</span>
+                            </div>
+
+                            <!-- Story -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">📱</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">قصة (Story)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">صورة أو فيديو يختفي بعد 24 ساعة</span>
+                            </div>
+
+                            <!-- Reel -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">🎬</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">ريلز (Reel)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">فيديو قصير طولي</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tiktok Format Selector -->
+                    <div id="tiktokFormatSelector" style="grid-area: 1/1; max-height: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-height 0.4s ease, opacity 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-top: 4px;">
+                            <h4 style="margin:0; font-size: 14px; font-weight: 600; color: #1e293b;">اختر شكل المحتوى لـ <span style="color: #000000;">تيك توك</span>:</h4>
+                            <span style="font-size: 13px; color: #64748b; cursor: pointer;" onclick="resetSocialPlatforms()">إلغاء</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                            <!-- Reel -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">🎬</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">ريلز (Reel)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">فيديو قصير طولي</span>
+                            </div>
+
+                            <!-- Story -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">📱</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">قصة (Story)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">صورة أو فيديو يختفي بعد 24 ساعة</span>
+                            </div>
+                        </div>
+                    </div>
+                    </div> <!-- Close formatSelectorsWrapper -->
+
+                    <div id="smActivePostIndicator" style="display:none; font-weight: 600; font-size: 14px; color: #475569; align-items: center; margin-bottom: 12px; padding: 8px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        المنشور <span id="smActivePostNum" style="font-size: 15px; margin-right: 4px; color: #f97316; font-weight: bold;">1</span>
+                    </div>
+
+                    <div class="sm-upload-zone" id="smUploadZone" style="position: relative; width: 100%; margin-bottom: 24px;">
+                        <!-- The prompt area triggers the upload -->
+                        <div id="smUploadPrompt" class="sm-upload-prompt-dashed" style="width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px;">
+                            <input type="file" id="smMediaInput" multiple accept="image/*,video/*" style="display:none;" onchange="window.handleMediaUpload(this)">
+                            
+                            <div style="color: #f97316; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                أضف رابط Frame.io
+                            </div>
+                            
+                            <div id="frameIoContainer" style="display:flex; width: 100%; max-width: 400px; gap: 8px;">
+                                <input type="text" id="frameIoInput" placeholder="الصق الرابط هنا..." style="flex:1; border: 1px solid #cbd5e0; border-radius: 6px; padding: 10px 12px; font-size: 13px; outline:none;" dir="ltr">
+                                <button onclick="event.stopPropagation(); window.addFrameIoMedia()" style="background:#f97316; color:white; border:none; border-radius:6px; padding:0 20px; font-size:13px; font-weight:600; cursor:pointer;">إضافة</button>
+                            </div>
+                        </div>
+
+                        <!-- The preview container horizontally scrolls directly below the dashed box -->
+                        <div id="smMediaPreviewContainer" style="display:none; width: 100%; margin-top: 12px;">
+                            <div id="smMediaGallery" style="display:flex; gap: 12px; flex-wrap: wrap; justify-content: flex-start; align-items: flex-start;">
+                                <!-- Dynamic thumbnails generated by app.js go here -->
+                            </div>
+                        </div>
+                        
+                        <script>
+                            window.addFrameIoMedia = function() {
+                                const input = document.getElementById('frameIoInput');
+                                let url = input.value.trim();
+                                if (!url) return;
+                                
+                                let isGoogleDrive = url.includes('drive.google.com');
+                                if (isGoogleDrive) {
+                                    url = url.replace(/\/view.*$/, '/preview');
+                                }
+                                
+                                let labelText = isGoogleDrive ? 'Google Drive' : 'Frame.io';
+
+                                // Auto-convert standard tracking links to player embed logic if needed
+                                if(url.includes('app.frame.io')) {
+                                    // Normally you extract the project/review ID and re-map to player.frame.io
+                                }
+
+                                const galleryContainer = document.getElementById('smMediaPreviewContainer');
+                                const gallery = document.getElementById('smMediaGallery');
+                                
+                                galleryContainer.style.display = 'block';
+                                
+                                const card = document.createElement('div');
+                                card.className = 'frame-io-media';
+                                card.setAttribute('data-url', url);
+                                card.style.cssText = "position: relative; width: 100%; max-width: 160px; border-radius: 8px; overflow: hidden; border: 1px solid #edf2f7; background: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); opacity: 0; transform: scale(0.95); transition: opacity 0.3s ease, transform 0.3s ease;";
+                                
+                                const placeholderId = 'frameIoPlaceholder-' + Date.now();
+                                
+                                window.showFrameIoVideo = window.showFrameIoVideo || function(btn, videoUrl, pId) {
+                                    const overlay = document.createElement('div');
+                                    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.95); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;";
+                                    
+                                    const closeBtn = document.createElement('div');
+                                    closeBtn.innerHTML = "×";
+                                    closeBtn.style.cssText = "position: absolute; top: 24px; right: 32px; color: white; font-size: 40px; cursor: pointer; z-index: 1000000; font-weight: 300;";
+                                    closeBtn.onclick = function() { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 300); };
+                                    
+                                    const iframe = document.createElement('iframe');
+                                    iframe.src = videoUrl;
+                                    iframe.style.cssText = "width: 90%; height: 90%; border: none; opacity: 0; transform: scale(0.98); transition: opacity 0.4s ease, transform 0.4s ease;";
+                                    iframe.onload = () => { iframe.style.opacity = '1'; iframe.style.transform = 'scale(1)'; };
+                                    iframe.setAttribute('allowfullscreen', 'true');
+                                    
+                                    overlay.appendChild(closeBtn);
+                                    overlay.appendChild(iframe);
+                                    document.body.appendChild(overlay);
+                                    
+                                    setTimeout(() => overlay.style.opacity = '1', 10);
+                                };
+
+                                card.innerHTML = `
+                                    <div id="${placeholderId}-img" style="width: 100%; aspect-ratio: 9/16; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                                        <div class="sm-gallery-badge">1</div>
+                                        
+                                        <!-- Sleek Scanning Effect -->
+                                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.1), transparent); transform: translateY(-100%); animation: scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
+                                        
+                                        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; z-index: 2;">
+                                            <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+                                                <div style="position:absolute; width:100%; height:100%; border-radius:12px; background:rgba(59, 130, 246, 0.2); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
+                                                <div style="position:absolute; width:60%; height:60%; border-radius:8px; background:rgba(59, 130, 246, 0.4); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; animation-delay: 0.2s;"></div>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" style="animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; animation-delay: 0.4s;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                            </div>
+                                            <span style="font-size:12px; font-weight:700; color:#3b82f6; letter-spacing:0.5px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">جاري المعاينة</span>
+                                        </div>
+                                        
+                                        <style>
+                                            @keyframes scan {
+                                                0% { transform: translateY(-100%); }
+                                                100% { transform: translateY(100%); }
+                                            }
+                                        </style>
+                                    </div>
+                                    <div style="padding: 10px; background: #ffffff; display: flex; justify-content: center; border-top: 1px solid #edf2f7;">
+                                        <button id="${placeholderId}-btn" onclick="event.stopPropagation(); window.showFrameIoVideo(this, '${url}', '${placeholderId}')" style="display:flex; align-items:center; justify-content:center; gap:6px; width: 100%; background: #e2e8f0; color: #94a3b8; border: none; border-radius: 6px; padding: 8px 0; font-size: 12px; font-weight: 600; cursor: default; transition: all 0.3s; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">
+                                            <div style="width:14px; height:14px; border:2px solid #cbd5e1; border-top-color:transparent; border-radius:50%;" class="animate-spin"></div>
+                                        </button>
+                                    </div>
+                                    <button onclick="event.stopPropagation(); window.removeMediaItem(this.closest('.frame-io-media'));" style="position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.95); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#e53e3e; font-weight:bold; font-size:14px; box-shadow:0 1px 3px rgba(0,0,0,0.2); z-index:10; line-height: 1;">×</button>
+                                `;
+                                
+                                gallery.appendChild(card);
+
+                                setTimeout(() => {
+                                    card.style.opacity = '1';
+                                    card.style.transform = 'scale(1)';
+                                }, 10);
+                                
+                                if (window.reindexMediaBadges) window.reindexMediaBadges();
+                                
+                                if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                    window.saveSocialDraft(true);
+                                }
+                                
+                                fetch('https://api.microlink.io/?url=' + encodeURIComponent(url))
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        let isVideo = false;
+                                        let durationStr = '';
+                                        // Default to video unless we specifically lack ANY video indicators
+                                        if (data && data.data && (data.data.video || data.data.type === 'video')) {
+                                            isVideo = true;
+                                            if (data.data.video && data.data.video.duration) {
+                                                let d = Math.round(data.data.video.duration);
+                                                let m = Math.floor(d / 60);
+                                                let s = d % 60;
+                                                durationStr = `${m}:${s < 10 ? '0' : ''}${s}`;
+                                            }
+                                        }
+                                        
+                                        // Set data attributes for saving state
+                                        card.setAttribute('data-media-type', isVideo ? 'video' : 'image');
+                                        if (durationStr) card.setAttribute('data-duration', durationStr);
+                                        
+                                        // Update button text and icon and restore active styling
+                                        const btnElement = document.getElementById(`${placeholderId}-btn`);
+                                        if (btnElement) {
+                                            btnElement.style.background = '#3b82f6';
+                                            btnElement.style.color = 'white';
+                                            btnElement.style.cursor = 'pointer';
+                                            btnElement.style.animation = 'none';
+                                            if (isVideo) {
+                                                btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> عرض الفيديو ${durationStr ? '('+durationStr+')' : ''}`;
+                                            } else {
+                                                btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> عرض الصورة`;
+                                            }
+                                        }
+
+                                        // Use logo if image is missing, or fallback to an empty string.
+                                        let imgUrl = '';
+                                        let bgStyle = '#1e293b';
+                                        if (data && data.data) {
+                                            if (data.data.image && data.data.image.url) imgUrl = data.data.image.url;
+                                            else if (data.data.logo && data.data.logo.url) {
+                                                imgUrl = data.data.logo.url;
+                                                bgStyle = '#f8fafc'; // lighter background for logo
+                                            }
+                                        }
+
+                                        if (imgUrl) card.setAttribute('data-thumbnail', imgUrl);
+                                        
+                                        const previewDiv = document.getElementById(placeholderId + '-img');
+                                        
+                                        if (isGoogleDrive) {
+                                            if (previewDiv) {
+                                                previewDiv.style.cursor = 'pointer';
+                                                previewDiv.onclick = function(e) { e.stopPropagation(); window.showFrameIoVideo(null, url, placeholderId); };
+                                                
+                                                const typeBadgeHtml = `<div onclick="window.toggleMediaType(this, '${placeholderId}', event)" style="cursor: pointer; position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; z-index: 10; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'; this.style.transform='scale(1)'">
+                                                    <span class="type-icon">${isVideo ? '▶️ فيديو' : '🖼️ صورة'}</span>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M12 5v14M5 12h14"></path></svg>
+                                                </div>`;
+                                                previewDiv.insertAdjacentHTML('beforeend', typeBadgeHtml);
+                                            }
+                                            if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                                window.saveSocialDraft(true);
+                                            }
+                                            input.value = '';
+                                            return;
+                                        }
+                                        
+                                        // Add click-to-toggle badge for Frame.io
+                                        const typeBadgeHtml = `<div onclick="window.toggleMediaType(this, '${placeholderId}', event)" style="cursor: pointer; position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; z-index: 10; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'; this.style.transform='scale(1)'">
+                                            <span class="type-icon">${isVideo ? '▶️ فيديو' : '🖼️ صورة'}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M12 5v14M5 12h14"></path></svg>
+                                        </div>`;
+                                        
+                                        if (previewDiv) {
+                                            previewDiv.style.cursor = 'pointer';
+                                            previewDiv.onclick = function(e) { e.stopPropagation(); window.showFrameIoVideo(null, url, placeholderId); };
+                                            let badgeHtml = previewDiv.querySelector('.sm-gallery-badge');
+                                            badgeHtml = badgeHtml ? badgeHtml.outerHTML : '';
+                                            
+                                            let visualContent = '';
+                                            if (imgUrl) {
+                                                visualContent = `<img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top:0; left:0; background: ${bgStyle}; z-index: 1;">`;
+                                            } else {
+                                                visualContent = `<div style="width: 100%; height: 100%; position: absolute; top:0; left:0; background: #1e293b; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px; z-index: 1;">لا توجد معاينة</div>`;
+                                            }
+                                            
+                                            previewDiv.innerHTML = `
+                                                ${visualContent}
+                                                ${badgeHtml}
+                                                ${typeBadgeHtml}
+                                            `;
+                                        }
+                                        
+                                        // auto-save the thumbnail link onto the card immediately
+                                        if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                            window.saveSocialDraft(true);
+                                        }
+                                        
+                                        input.value = '';
+                                    }).catch(e => {
+                                        console.error('Frame.io preview load failed', e);
+                                        input.value = '';
+                                    });
+                            };
+                            
+                            window.toggleMediaType = function(badgeEl, placeholderId, e) {
+                                if (e) e.stopPropagation();
+                                const card = badgeEl.closest('.frame-io-media');
+                                let currentType = card.getAttribute('data-media-type') || 'video';
+                                let newType = currentType === 'video' ? 'image' : 'video';
+                                
+                                card.setAttribute('data-media-type', newType);
+                                
+                                // Update badge visually
+                                const iconSpan = badgeEl.querySelector('.type-icon');
+                                if (iconSpan) {
+                                    iconSpan.innerHTML = newType === 'image' ? '🖼️ صورة' : '▶️ فيديو';
+                                }
+                                
+                                // Update button visually
+                                const btnElement = document.getElementById(`${placeholderId}-btn`);
+                                if (btnElement) {
+                                    if (newType === 'video') {
+                                        const dur = card.getAttribute('data-duration');
+                                        btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> عرض الفيديو ${dur ? '('+dur+')' : ''}`;
+                                    } else {
+                                        btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> عرض الصورة`;
+                                    }
+                                }
+                                
+                                if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                    window.saveSocialDraft(true);
+                                }
+                            };
+                        </script>
+                    </div>
+
                     <div class="sm-textarea-wrap">
                         <div class="sm-textarea-header">
                             <h4>المحتوى</h4>
@@ -905,32 +1296,104 @@
                         <textarea placeholder="ماذا يدور في بالك..." class="sm-textarea"></textarea>
                         <div class="sm-char-count">0 حرف</div>
                     </div>
-                    
-                    <div class="sm-upload-zone">
-                        <div class="sm-upload-icon-container">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><line x1="12" y1="8" x2="12" y2="14"></line><line x1="9" y1="11" x2="15" y2="11"></line></svg>
-                        </div>
-                        <p class="sm-upload-title">+ إضافة وسائط</p>
-                        <p class="sm-upload-sub">اسحب الملفات أو اضغط للرفع</p>
-                    </div>
                 </div>
 
                 <!-- Settings Column -->
                 <div class="sm-modal-left-col">
+                    <!-- Dynamic Area for Existing Posts on this Day -->
+                    <div id="smModalExistingPostsArea" style="display: none; margin-bottom: 24px;"></div>
+
                     <div class="sm-modal-section">
                         <h4>المنصات</h4>
-                        <div class="sm-platform-empty">
-                            <p>لا توجد حسابات مربوطة</p>
-                            <button class="sm-link-btn-orange">ربط حساب</button>
+                        <div class="sm-platform-empty" style="display:flex; align-items:center; justify-content:center; padding: 24px 12px;">
+                            <div style="display:flex; justify-content:center; gap:10px; align-items:center;">
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#e6f2ff; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#1877f2', null)">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877f2"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#fce4ec; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#e1306c', 'igFormatSelector')">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#0f1419', null)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#0f1419"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#e4f0fd; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#0a66c2', null)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#0a66c2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#000000', 'tiktokFormatSelector')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#000000" stroke="none"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.17-3.8-5.46-.4-2.51.69-5.17 2.73-6.69 1.51-1.12 3.35-1.57 5.11-1.33v4.22c-1.14-.15-2.31.22-3.11 1.01-.89.87-1.1 2.27-.47 3.35.48.98 1.63 1.56 2.73 1.5 1.78-.15 2.91-1.74 2.87-3.53.01-4.14.01-8.29.01-12.43 0-.52-.01-1.04-.01-1.56Z"/></svg>
+                                </div>
+                            </div>
                         </div>
+                        <script>
+                            function resetSocialPlatforms() {
+                                const icons = document.querySelectorAll('.sm-platform-empty > div > div');
+                                icons.forEach(icon => {
+                                    icon.style.boxShadow = 'none';
+                                    icon.removeAttribute('data-active');
+                                });
+                                
+                                const wrapper = document.getElementById('formatSelectorsWrapper');
+                                if(wrapper) wrapper.style.marginBottom = '0px';
+
+                                const selectors = ['igFormatSelector', 'tiktokFormatSelector'];
+                                selectors.forEach(id => {
+                                    const el = document.getElementById(id);
+                                    if(el) {
+                                        el.style.maxHeight = '0';
+                                        el.style.opacity = '0';
+                                        el.style.pointerEvents = 'none';
+                                    }
+                                });
+                            }
+
+                            function selectSocialPlatform(element, color, targetSelectorId) {
+                                const isActive = element.getAttribute('data-active') === 'true';
+                                
+                                const parent = element.parentElement;
+                                for(let i=0; i<parent.children.length; i++) {
+                                    parent.children[i].style.boxShadow = 'none';
+                                    parent.children[i].removeAttribute('data-active');
+                                }
+                                
+                                const wrapper = document.getElementById('formatSelectorsWrapper');
+                                
+                                const selectors = ['igFormatSelector', 'tiktokFormatSelector'];
+                                selectors.forEach(id => {
+                                    const el = document.getElementById(id);
+                                    if(el) {
+                                        el.style.maxHeight = '0';
+                                        el.style.opacity = '0';
+                                        el.style.pointerEvents = 'none';
+                                    }
+                                });
+                                
+                                if(isActive) {
+                                    if(wrapper) wrapper.style.marginBottom = '0px';
+                                    return; // It's now toggled off, so we stop here
+                                }
+                                
+                                element.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px ' + color;
+                                element.setAttribute('data-active', 'true');
+                                
+                                if(targetSelectorId) {
+                                    if(wrapper) wrapper.style.marginBottom = '24px';
+                                    const target = document.getElementById(targetSelectorId);
+                                    target.style.maxHeight = '500px';
+                                    target.style.opacity = '1';
+                                    target.style.pointerEvents = 'auto';
+                                } else {
+                                    if(wrapper) wrapper.style.marginBottom = '0px';
+                                }
+                            }
+                        </script>
                     </div>
                     
                     <div class="sm-modal-section">
                         <h4>النشر</h4>
                         <div class="sm-publish-toggle">
-                            <button class="sm-toggle-btn">مسودة</button>
+                            <button class="sm-toggle-btn active">مسودة</button>
                             <button class="sm-toggle-btn">فوري</button>
-                            <button class="sm-toggle-btn active">جدولة</button>
+                            <button class="sm-toggle-btn">جدولة</button>
                         </div>
                     </div>
                     
@@ -938,18 +1401,18 @@
                         <div class="sm-modal-section" id="sm-datetime-section">
                             <h4>التاريخ والوقت</h4>
                             <div class="sm-datetime-inputs">
-                                <div class="sm-time-input-wrap">
-                                    <input type="text" placeholder="--:--" class="sm-time-input" readonly>
-                                    <span class="sm-icon-left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
-                                </div>
                                 <div class="sm-date-input-wrap">
                                     <input type="text" placeholder="dd/mm/yyyy" class="sm-date-input" readonly>
-                                    <span class="sm-icon-left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+                                    <span class="sm-icon-right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+                                </div>
+                                <div class="sm-time-input-wrap">
+                                    <input type="text" placeholder="--:--" class="sm-time-input" readonly>
+                                    <span class="sm-icon-right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="sm-modal-section" id="sm-timezone-section">
+                        <div class="sm-modal-section" id="sm-timezone-section" style="display: none;">
                             <h4>المنطقة الزمنية</h4>
                             <select class="sm-timezone-select">
                                 <option>GMT+3 (الرياض) (حالي)</option>
@@ -961,7 +1424,7 @@
             
             <div class="sm-modal-footer">
                 <button class="sm-btn-cancel">إلغاء</button>
-                <button class="sm-primary-btn" id="sm-primary-action-btn" style="padding: 10px 24px;">جدولة المنشور</button>
+                <button class="sm-primary-btn" id="sm-primary-action-btn" onclick="window.saveSocialDraft()" style="padding: 10px 24px;">جدولة المنشور</button>
             </div>
         </div>
     </div>
@@ -971,5 +1434,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="app.js"></script>
+    <!-- Global Confirmation Modal -->
+    <div class="modal-overlay" id="globalConfirmModal" style="z-index: 9999;">
+        <div class="modal-content" style="max-width: 350px; text-align: center; border-radius: 16px; padding: 32px 24px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </div>
+            <h3 style="margin: 0 0 8px; font-size: 18px; color: #1e293b; font-weight: 700;">هل أنت متأكد؟</h3>
+            <p style="margin: 0 0 24px; font-size: 14px; color: #64748b;">هل تريد إزالة هذا الوسيط؟</p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="globalConfirmCancelBtn" style="flex:1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: #475569; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">إلغاء</button>
+                <button id="globalConfirmYesBtn" style="flex:1; padding: 10px; border-radius: 8px; border: none; background: #ef4444; color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">نعم، إحذف</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

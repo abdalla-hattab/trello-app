@@ -31,6 +31,11 @@ boards.forEach(b => {
             if (l.y === undefined) l.y = 80;
         });
     }
+    
+    // Migrate old Social Scheduler names to Client 1
+    if (b.type === 'social_scheduler' && (b.title === 'Social Scheduler 📅' || b.title === 'Social Scheduler')) {
+        b.title = 'Client 1';
+    }
 });
 
 let activeBoardId = localStorage.getItem('ai_active_board');
@@ -40,12 +45,267 @@ let activeTargetListId = null;
 let isGlobalDragging = false;
 
 function saveState() {
+    boards.forEach(board => {
+        if (board.lists && board.connections) {
+            // Garbage collect totally orphaned tracker lists (hidden floating lists bug)
+            const listsToRemove = [];
+            board.lists.forEach(l => {
+                const isTracker = l.trelloListId || l.trelloTasksListId || l.pipedriveStageId || l.trackerType;
+                if (isTracker) {
+                    const hasEdges = board.connections.some(c => c.source === l.id || c.target === l.id);
+                    if (!hasEdges) listsToRemove.push(l.id);
+                }
+            });
+            if (listsToRemove.length > 0) {
+                board.lists = board.lists.filter(l => !listsToRemove.includes(l.id));
+            }
+        }
+    });
+    
     localStorage.setItem('ai_accounts_lists', JSON.stringify(boards));
     localStorage.setItem('ai_active_board', activeBoardId);
 }
 
+function ensureCardChecklist(card) {
+    if (!card) return [];
+    if (!Array.isArray(card.serviceChecklist)) {
+        const legacyChecklist = Array.isArray(card.services)
+            ? card.services
+                .filter(item => item && typeof item === 'object' && typeof item.name === 'string')
+                .map(item => ({ text: item.name.trim(), checked: !!item.checked }))
+                .filter(item => item.text)
+            : [];
+        card.serviceChecklist = legacyChecklist;
+    }
+    card.serviceChecklist = card.serviceChecklist
+        .map(item => {
+            if (typeof item === 'string') {
+                const text = item.trim();
+                return text ? { text, checked: false } : null;
+            }
+            if (!item || typeof item !== 'object') return null;
+            const text = typeof item.text === 'string'
+                ? item.text.trim()
+                : (typeof item.name === 'string' ? item.name.trim() : '');
+            if (!text) return null;
+            return { text, checked: !!item.checked };
+        })
+        .filter(Boolean);
+    return card.serviceChecklist;
+}
+
+function cloneCardChecklist(card) {
+    return ensureCardChecklist(card).map(item => ({ text: item.text, checked: !!item.checked }));
+}
+
+function renderCardChecklistEditor(card, options = {}) {
+    const servicesList = document.getElementById('servicesList');
+    const servicesItemInput = document.getElementById('servicesItemInput');
+    const addServicesItemBtn = document.getElementById('addServicesItemBtn');
+    if (!servicesList || !servicesItemInput || !addServicesItemBtn) return;
+
+    const checklist = ensureCardChecklist(card);
+    servicesList.innerHTML = '';
+
+    if (checklist.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.textContent = options.emptyText || 'No service items yet. Add the agreed services below.';
+        emptyState.style.fontSize = '13px';
+        emptyState.style.color = '#5e6c84';
+        emptyState.style.fontStyle = 'italic';
+        servicesList.appendChild(emptyState);
+    } else {
+        checklist.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'nc-service-row' + (item.checked ? ' nc-is-checked' : '');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'nc-modal-cb';
+            checkbox.checked = !!item.checked;
+            checkbox.onchange = () => {
+                const isChecked = checkbox.checked;
+                textInput.classList.toggle('nc-done', isChecked);
+                checklist[index].checked = isChecked;
+                saveState();
+                setTimeout(() => {
+                    render();
+                    renderCardChecklistEditor(card, options);
+                }, 0);
+            };
+
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.value = item.text;
+            textInput.placeholder = 'Describe the service';
+            textInput.className = 'nc-service-text' + (item.checked ? ' nc-done' : '');
+            textInput.oninput = () => {
+                checklist[index].text = textInput.value;
+            };
+            textInput.onblur = () => {
+                const value = textInput.value.trim();
+                let needsRender = false;
+                if (!value) {
+                    checklist.splice(index, 1);
+                    needsRender = true;
+                } else {
+                    if (checklist[index].text !== value) {
+                        checklist[index].text = value;
+                    }
+                }
+                saveState();
+                if (needsRender) {
+                    setTimeout(() => {
+                        render();
+                        renderCardChecklistEditor(card, options);
+                    }, 0);
+                }
+            };
+            textInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    textInput.blur();
+                }
+            };
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.textContent = '×';
+            deleteBtn.className = 'nc-del-btn';
+            deleteBtn.onclick = () => {
+                checklist.splice(index, 1);
+                saveState();
+                render();
+                renderCardChecklistEditor(card, options);
+            };
+
+            row.appendChild(checkbox);
+            row.appendChild(textInput);
+            row.appendChild(deleteBtn);
+            servicesList.appendChild(row);
+        });
+    }
+
+    const handleAddService = () => {
+        const value = servicesItemInput.value.trim();
+        if (!value) return;
+        checklist.push({ text: value, checked: false });
+        servicesItemInput.value = '';
+        saveState();
+        render();
+        renderCardChecklistEditor(card, options);
+        servicesItemInput.focus();
+    };
+
+    addServicesItemBtn.onclick = handleAddService;
+    addServicesItemBtn.onmousedown = (e) => {
+        e.preventDefault();
+        handleAddService();
+    };
+
+    servicesItemInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddService();
+        }
+    };
+}
+
 // DOM Elements
 const appContainer = document.getElementById('appContainer');
+
+window.globalDeleteTargetId = null;
+window.globalDeleteStepCount = 0;
+
+window.promptSecureDelete = function(bId, bTitle) {
+    if (boards.length <= 1) {
+        alert("لا يمكنك حذف المساحة الوحيدة المتبقية.");
+        return;
+    }
+    window.globalDeleteTargetId = bId;
+    window.globalDeleteStepCount = 0;
+    
+    let dm = document.getElementById('secureDeleteModal');
+    if (!dm) {
+        dm = document.createElement('div');
+        dm.id = 'secureDeleteModal';
+        dm.className = 'modal-overlay';
+        dm.innerHTML = `
+            <div class="modal-content" style="text-align: center; max-width: 380px;">
+                <div class="modal-header" style="justify-content: center; flex-direction: column; border-bottom: none; padding-bottom: 0;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <h3 style="color: #ef4444; font-size: 20px;">تأكيد مسح المساحة المتقدم</h3>
+                    <p style="color: #4a5568; font-size: 14px; margin-top: 8px;">هل أنت متأكد أنك تريد حذف: <strong id="secureDeleteTitle" style="color: #172b4d;"></strong>؟</p>
+                </div>
+                <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                    <div id="secureDeleteMsg" style="font-size: 13px; font-weight: 600; color: #1a202c; min-height: 44px; display: flex; align-items: center; justify-content: center; background: #fff5f5; padding: 4px; border-radius: 6px; border: 1px dashed #feb2b2;"></div>
+                    <button id="secureDeleteBtn" style="background: #ef4444; color: #fff; padding: 14px; border-radius: 6px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; user-select: none; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);">انقر هنا 3 مرات متتالية بالماوس للحذف</button>
+                    <button onclick="document.getElementById('secureDeleteModal').classList.remove('active')" style="background: transparent; color: #718096; padding: 10px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; text-decoration: underline;">تراجع وإغلاق النافذة</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(dm);
+        
+        const btn = document.getElementById('secureDeleteBtn');
+        btn.addEventListener('keydown', (e) => {
+            e.preventDefault();
+        });
+        
+        btn.onclick = (e) => {
+            if (e.detail === 0 || (e.clientX === 0 && e.clientY === 0) || !e.isTrusted) {
+                return;
+            }
+            window.globalDeleteStepCount++;
+            const msgEl = document.getElementById('secureDeleteMsg');
+            if (window.globalDeleteStepCount === 1) {
+                btn.style.background = '#dc2626';
+                btn.style.transform = 'scale(0.98)';
+                setTimeout(() => btn.style.transform = 'none', 100);
+                msgEl.textContent = 'تأكيد 1/3: لا يمكن التراجع عن هذا الإجراء إطلاقا.';
+                btn.textContent = 'انقر مرة أخرى (تبقت نقرتان بالماوس)';
+            } else if (window.globalDeleteStepCount === 2) {
+                btn.style.background = '#b91c1c';
+                btn.style.transform = 'scale(0.96)';
+                setTimeout(() => btn.style.transform = 'none', 100);
+                msgEl.textContent = 'تأكيد 2/3: سيتم مسح جميع بيانات العميل و المنشورات تماماً.';
+                btn.textContent = 'انقر للحذف النهائي والكامل';
+            } else if (window.globalDeleteStepCount >= 3) {
+                window.executeSecureDelete();
+            }
+        };
+    }
+    
+    document.getElementById('secureDeleteTitle').textContent = bTitle || 'هذه المساحة';
+    const msg = document.getElementById('secureDeleteMsg');
+    msg.textContent = 'يتطلب الفحص الأمني 3 نقرات يدوية بالماوس لمنع الحذف بالخطأ من لوحة المفاتيح.';
+    msg.style.color = '#c53030';
+    
+    const btn = document.getElementById('secureDeleteBtn');
+    btn.style.background = '#ef4444';
+    btn.textContent = 'انقر هنا 3 مرات بالماوس للحذف';
+    
+    dm.classList.add('active');
+};
+
+window.executeSecureDelete = function() {
+    const targetBoard = boards.find(bd => bd.id === window.globalDeleteTargetId);
+    boards = boards.filter(bd => bd.id !== window.globalDeleteTargetId);
+    
+    if (activeBoardId === window.globalDeleteTargetId) {
+        const nextBoard = boards.find(b => targetBoard && b.type === targetBoard.type) || boards[0];
+        activeBoardId = nextBoard ? nextBoard.id : null;
+    }
+    saveState();
+    
+    const dm = document.getElementById('secureDeleteModal');
+    if (dm) dm.classList.remove('active');
+    
+    const cm = document.getElementById('switchBoardModal');
+    if (cm) cm.classList.remove('active');
+    
+    if (typeof render === 'function') render();
+    if (typeof showToast === 'function') showToast("تم مسح المساحة بالكامل بنجاح.");
+};
 
 const switchBoardModal = document.getElementById('switchBoardModal');
 const boardListMenu = document.getElementById('boardListMenu');
@@ -176,7 +436,7 @@ window.handleToggleReorder = function(e, listId, edge, targetType) {
     e.stopPropagation();
     
     let sourceTrackerRaw = transferTypeObj.replace('application/x-transfer-', '');
-    const map = { 'ch': 'clientHappiness', 'ms': 'moneySmelling', 'pd': 'pipedrive', 'trello': 'trello', 'ads': 'ads' };
+    const map = { 'ch': 'clientHappiness', 'ms': 'moneySmelling', 'nc': 'newClients', 'pd': 'pipedrive', 'trello': 'trello', 'ads': 'ads' };
     const sourceTracker = map[sourceTrackerRaw];
     
     if (!sourceTracker || sourceTracker === targetType) return;
@@ -188,7 +448,7 @@ window.handleToggleReorder = function(e, listId, edge, targetType) {
     if (!list) return;
     
     list.edgeOrder = list.edgeOrder || {};
-    let curOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'pipedrive', 'trello', 'ads'];
+    let curOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'ads'];
     
     const oldIdx = curOrder.indexOf(sourceTracker);
     const newIdx = curOrder.indexOf(targetType);
@@ -673,8 +933,585 @@ let pipedriveToken = localStorage.getItem('pipedriveToken') || '';
 const pipedriveSettingsModal = document.getElementById('pipedriveSettingsModal');
 const closePipedriveSettingsModal = document.getElementById('closePipedriveSettingsModal');
 
+// ==============================================================
+// Global Optimization: Prevent native pinch-zoom lag in apps
+// On Mac trackpads, pinch-zoom triggers wheel events with ctrlKey.
+// Natively zooming a heavy grid causes paint freezing.
+// ==============================================================
+document.addEventListener('wheel', (e) => {
+    if ((e.ctrlKey || e.metaKey) && document.querySelector('.social-scheduler-view')) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
 // Social Media Scheduler Modals
 const createPostModal = document.getElementById('createPostModal');
+window.currentEditingSocialPostId = null;
+
+window.smEscapeHTML = function(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+};
+
+
+window.showCustomConfirm = function(title, message, confirmText, cancelText, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.4)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.WebkitBackdropFilter = 'blur(4px)';
+    overlay.style.zIndex = '999999';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.2s ease-out';
+    overlay.style.direction = 'rtl';
+
+    const modal = document.createElement('div');
+    modal.style.background = '#ffffff';
+    modal.style.borderRadius = '20px';
+    modal.style.padding = '24px';
+    modal.style.width = '90%';
+    modal.style.maxWidth = '340px';
+    modal.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+    modal.style.transform = 'scale(0.95) translateY(10px)';
+    modal.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+    modal.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #fee2e2; color: #ef4444; margin: 0 auto 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        </div>
+        <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 800; color: #0f172a; text-align: center;">${title}</h3>
+        <p style="margin: 0 0 24px; font-size: 14px; color: #64748b; text-align: center; line-height: 1.6; font-weight: 500;">${message}</p>
+        <div style="display: flex; gap: 12px;">
+            <button id="sm-confirm-btn" style="flex: 1; padding: 10px; border: none; border-radius: 10px; background: #ef4444; color: white; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">${confirmText}</button>
+            <button id="sm-cancel-btn" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; background: transparent; color: #475569; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='transparent'; this.style.borderColor='#e2e8f0';">${cancelText}</button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        modal.style.transform = 'scale(1) translateY(0)';
+    });
+
+    const close = () => {
+        overlay.style.opacity = '0';
+        modal.style.transform = 'scale(0.95) translateY(10px)';
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    modal.querySelector('#sm-confirm-btn').onclick = () => {
+        close();
+        if (onConfirm) onConfirm();
+    };
+
+    modal.querySelector('#sm-cancel-btn').onclick = close;
+    overlay.onclick = (e) => {
+        if (e.target === overlay) close();
+    };
+};
+
+window.hideSpecialEvent = function(e, eventId) {
+    e.stopPropagation();
+    const eventEl = e.currentTarget.closest('[data-special-event="true"]');
+    
+    const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
+    let hidden = JSON.parse(localStorage.getItem(boardKey) || '[]');
+    if (!hidden.includes(eventId)) {
+        hidden.push(eventId);
+        localStorage.setItem(boardKey, JSON.stringify(hidden));
+    }
+    if (eventEl) {
+        eventEl.style.transition = 'all 0.3s ease';
+        eventEl.style.opacity = '0';
+        eventEl.style.transform = 'scale(0.8)';
+        setTimeout(() => eventEl.remove(), 300);
+    }
+};
+
+window.eventCategoryMap = {
+    'عالمي': { bg: '#fff7ed', text: '#d97706', dot: '#f59e0b' },
+    'اجتماعي': { bg: '#eff6ff', text: '#2563eb', dot: '#3b82f6' },
+    'ثقافي': { bg: '#fdf2f8', text: '#db2777', dot: '#ec4899' },
+    'صحي': { bg: '#ecfdf5', text: '#059669', dot: '#10b981' },
+    'رياضي': { bg: '#fef2f2', text: '#dc2626', dot: '#ef4444' },
+    'بيئي': { bg: '#eef2ff', text: '#4f46e5', dot: '#6366f1' },
+    'تجاري': { bg: '#fdf4ff', text: '#c026d3', dot: '#d946ef' },
+    'تقني': { bg: '#f3e8ff', text: '#9333ea', dot: '#a855f7' },
+    'ديني': { bg: '#ede9fe', text: '#6d28d9', dot: '#8b5cf6' }
+};
+
+window.specialAwarenessDays = [
+    // January (m: 0)
+    { m: 0, d: 1, name: "رأس السنة الميلادية", desc: "بداية العام الميلادي الجديد", category: "عالمي" },
+    { m: 0, d: 4, name: "اليوم العالمي للغة برايل", desc: "للتوعية بأهمية لغة برايل للمكفوفين", category: "ثقافي" },
+    { m: 0, d: 24, name: "اليوم الدولي للتعليم", desc: "الاحتفاء بدور التعليم في تحقيق السلام والتنمية", category: "ثقافي" },
+    { m: 0, d: 26, name: "اليوم العالمي للجمارك", desc: "للإشادة بجهود رجال الجمارك حول العالم", category: "عالمي" },
+    { m: 0, d: 28, name: "يوم الحد من انبعاثات الكربون", desc: "للتوعية بضرورة حماية البيئة وتقليل التلوث", category: "بيئي" },
+
+    // February (m: 1)
+    { m: 1, d: 4, name: "اليوم العالمي للسرطان", desc: "لرفع الوعي العالمي وتوحيد الجهود لمكافحة السرطان", category: "صحي" },
+    { m: 1, d: 11, name: "المرأة في ميدان العلوم", desc: "المرأة والفتاة في ميدان العلوم والأبحاث", category: "ثقافي" },
+    { m: 1, d: 13, name: "اليوم العالمي للإذاعة", desc: "للاحتفاء بدور الإذاعة المسموعة وإيصال المعلومات", category: "ثقافي" },
+    { m: 1, d: 14, name: "عيد الحب", desc: "يوم للتعبير عن الحب والتقدير", category: "اجتماعي" },
+    { m: 1, d: 20, name: "يوم العدالة الاجتماعية", desc: "لتعزيز مبادئ العدالة والمساواة في المجتمعات", category: "اجتماعي" },
+    { m: 1, d: 21, name: "اليوم الدولي للغة الأم", desc: "للاحتفال بالتنوع اللغوي والثقافي", category: "ثقافي" },
+
+    // March (m: 2)
+    { m: 2, d: 1, name: "الدفاع المدني / صفر تمييز", desc: "يوم الدفاع المدني وتصفير التمييز بكافة أشكاله", category: "عالمي" },
+    { m: 2, d: 3, name: "يوم الحياة البرية", desc: "للاحتفاء بتنوع النباتات والحيوانات البرية وحمايتها", category: "بيئي" },
+    { m: 2, d: 8, name: "يوم المرأة العالمي", desc: "للاحتفال بإنجازات المرأة وحقوقها", category: "اجتماعي" },
+    { m: 2, d: 15, name: "حقوق المستهلك", desc: "للتوعية بحقوق المستهلكين وحمايتها", category: "تجاري" },
+    { m: 2, d: 20, name: "يوم السعادة العالمي", desc: "للاعتراف بأهمية السعادة والرفاهية", category: "اجتماعي" },
+    { m: 2, d: 21, name: "عيد الأم / يوم الشعر", desc: "تكريم للأمهات والاحتفاء بالشعر والشعراء", category: "اجتماعي" },
+    { m: 2, d: 22, name: "يوم المياه العالمي", desc: "للفت الانتباه لأهمية المياه العذبة", category: "بيئي" },
+    { m: 2, d: 27, name: "يوم المسرح العالمي", desc: "لإبراز أهمية الفنون المسرحية", category: "ثقافي" },
+
+    // April (m: 3)
+    { m: 3, d: 1, name: "كذبة أبريل / يوم المرح", desc: "يوم للمقالب والخدع والمرح في العمل", category: "عالمي" },
+    { m: 3, d: 2, name: "يوم التوحد / كتاب الطفل", desc: "للتوعية بالتوحد والتشجيع على قراءة كتب الأطفال", category: "صحي" },
+    { m: 3, d: 4, name: "يوم المخطوطات العربية", desc: "للاحتفاء بالتراث المخطوط وحفظه", category: "ثقافي" },
+    { m: 3, d: 5, name: "اليوم العالمي للضمير", desc: "لترسيخ ثقافة السلام والوعي", category: "عالمي" },
+    { m: 3, d: 6, name: "الرياضة للتنمية والسلام", desc: "استخدام الرياضة لتوحيد الشعوب", category: "رياضي" },
+    { m: 3, d: 7, name: "يوم الصحة العالمي", desc: "يسلط الضوء على القضايا الصحية العالمية الكبرى", category: "صحي" },
+    { m: 3, d: 15, name: "يوم الفن العالمي", desc: "للترويج لتطور الوعي الفني", category: "ثقافي" },
+    { m: 3, d: 18, name: "يوم التراث العالمي", desc: "للحفاظ على التراث الإنساني ومواقع التراث", category: "ثقافي" },
+    { m: 3, d: 20, name: "اليوم العالمي للغة الصينية", desc: "للاحتفاء باللغة الصينية وتاريخها", category: "ثقافي" },
+    { m: 3, d: 21, name: "يوم الإبداع والابتكار", desc: "لتشجيع التفكير الابتكاري وحل المشكلات", category: "عالمي" },
+    { m: 3, d: 22, name: "يوم الأرض", desc: "لزيادة الوعي بالقضايا البيئية والكوكبية", category: "بيئي" },
+    { m: 3, d: 23, name: "اليوم العالمي للكتاب", desc: "للتشجيع على القراءة وحماية حقوق المؤلفين", category: "ثقافي" },
+    { m: 3, d: 23, name: "يوم اللغة الإنجليزية والإسبانية", desc: "اليوم العالمي للغة الإنجليزية والإسبانية", category: "ثقافي" },
+    { m: 3, d: 25, name: "اليوم العالمي للملاريا", desc: "للتعريف بجهود مكافحة الملاريا", category: "صحي" },
+    { m: 3, d: 26, name: "يوم الملكية الفكرية", desc: "للتوعية بأهمية حماية حقوق الإبداع والابتكار", category: "تجاري" },
+    { m: 3, d: 28, name: "السلامة والصحة في العمل", desc: "لزيادة الوعي بالسلامة المهنية", category: "صحي" },
+    { m: 3, d: 29, name: "يوم الرقص العالمي", desc: "للاحتفال بفن الرقص", category: "ثقافي" },
+    { m: 3, d: 30, name: "يوم موسيقى الجاز", desc: "تسليط الضوء على هذه الموسيقى وتاريخها", category: "ثقافي" },
+
+    // May (m: 4)
+    { m: 4, d: 1, name: "يوم العمال العالمي / شهر التوعية بالسيلياك", desc: "احتفال عالمي بالعمال وشهر التوعية بالسيلياك", category: "اجتماعي" },
+    { m: 4, d: 3, name: "يوم حرية الصحافة", desc: "لتقييم حالة حرية الصحافة حول العالم", category: "ثقافي" },
+    { m: 4, d: 4, name: "يوم الضحك العالمي", desc: "يوم الضحك العالمي", category: "عالمي" },
+    { m: 4, d: 5, name: "اليوم العالمي للربو", desc: "اليوم العالمي للربو", category: "صحي" },
+    { m: 4, d: 8, name: "يوم الصليب والهلال الأحمر", desc: "لتقدير جهود العاملين في الإغاثة", category: "صحي" },
+    { m: 4, d: 12, name: "اليوم العالمي للتمريض", desc: "تقدير وتكريم الكوادر التمريضية", category: "صحي" },
+    { m: 4, d: 15, name: "اليوم العالمي للأسر", desc: "اليوم العالمي للأسر", category: "اجتماعي" },
+    { m: 4, d: 16, name: "يوم الضوء العالمي", desc: "يوم الضوء العالمي", category: "تقني" },
+    { m: 4, d: 17, name: "يوم الاتصالات / اليوم العالمي لارتفاع ضغط الدم", desc: "يوم الاتصالات / اليوم العالمي لارتفاع ضغط الدم", category: "تقني" },
+    { m: 4, d: 18, name: "اليوم العالمي للمتاحف", desc: "اليوم العالمي للمتاحف", category: "ثقافي" },
+    { m: 4, d: 20, name: "اليوم العالمي للنحل", desc: "للتوعية بأهمية الملقحات", category: "بيئي" },
+    { m: 4, d: 21, name: "التنوع الثقافي", desc: "لحوار الحضارات وتقبل الآخر", category: "ثقافي" },
+    { m: 4, d: 31, name: "الامتناع عن التدخين", desc: "يوم التوعية بأضرار التبغ", category: "صحي" },
+
+    // June (m: 5)
+    { m: 5, d: 1, name: "اليوم العالمي للحليب / اليوم العالمي للوالدين", desc: "لتكريم الآباء والحث على التغذية السليمة", category: "اجتماعي" },
+    { m: 5, d: 3, name: "اليوم العالمي للدراجات الهوائية", desc: "للتشجيع على استخدام وسائل نقل صحية", category: "رياضي" },
+    { m: 5, d: 5, name: "اليوم العالمي للبيئة", desc: "للتوعية وحماية بيئتنا", category: "بيئي" },
+    { m: 5, d: 7, name: "اليوم العالمي لسلامة الأغذية", desc: "لتسليط الضوء على سلامة الغذاء والصحة", category: "صحي" },
+    { m: 5, d: 8, name: "اليوم العالمي للمحيطات", desc: "لحماية المسطحات المائية والمحيطات", category: "بيئي" },
+    { m: 5, d: 12, name: "اليوم العالمي لمكافحة عمل الأطفال", desc: "لتسليط الضوء على حقوق ومصلحة الأطفال", category: "اجتماعي" },
+    { m: 5, d: 14, name: "اليوم العالمي للمتبرعين بالدم", desc: "لشكر المتبرعين بالدم والتوعية بأهمية التبرع", category: "صحي" },
+    { m: 5, d: 15, name: "التوعية بشأن إساءة معاملة كبار السن", desc: "لتعزيز بيئة آمنة وراعية لكبار السن", category: "اجتماعي" },
+    { m: 5, d: 16, name: "بداية السنة الهجرية 1448هـ", desc: "بداية السنة الهجرية 1448هـ", category: "ديني" },
+    { m: 5, d: 17, name: "يوم مكافحة التصحر والجفاف", desc: "للعمل على حماية الأراضي من الجفاف", category: "بيئي" },
+    { m: 5, d: 18, name: "يوم فن الطبخ المستدام", desc: "دعم الطبخ المحلي والعادات الغذائية السليمة", category: "ثقافي" },
+    { m: 5, d: 18, name: "اليوم العالمي للسوشي", desc: "اليوم العالمي للسوشي والتسويق للمطاعم", category: "تجاري" },
+    { m: 5, d: 20, name: "يوم اللاجئ العالمي", desc: "لدعم حقوق اللاجئين وتفهم معاناتهم", category: "اجتماعي" },
+    { m: 5, d: 21, name: "يوم الأب / اليوم العالمي للموسيقى / ذكرى مبايعة ولي العهد (ميلادي)", desc: "ذكرى مبايعة ولي العهد ويوم الأب العالمي", category: "اجتماعي" },
+    { m: 5, d: 23, name: "يوم الخدمة العامة", desc: "للإشادة بالموظفين ودورهم في الخدمة العامة", category: "عالمي" },
+    { m: 5, d: 23, name: "اليوم الأولمبي للجري", desc: "التشجيع على الممارسة والنشاط الرياضي", category: "رياضي" },
+    { m: 5, d: 25, name: "يوم البحارة", desc: "لتسليط الضوء على إسهامات البحارة", category: "عالمي" },
+    { m: 5, d: 26, name: "يوم مكافحة إساءة استعمال المخدرات", desc: "لمكافحة المخدرات وحماية الشباب", category: "صحي" },
+    { m: 5, d: 27, name: "يوم المؤسسات المتناهية الصغر والصغيرة", desc: "لدعم المشاريع التجارية والمؤسسات المتوسطة", category: "تجاري" },
+    { m: 5, d: 30, name: "العمل البرلماني", desc: "للاحتفال بالبرلمانات ودورها", category: "عالمي" },
+
+    // July (m: 6)
+    { m: 6, d: 11, name: "يوم السكان العالمي", desc: "للاهتمام بقضايا النمو السكاني", category: "عالمي" },
+    { m: 6, d: 15, name: "مهارات الشباب", desc: "لتمكين الشباب للعمل", category: "اجتماعي" },
+    { m: 6, d: 17, name: "يوم الإيموجي", desc: "للاحتفال بالرموز التعبيرية الرقمية الممتعة", category: "تجاري" },
+    { m: 6, d: 18, name: "يوم نيلسون مانديلا", desc: "استذكار لجهود ومبادئ مانديلا", category: "عالمي" },
+    { m: 6, d: 20, name: "يوم الشطرنج", desc: "للاحتفاء برياضة الشطرنج الذهنية", category: "ثقافي" },
+    { m: 6, d: 28, name: "يوم التهاب الكبد", desc: "للتوعية بهذا المرض والوقاية منه", category: "صحي" },
+    { m: 6, d: 30, name: "يوم الصداقة العالمي", desc: "للاحتفال بالصداقة كمبادرة للسلام", category: "اجتماعي" },
+
+    // August (m: 7)
+    { m: 7, d: 9, name: "يوم الشعوب الأصلية", desc: "للاحتفاء بثقافات الشعوب المتبقية", category: "ثقافي" },
+    { m: 7, d: 12, name: "يوم الشباب الدولي", desc: "للتوعية بقضايا الشباب وتمكينهم", category: "اجتماعي" },
+    { m: 7, d: 19, name: "العمل الإنساني / التصوير", desc: "لتقدير العاملين في المجال الإنساني وعالم التصوير", category: "عالمي" },
+    { m: 7, d: 29, name: "مكافحة التجارب النووية", desc: "لحظر ووقف التجارب النووية", category: "عالمي" },
+
+    // September (m: 8)
+    { m: 8, d: 5, name: "العمل الخيري", desc: "لتشجيع العمل التطوعي والخيري", category: "اجتماعي" },
+    { m: 8, d: 8, name: "يوم محو الأمية", desc: "للحد من الأمية حول العالم", category: "ثقافي" },
+    { m: 8, d: 15, name: "يوم الديمقراطية", desc: "للاحتفاء بمبادئ الديمقراطية والتعبير", category: "عالمي" },
+    { m: 8, d: 16, name: "حفظ طبقة الأوزون", desc: "للتوعية بأهمية الغلاف الجوي", category: "بيئي" },
+    { m: 8, d: 21, name: "يوم السلام", desc: "للترويج لإنهاء الصراعات", category: "عالمي" },
+    { m: 8, d: 23, name: "اليوم الوطني السعودي", desc: "احتفال المملكة العربية السعودية بتوحيدها", category: "عالمي", dot: '#006c35', bg: '#e0f2e9', text: '#006c35' },
+    { m: 8, d: 27, name: "يوم السياحة العالمي", desc: "لتسليط الضوء على أهمية القطاع السياحي", category: "عالمي" },
+    { m: 8, d: 29, name: "يوم القلب العالمي", desc: "للتوعية بأمراض القلب وأهمية صحته", category: "صحي" },
+    { m: 8, d: 30, name: "يوم الترجمة العالمي", desc: "للاحتفاء بالترجمة وحوار الحضارات", category: "ثقافي" },
+
+    // October (m: 9)
+    { m: 9, d: 1, name: "القهوة / المسنين", desc: "للاحتفاء بعشاق القهوة وتقدير كبار السن", category: "تجاري" },
+    { m: 9, d: 2, name: "يوم اللاعنف", desc: "لترسيخ ثقافة السلام بعيداً عن التعنيف", category: "عالمي" },
+    { m: 9, d: 5, name: "يوم المعلم العالمي", desc: "لتكريم وتقدير المعلمين ودورهم", category: "ثقافي" },
+    { m: 9, d: 9, name: "يوم البريد العالمي", desc: "توعية حول أثر خدمات البريد", category: "عالمي" },
+    { m: 9, d: 10, name: "الصحة النفسية", desc: "للتوعية بأهمية الصحة العقلية", category: "صحي" },
+    { m: 9, d: 11, name: "يوم الفتاة العالمي", desc: "للاعتراف بحقوق الفتيات والتحديات التي تواجههن", category: "اجتماعي" },
+    { m: 9, d: 16, name: "يوم الأغذية العالمي", desc: "للحد من الجوع والأمن الغذائي", category: "صحي" },
+    { m: 9, d: 17, name: "القضاء على الفقر", desc: "لدعم ومساندة من يعانون الفقرات", category: "اجتماعي" },
+    { m: 9, d: 24, name: "يوم الأمم المتحدة", desc: "الاحتفال بذكرى تأسيس منظمة الأمم المتحدة", category: "عالمي" },
+    { m: 9, d: 31, name: "اليوم العالمي للمدن", desc: "لتشجيع التوسع الحضري المستدام", category: "عالمي" },
+
+    // November (m: 10)
+    { m: 10, d: 1, name: "يوم النباتيين العالمي", desc: "لتشجيع النظم الغذائية النباتية", category: "صحي" },
+    { m: 10, d: 10, name: "العلوم من أجل السلام", desc: "ربط العلم والتنمية بمساعي السلام", category: "عالمي" },
+    { m: 10, d: 14, name: "يوم السكري العالمي", desc: "للتوعية بمرض السكري وطرق تجنبه", category: "صحي" },
+    { m: 10, d: 16, name: "يوم التسامح", desc: "لترسيخ مفهوم التسامح بين الشعوب", category: "اجتماعي" },
+    { m: 10, d: 19, name: "اليوم الدولي للرجل", desc: "للاعتراف بإسهامات الرجل وخاصة الصحية", category: "اجتماعي" },
+    { m: 10, d: 20, name: "يوم الطفل العالمي", desc: "لتعزيز الترابط الدولي والتوعية بحقوق الأطفال", category: "اجتماعي" },
+    { m: 10, d: 21, name: "يوم التلفزيون", desc: "لتقدير الأثر والتأثير المتلفز", category: "ثقافي" },
+
+    // December (m: 11)
+    { m: 11, d: 1, name: "اليوم العالمي للإيدز", desc: "للتوعية بمرض نقص المناعة", category: "صحي" },
+    { m: 11, d: 2, name: "إلغاء الرق", desc: "للتأكيد على القضاء على الاستعباد", category: "اجتماعي" },
+    { m: 11, d: 3, name: "ذوي الإعاقة", desc: "لدعم دمج الأشخاص ذوي الإعاقة", category: "اجتماعي" },
+    { m: 11, d: 5, name: "يوم المتطوعين", desc: "للإشادة بالمتطوعين وأعمالهم", category: "اجتماعي" },
+    { m: 11, d: 9, name: "مكافحة الفساد", desc: "للتوعية بمخاطر الفساد وتعزيز النزاهة", category: "عالمي" },
+    { m: 11, d: 10, name: "حقوق الإنسان", desc: "الاحتفاء بالإعلان العالمي لحقوق الإنسان", category: "عالمي" },
+    { m: 11, d: 11, name: "اليوم الدولي للجبال", desc: "للتوعية بأهمية التنمية الجبلية", category: "بيئي" },
+    { m: 11, d: 18, name: "اللغة العربية / المهاجرين", desc: "للاحتفاء بلغة الضاد، وللتوعية بحقوق المهاجرين", category: "ثقافي" },
+    { m: 11, d: 20, name: "التضامن الإنساني", desc: "للوقوف جنباً إلى جنب كبشر", category: "اجتماعي" }
+];
+
+window.restoreMonthEvents = function(monthIndex) {
+    const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
+    let hidden = JSON.parse(localStorage.getItem(boardKey) || '[]');
+    const originalLength = hidden.length;
+    hidden = hidden.filter(id => !id.startsWith(`${monthIndex}-`));
+    if (hidden.length !== originalLength) {
+        localStorage.setItem(boardKey, JSON.stringify(hidden));
+        // Force a re-render to show them
+        if (typeof render === 'function') render();
+    }
+};
+
+window.hideAllMonthEvents = function(monthIndex) {
+    const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
+    let hidden = JSON.parse(localStorage.getItem(boardKey) || '[]');
+    
+    const monthEvents = window.specialAwarenessDays.filter(e => e.m === monthIndex);
+    
+    let changed = false;
+    monthEvents.forEach(e => {
+        const eventId = `${e.m}-${e.d}`;
+        if (!hidden.includes(eventId)) {
+            hidden.push(eventId);
+            changed = true;
+        }
+    });
+    
+    if (changed) {
+        localStorage.setItem(boardKey, JSON.stringify(hidden));
+        if (typeof render === 'function') render();
+    }
+};
+
+window.openCreatePostModal = function(postId = null) {
+    if (createPostModal) {
+        window.currentEditingSocialPostId = postId;
+        const textArea = document.querySelector('.sm-textarea');
+        const publishToggles = createPostModal.querySelectorAll('.sm-toggle-btn');
+        
+        // Reset modal fields first
+        if (textArea) textArea.value = '';
+        if (window.clearMediaUpload) window.clearMediaUpload(); // clears gallery
+        publishToggles.forEach(b => b.classList.remove('active'));
+        const draftBtn = Array.from(publishToggles).find(b => b.textContent.trim() === 'مسودة');
+        if (draftBtn) draftBtn.click();
+        
+        let targetOpt = window.activeSocialDateOptions;
+        
+        // Calculate and show post number indicator
+        let postNum = 1;
+        const activeBoard = boards.find(b => b.id === activeBoardId);
+        if (activeBoard && activeBoard.cards && targetOpt) {
+            const targetDateStr = `${targetOpt.year}-${targetOpt.month}-${targetOpt.date}`;
+            const dayPosts = activeBoard.cards.filter(c => c.dateStr === targetDateStr);
+            
+            if (postId) {
+                const idx = dayPosts.findIndex(c => c.id === postId);
+                if (idx > -1) postNum = idx + 1;
+            } else {
+                postNum = dayPosts.length + 1;
+            }
+        }
+        
+        const indicator = document.getElementById('smActivePostIndicator');
+        const numSpan = document.getElementById('smActivePostNum');
+        if (indicator && numSpan) {
+            numSpan.textContent = postNum;
+            indicator.style.display = 'flex';
+        }
+        
+        if (postId) {
+            const activeBoard = boards.find(b => b.id === activeBoardId);
+            if (activeBoard && activeBoard.cards) {
+                const post = activeBoard.cards.find(c => c.id === postId);
+                if (post) {
+                    if (textArea) textArea.value = post.fullText || post.description || '';
+                    
+                    // Manually inject gallery items safely
+                    const mediaItems = post.mediaItems || (post.mediaObj ? [post.mediaObj] : []);
+                    if (mediaItems.length > 0) {
+                        const previewContainer = document.getElementById('smMediaPreviewContainer');
+                        const uploadPrompt = document.getElementById('smUploadPrompt');
+                        const gallery = document.getElementById('smMediaGallery');
+                        
+                        if (previewContainer && gallery) {
+                            previewContainer.style.display = 'block';
+                            gallery.innerHTML = ''; // Ensure clear
+                            
+                            mediaItems.forEach((mi, index) => {
+                                const wrap = document.createElement('div');
+                                wrap.style.cssText = 'flex-shrink: 0; width: 80px; height: 80px; border-radius: 8px; position: relative; background:#fff; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+                                
+                                const delBtn = `<button style="position: absolute; top: 4px; right: 4px; z-index: 5; background: #ef4444; color: white; border-radius: 50%; width: 16px; height: 16px; border: none; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; line-height: 1;" onclick="event.stopPropagation(); window.removeMediaItem(this)">×</button>`;
+                                const badge = `<div class="sm-gallery-badge" style="position: absolute; top: 6px; left: 6px; z-index: 10; background: #f97316; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">${index + 1}</div>`;
+                                // For loaded dataUrls, estimate MB from base64 length or just use placeholder
+                                const sizeMB = mi.dataUrl ? (mi.dataUrl.length * 0.75 / (1024 * 1024)).toFixed(2) : '0.10';
+                                const sizeBadge = `<div style="position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); z-index: 5; background: rgba(0,0,0,0.65); color: white; border-radius: 4px; padding: 2px 4px; font-size: 8px; white-space: nowrap;">MB ${sizeMB}</div>`;
+                                
+                                if (mi.type === 'frame-io') {
+                                    wrap.className = 'frame-io-media';
+                                    wrap.setAttribute('data-url', mi.url);
+                                    if (mi.thumbnail) wrap.setAttribute('data-thumbnail', mi.thumbnail);
+                                    if (mi.mediaType) wrap.setAttribute('data-media-type', mi.mediaType);
+                                    if (mi.duration) wrap.setAttribute('data-duration', mi.duration);
+                                    wrap.style.cssText = "position: relative; width: 100%; max-width: 160px; border-radius: 8px; overflow: hidden; border: 1px solid #edf2f7; background: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);";
+                                    const placeholderId = 'frameIoPlaceholder-' + Date.now() + '-' + index;
+                                    let isGoogleDrive = mi.url.includes('drive.google.com');
+                                    let labelText = isGoogleDrive ? 'Google Drive' : 'Frame.io';
+                                    
+                                    if (isGoogleDrive) {
+                                        visualContent = `<iframe src="${mi.url}" style="width: 100%; height: 100%; border: none; pointer-events: none; z-index:1;"></iframe>`;
+                                    } else {
+                                        if (mi.thumbnail) {
+                                            visualContent = `<img src="${mi.thumbnail}" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top:0; left:0; background: ${mi.thumbnail.includes('frame.io') ? '#f8fafc' : '#000'}; z-index: 1;">`;
+                                        } else {
+                                            visualContent = `<div style="width: 100%; height: 100%; position: absolute; top:0; left:0; background: #1e293b; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px; z-index: 1;">لا توجد معاينة</div>`;
+                                        }
+                                    }
+                                    
+                                    wrap.innerHTML = `
+                                        <div id="${placeholderId}-img" onclick="event.stopPropagation(); window.showFrameIoVideo(null, '${mi.url}', '${placeholderId}')" style="cursor: pointer; width: 100%; aspect-ratio: 9/16; background: #1e293b; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                                            ${badge}
+                                            ${visualContent}
+                                            <div onclick="window.toggleMediaType(this, '${placeholderId}', event)" style="cursor: pointer; position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; z-index: 10; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'; this.style.transform='scale(1)'">
+                                                <span class="type-icon">${mi.mediaType === 'image' ? '🖼️ صورة' : '▶️ فيديو'}</span>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M12 5v14M5 12h14"></path></svg>
+                                            </div>
+                                        </div>
+                                        <div style="padding: 10px; background: #ffffff; display: flex; justify-content: center; border-top: 1px solid #edf2f7;">
+                                            <button onclick="event.stopPropagation(); window.showFrameIoVideo(this, '${mi.url}', '${placeholderId}')" style="display:flex; align-items:center; justify-content:center; gap:6px; width: 100%; background: #3b82f6; color: white; border: none; border-radius: 6px; padding: 8px 0; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                                                ${mi.mediaType === 'image' 
+                                                    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> عرض الصورة` 
+                                                    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> عرض الفيديو ${mi.duration ? '('+mi.duration+')' : ''}`
+                                                }
+                                            </button>
+                                        </div>
+                                        <button onclick="event.stopPropagation(); window.removeMediaItem(this.closest('.frame-io-media'))" style="position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.95); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#e53e3e; font-weight:bold; font-size:14px; box-shadow:0 1px 3px rgba(0,0,0,0.2); z-index:10; line-height: 1;">×</button>
+                                    `;
+                                } else {
+                                    wrap.style.cssText = 'position: relative; width: 100%; max-width: 160px; border-radius: 8px; overflow: hidden; border: 1px solid #edf2f7; background: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
+                                    const mediaTypeLabel = mi.type === 'video' ? 'فيديو' : 'صورة';
+                                    const mediaElem = mi.type === 'video' 
+                                        ? `<video class="sm-gallery-vid" src="${mi.dataUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; z-index: 1;" muted></video>`
+                                        : `<img class="sm-gallery-img" src="${mi.dataUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; z-index: 1;">`;
+                                    const clickHandler = mi.type === 'video' ? `window.viewMediaFull('${mi.dataUrl}', 'video')` : `window.viewMediaFull('${mi.dataUrl}', 'image')`;
+                                    
+                                    wrap.innerHTML = `
+                                        <div style="width: 100%; aspect-ratio: 9/16; background: #1e293b; position: relative; overflow: hidden; cursor:pointer;" onclick="${clickHandler}">
+                                            ${mediaElem}
+                                            ${delBtn}
+                                            ${badge}
+                                            ${sizeBadge}
+                                        </div>
+                                        <div style="padding: 10px; background: #ffffff; display: flex; justify-content: center; border-top: 1px solid #edf2f7;">
+                                            <button onclick="${clickHandler}" style="width: 100%; background: #3b82f6; color: white; border: none; border-radius: 6px; padding: 8px 0; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                                                عرض ال${mediaTypeLabel}
+                                            </button>
+                                        </div>
+                                    `;
+                                }
+                                gallery.appendChild(wrap);
+                            });
+                        }
+                    }
+                    
+                    // Match toggle 
+                    if (post.status) {
+                        publishToggles.forEach(b => {
+                            b.classList.remove('active');
+                            if (b.textContent.trim() === post.status) b.classList.add('active');
+                        });
+                        // Wait for modal transition then trigger the toggle logic 
+                        setTimeout(() => {
+                            const activeBtn = Array.from(publishToggles).find(b => b.classList.contains('active'));
+                            if (activeBtn) activeBtn.click();
+                        }, 50);
+                    }
+                    
+                    // Set correct date target
+                    if (post.dateStr) {
+                        const parts = post.dateStr.split('-');
+                        targetOpt = { year: parseInt(parts[0]), month: parseInt(parts[1]), date: parseInt(parts[2]) };
+                        window.activeSocialDateOptions = targetOpt; // update exact selection
+                    }
+                }
+            }
+        }
+        
+        const subtitle = document.getElementById('createPostSubtitle');
+        if (subtitle && targetOpt) {
+            const monthNamesArabic = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+            const dayNamesArabic = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+            const d = new Date(targetOpt.year, targetOpt.month, targetOpt.date);
+            const dayOfWeekArabic = dayNamesArabic[d.getDay()];
+            const monthText = monthNamesArabic[targetOpt.month];
+            
+            subtitle.textContent = `للنشر يوم: ${dayOfWeekArabic} ${targetOpt.date} ${monthText} ${targetOpt.year}`;
+            subtitle.style.fontWeight = '600';
+            subtitle.style.color = '#f97316';
+        } else if (subtitle) {
+            subtitle.textContent = 'أنشئ وانشر محتواك على منصاتك';
+            subtitle.style.fontWeight = 'normal';
+            subtitle.style.color = '#718096';
+        }
+        
+        const existingPostsArea = document.getElementById('smModalExistingPostsArea');
+        if (existingPostsArea && targetOpt) {
+            existingPostsArea.innerHTML = '';
+            const activeBoard = boards.find(b => b.id === activeBoardId);
+            if (activeBoard && activeBoard.cards) {
+                const targetDateStr = `${targetOpt.year}-${targetOpt.month}-${targetOpt.date}`;
+                let dayPosts = activeBoard.cards.filter(c => c.dateStr === targetDateStr);
+                
+                if (dayPosts.length > 0 || postId) {
+                    let html = `<h4 style="font-size:12px; color:#64748b; margin-bottom:8px; font-weight:600;">منشورات هذا اليوم:</h4><div id="smModalPostsList" style="display:flex; flex-direction:column; gap:6px;">`;
+                    
+                    html += dayPosts.map((p, idx) => {
+                        const safeFullText = p.fullText ? window.smEscapeHTML(p.fullText) : '';
+                        const safeDesc = p.description ? window.smEscapeHTML(p.description) : '';
+                        const textSnippetRaw = p.fullText ? p.fullText.substring(0, 30) + '...' : (p.description ? p.description.substring(0, 30) + '...' : 'مسودة منشور...');
+                        const textSnippet = window.smEscapeHTML(textSnippetRaw);
+                        const items = p.mediaItems || (p.mediaObj ? [p.mediaObj] : []);
+                        
+                        let mediaThumb = `<div style="font-size:12px; margin-left:6px; flex-shrink:0;">📝</div>`;
+                        if (items.length > 0) {
+                            const m = items[0];
+                            if (m.dataUrl && (!m.type || m.type === 'image')) {
+                                mediaThumb = `<img src="${m.dataUrl}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
+                            } else if (m.thumbnail) {
+                                mediaThumb = `<img src="${m.thumbnail}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
+                            } else if (m.type === 'frame-io' || m.type === 'video' || (m.dataUrl && m.dataUrl.startsWith('data:video/'))) {
+                                mediaThumb = `<div style="width:24px; height:24px; border-radius:4px; background:#1e293b; color:white; display:flex; align-items:center; justify-content:center; margin-left:6px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div>`;
+                            }
+                        }
+                        
+                        const isActive = p.id === postId;
+                        let bg = isActive ? '#eff6ff' : '#ffffff';
+                        let border = isActive ? '1px solid #3b82f6' : '1px solid #e2e8f0';
+                        let accentColor = '#94a3b8'; 
+                        
+                        if (!isActive) {
+                            if (p.status === 'فوري') { bg = '#f0fdf4'; border = '1px solid #bbf7d0'; accentColor = '#22c55e'; }
+                            else if (p.status === 'جدولة') { bg = '#fffbeb'; border = '1px solid #fde68a'; accentColor = '#f59e0b'; }
+                        } else {
+                            if (p.status === 'فوري') accentColor = '#22c55e';
+                            else if (p.status === 'جدولة') accentColor = '#f59e0b';
+                        }
+                        
+                        const hoverStyle = isActive ? "" : "onmouseover=\"this.style.transform='scale(1.02)'\" onmouseout=\"this.style.transform='scale(1)'\"";
+                        const clickEvt = isActive ? "" : `onclick="const ta = document.querySelector('.sm-textarea'); const hi = document.getElementById('smMediaInput'); if((ta && ta.value.trim()) || (hi && hi.files.length>0) || document.getElementById('smMediaGallery').children.length > 0) window.saveSocialDraft(true); setTimeout(() => window.openCreatePostModal('${p.id}'), 100);"`;
+                        const pointerEvt = isActive ? "pointer-events: none; opacity: 0.9;" : "cursor: pointer;";
+                        const shadow = isActive ? "box-shadow: 0 0 0 2px rgba(59,130,246,0.3);" : "box-shadow: 0 1px 2px rgba(0,0,0,0.05);";
+
+                        return `
+                        <div data-id="${p.id}" ${clickEvt} ${hoverStyle} title="${safeFullText || safeDesc || ''}" style="padding: 6px; border-radius: 6px; background: ${bg}; border: ${border}; border-right: 3px solid ${accentColor}; font-size: 11px; color: #1e293b; display: flex; align-items: center; transition: transform 0.1s; direction: rtl; ${pointerEvt} ${shadow}">
+                            <div class="sm-sidebar-drag-handle" style="font-weight: 800; color: #cbd5e1; font-size: 14px; margin-left: 8px; cursor: grab; display: flex; align-items: center; justify-content: center; pointer-events: auto;" onclick="event.stopPropagation();">${idx + 1}</div>
+                            ${mediaThumb}
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-weight: ${isActive ? '700' : '500'}; color: ${isActive ? '#1d4ed8' : '#1e293b'}; margin-left: 4px;">${textSnippet}</div>
+                            <button onclick="event.stopPropagation(); window.deleteSocialPost('${p.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; border-radius: 4px; pointer-events: auto; display: flex; align-items: center; justify-content: center; opacity: 0.7; transition: all 0.2s;" onmouseover="this.style.opacity='1'; this.style.background='#fee2e2';" onmouseout="this.style.opacity='0.7'; this.style.background='transparent';" title="حذف المنشور">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                        </div>`;
+                    }).join('');
+                    
+                    html += `</div>
+                        <button onclick="const ta = document.querySelector('.sm-textarea'); const hi = document.getElementById('smMediaInput'); if((ta && ta.value.trim()) || (hi && hi.files.length>0) || document.getElementById('smMediaGallery').children.length > 0) window.saveSocialDraft(true); setTimeout(() => window.openCreatePostModal(null), 100);" style="width: 100%; border: dashed 1px #cbd5e1; background: #f8fafc; color: #3b82f6; padding: 6px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 600; transition: background 0.2s; margin-top: 4px;" onmouseover="this.style.background='#f1f5f9';" onmouseout="this.style.background='#f8fafc';">
+                            + إضافة منشور جديد
+                        </button>
+                    `;
+                    
+                    existingPostsArea.innerHTML = html;
+                    existingPostsArea.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        const listEl = document.getElementById('smModalPostsList');
+                        if (listEl && typeof Sortable !== 'undefined') {
+                            new Sortable(listEl, {
+                                animation: 150,
+                                handle: '.sm-sidebar-drag-handle',
+                                onEnd: function () {
+                                    const board = boards.find(b => b.id === activeBoardId);
+                                    if (board && board.cards) {
+                                        const dateStr = `${targetOpt.year}-${targetOpt.month}-${targetOpt.date}`;
+                                        const originalDayCards = board.cards.filter(c => c.dateStr === dateStr);
+                                        const newOrderDOMIds = Array.from(listEl.children).map(c => c.getAttribute('data-id')).filter(id => id);
+                                        const rearrangedDayCards = newOrderDOMIds.map(id => originalDayCards.find(c => c.id === id)).filter(c => c);
+                                        
+                                        let replacementIndex = 0;
+                                        board.cards = board.cards.map(c => {
+                                            if (c.dateStr === dateStr) {
+                                                const replacementCard = rearrangedDayCards[replacementIndex];
+                                                replacementIndex++;
+                                                return replacementCard;
+                                            }
+                                            return c;
+                                        });
+                                        
+                                        saveState();
+                                        render();
+                                        setTimeout(() => window.openCreatePostModal(window.currentEditingSocialPostId), 50);
+                                    }
+                                }
+                            });
+                        }
+                    }, 50);
+                } else {
+                    existingPostsArea.style.display = 'none';
+                }
+            } else {
+                existingPostsArea.style.display = 'none';
+            }
+        }
+        
+        createPostModal.classList.add('active');
+    }
+};
 const closeCreatePostModal = document.getElementById('closeCreatePostModal');
 const pipedriveDomainInput = document.getElementById('pipedriveDomain');
 const pipedriveTokenInput = document.getElementById('pipedriveToken');
@@ -688,15 +1525,56 @@ if (closePipedriveSettingsModal) {
 }
 
 if (closeCreatePostModal && createPostModal) {
-    closeCreatePostModal.onclick = () => createPostModal.classList.remove('active');
+    const handleModalDismiss = () => {
+        const textArea = document.querySelector('.sm-textarea');
+        const textContent = textArea ? textArea.value.trim() : '';
+        const gallery = document.getElementById('smMediaGallery');
+        const hasGalleryItems = gallery && gallery.children.length > 0;
+        
+        const isEmpty = !textContent && !hasGalleryItems;
+        
+        if (isEmpty) {
+            if (window.currentEditingSocialPostId) {
+                // Automatically delete the draft if it becomes completely empty
+                const board = boards.find(b => b.id === activeBoardId);
+                if (board) {
+                    const idx = board.cards.findIndex(c => c.id === window.currentEditingSocialPostId);
+                    if (idx > -1) {
+                        board.cards.splice(idx, 1);
+                        saveState();
+                        render();
+                    }
+                }
+            }
+        } else {
+            window.saveSocialDraft(true); // Save current state safely into draft before closing
+        }
+        
+        createPostModal.classList.remove('active');
+        if (textArea) textArea.value = '';
+        if (window.clearMediaUpload) window.clearMediaUpload();
+    };
+
+    closeCreatePostModal.onclick = handleModalDismiss;
+    
+    // Close modal if clicking outside the content box
+    createPostModal.addEventListener('click', (e) => {
+        if (e.target === createPostModal) {
+            handleModalDismiss();
+        }
+    });
+
     // Also bind Cancel button inside modal body
     const cancelBtn = createPostModal.querySelector('.sm-btn-cancel');
-    if (cancelBtn) cancelBtn.onclick = () => createPostModal.classList.remove('active');
+    if (cancelBtn) cancelBtn.onclick = handleModalDismiss;
 
     // Bind Publish Mode toggles
     const publishToggles = createPostModal.querySelectorAll('.sm-toggle-btn');
     const optionalWrapper = document.getElementById('sm-optional-fields-wrapper');
     const primaryActionBtn = document.getElementById('sm-primary-action-btn');
+    if (primaryActionBtn) {
+        primaryActionBtn.onclick = () => window.saveSocialDraft();
+    }
 
     if (publishToggles.length > 0) {
         publishToggles.forEach(btn => {
@@ -715,6 +1593,14 @@ if (closeCreatePostModal && createPostModal) {
                 } else {
                     if (optionalWrapper) optionalWrapper.classList.remove('collapsed');
                     if (primaryActionBtn) primaryActionBtn.textContent = 'جدولة المنشور';
+                    
+                    const dateInput = createPostModal.querySelector('.sm-date-input');
+                    if (dateInput && window.activeSocialDateOptions) {
+                        const d = window.activeSocialDateOptions.date.toString().padStart(2, '0');
+                        const m = (window.activeSocialDateOptions.month + 1).toString().padStart(2, '0');
+                        const y = window.activeSocialDateOptions.year;
+                        dateInput.value = `${d}/${m}/${y}`;
+                    }
                 }
             };
         });
@@ -1289,6 +2175,16 @@ if (closeMoneySmellingMappingModal) {
     closeMoneySmellingMappingModal.onclick = () => moneySmellingMappingModal.classList.remove('active');
 }
 
+const newClientsMappingModal = document.getElementById('newClientsMappingModal');
+const closeNewClientsMappingModal = document.getElementById('closeNewClientsMappingModal');
+const newClientsSpawnDirection = document.getElementById('newClientsSpawnDirection');
+const newClientsTargetPort = document.getElementById('newClientsTargetPort');
+const generateNewClientsTrackerBtn = document.getElementById('generateNewClientsTrackerBtn');
+
+if (closeNewClientsMappingModal) {
+    closeNewClientsMappingModal.onclick = () => newClientsMappingModal.classList.remove('active');
+}
+
 if (generateMoneySmellingTrackerBtn) {
     generateMoneySmellingTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
@@ -1355,6 +2251,75 @@ if (generateMoneySmellingTrackerBtn) {
         render();
         
         moneySmellingMappingModal.classList.remove('active');
+    };
+}
+
+if (generateNewClientsTrackerBtn) {
+    generateNewClientsTrackerBtn.onclick = () => {
+        if (!pendingSourceList) return;
+        
+        const spawnDir = newClientsSpawnDirection.value;
+        const targetPort = newClientsTargetPort.value;
+        const curBoard = boards.find(b => b.id === activeBoardId);
+        
+        let actualTargetPort = targetPort;
+        if (actualTargetPort === 'auto') {
+            const opp = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+            actualTargetPort = opp[spawnDir] || 'left';
+        }
+        
+        let targetX = pendingSourceList.x || 0;
+        let targetY = pendingSourceList.y || 80;
+        
+        if (spawnDir === 'right') targetX += 340;
+        else if (spawnDir === 'left') targetX -= 340;
+        else if (spawnDir === 'bottom') targetY += 200;
+        else if (spawnDir === 'top') targetY -= 200;
+        
+        if (!curBoard.connections) curBoard.connections = [];
+        const existingNewClientsConn = curBoard.connections.find(c => 
+            c.source === pendingSourceList.id && curBoard.lists.find(l => l.id === c.target && l.isNewClients)
+        );
+        
+        if (existingNewClientsConn) {
+            // Update existing connection and list position
+            existingNewClientsConn.sourcePort = spawnDir;
+            existingNewClientsConn.targetPort = actualTargetPort;
+            
+            const targetList = curBoard.lists.find(l => l.id === existingNewClientsConn.target);
+            if (targetList) {
+                targetList.x = targetX;
+                targetList.y = targetY;
+            }
+            
+            showToast("Updated New Clients tracker position!");
+        } else {
+            // Create new
+            const newListId = 'list-' + Date.now();
+            const newList = {
+                id: newListId,
+                title: 'New Clients',
+                cards: [],
+                x: targetX,
+                y: targetY,
+                theme: pendingSourceList.theme || 'default',
+                isNewClients: true
+            };
+            
+            curBoard.lists.push(newList);
+            curBoard.connections.push({
+                source: pendingSourceList.id,
+                target: newListId,
+                sourcePort: spawnDir,
+                targetPort: actualTargetPort
+            });
+            showToast("Created a New Clients tracker!");
+        }
+        
+        saveState();
+        render();
+        
+        newClientsMappingModal.classList.remove('active');
     };
 }
 
@@ -1889,6 +2854,31 @@ toggleNavPosBtn.onclick = () => {
     localStorage.setItem('nav_position', topNavBar.classList.contains('pos-right') ? 'right' : 'center');
 };
 
+const navItems = document.querySelectorAll('.nav-item');
+if (navItems.length >= 3) {
+    // Planner button
+    navItems[1].onclick = () => {
+        const smBoard = boards.find(b => b.type === 'social_scheduler');
+        if (smBoard) {
+            activeBoardId = smBoard.id;
+            saveState();
+            render();
+        } else {
+            const openAddBtn = document.getElementById('openAddSocialBoardBtn');
+            if (openAddBtn) openAddBtn.click();
+        }
+    };
+    // Board button
+    navItems[2].onclick = () => {
+        const kBoard = boards.find(b => b.type === 'kanban' || b.type === 'timer');
+        if (kBoard) {
+            activeBoardId = kBoard.id;
+            saveState();
+            render();
+        }
+    };
+}
+
 const clockIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 const stopwatchIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><polyline points="12 9 12 13 14 15"></polyline><line x1="12" y1="2" x2="12" y2="4"></line><line x1="8" y1="2" x2="16" y2="2"></line></svg>`;
 
@@ -1923,7 +2913,7 @@ window.switchBoard = function(boardId) {
 // Switch Boards Flow
 openSwitchBoardsBtn.onclick = () => {
     boardListMenu.innerHTML = '';
-    boards.forEach(b => {
+    boards.filter(b => b.type !== 'social_scheduler').forEach(b => {
         const item = document.createElement('div');
         item.className = 'board-menu-item' + (b.id === activeBoardId ? ' active' : '');
         
@@ -2029,8 +3019,23 @@ openSwitchBoardsBtn.onclick = () => {
             showToast("Workspace duplicated!");
         };
 
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'icon-btn delete-board-btn';
+        deleteBtn.title = 'Delete Workspace';
+        deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (typeof window.promptSecureDelete === 'function') {
+                window.promptSecureDelete(b.id, b.title || 'هذه المساحة');
+            }
+        };
+
         rightWrap.appendChild(countSpan);
         rightWrap.appendChild(dupBtn);
+        if (boards.length > 1) {
+            rightWrap.appendChild(deleteBtn);
+        }
 
         item.appendChild(leftWrap);
         item.appendChild(rightWrap);
@@ -2038,9 +3043,82 @@ openSwitchBoardsBtn.onclick = () => {
         item.onclick = () => switchBoard(b.id);
         boardListMenu.appendChild(item);
     });
+    
+    // Append single unified Social Media App button if clients exist
+    const socialBoards = boards.filter(b => b.type === 'social_scheduler');
+    if (socialBoards.length > 0) {
+        const item = document.createElement('div');
+        const isActive = socialBoards.some(b => b.id === activeBoardId);
+        item.className = 'board-menu-item' + (isActive ? ' active' : '');
+        
+        item.innerHTML = `
+            <div style="display:flex; align-items:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                <span style="font-weight: 700; color: #1a202c;">Social Media App</span>
+            </div>
+            <div class="menu-right-wrap">
+                <span class="board-count-text">${socialBoards.length} clients</span>
+            </div>
+        `;
+        
+        item.onclick = () => switchBoard(socialBoards[0].id);
+        item.style.borderTop = '1px dashed #e2e8f0';
+        item.style.marginTop = '4px';
+        
+        boardListMenu.appendChild(item);
+    }
+
     switchBoardModal.classList.add('active');
 };
 closeSwitchBoardModal.onclick = () => switchBoardModal.classList.remove('active');
+
+const exportBackupBtn = document.getElementById('exportBackupBtn');
+if (exportBackupBtn) {
+    exportBackupBtn.onclick = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(boards, null, 2));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", "workspace_backup_" + new Date().toISOString().split('T')[0] + ".json");
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+        showToast("Backup exported successfully!");
+    };
+}
+
+const importBackupFile = document.getElementById('importBackupFile');
+if (importBackupFile) {
+    importBackupFile.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (!confirm("Are you sure you want to import this workspace? This will OVERWRITE your current data!")) {
+            importBackupFile.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                if (Array.isArray(importedData)) {
+                    boards = importedData;
+                    if (boards.length > 0) activeBoardId = boards[0].id;
+                    saveState();
+                    render();
+                    showToast("Workspace imported successfully!");
+                    switchBoardModal.classList.remove('active');
+                } else {
+                    alert("Invalid backup file: Please provide a valid workspace backup.");
+                }
+            } catch (err) {
+                alert("Failed to read backup file. It might be corrupted.");
+            }
+        };
+        reader.readAsText(file);
+        importBackupFile.value = ''; // Reset to allow importing the same file again
+    };
+}
 
 if (openAddTimerBoardBtn) {
     openAddTimerBoardBtn.onclick = () => {
@@ -2065,7 +3143,8 @@ if (openAddKanbanBoardBtn) {
 if (openAddSocialBoardBtn) {
     openAddSocialBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
-        newBoardTitle.value = 'Social Scheduler 📅';
+        const smCount = boards.filter(b => b.type === 'social_scheduler').length;
+        newBoardTitle.value = 'Client ' + (smCount + 1);
         pendingNewBoardType = 'social_scheduler';
         document.querySelector('#addBoardModal h3').textContent = 'Create Social Media Scheduler';
         addBoardModal.classList.add('active');
@@ -2076,6 +3155,7 @@ closeAddBoardModal.onclick = () => addBoardModal.classList.remove('active');
 confirmAddBoardBtn.onclick = () => {
     const title = newBoardTitle.value.trim();
     if (title) {
+        newBoardTitle.blur();
         const newBoard = { id: 'board-' + Date.now(), title: title, type: pendingNewBoardType };
         if (pendingNewBoardType === 'kanban') newBoard.lists = [];
         else newBoard.cards = [];
@@ -2261,10 +3341,12 @@ function updateAllTrackersSummaries(activeBoard) {
                     let hasAds = false;
                     let hasCH = false;
                     let hasMS = false;
+                    let hasNC = false;
                     let tCards = 0; let tCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let aCards = 0; let aCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let chCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let msCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+                    let ncCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     
                     allDescendants.forEach(tid => {
                         const tList = activeBoard.lists.find(l => l.id === tid);
@@ -2272,10 +3354,12 @@ function updateAllTrackersSummaries(activeBoard) {
                             const isAds = tList.trackerType === 'ads';
                             const isCH = tList.isClientHappiness;
                             const isMS = tList.isMoneySmelling;
+                            const isNC = tList.isNewClients;
                             
                             if (isAds) hasAds = true;
                             else if (isCH) hasCH = true;
                             else if (isMS) hasMS = true;
+                            else if (isNC) hasNC = true;
                             else hasTrello = true;
                             
                             tList.cards.forEach(c => {
@@ -2287,6 +3371,7 @@ function updateAllTrackersSummaries(activeBoard) {
                                         tCards++;
                                         if (isCH) chCol[col]++;
                                         else if (isMS) msCol[col]++;
+                                        else if (isNC) ncCol[col]++;
                                         else tCol[col]++;
                                     }
                                 }
@@ -2303,12 +3388,12 @@ function updateAllTrackersSummaries(activeBoard) {
                         };
                         const getClick = (color) => `data-clicker="true" data-pid="${pId}" data-ptype="${type}" data-pcolor="${color}"`;
 
-                        const isMoney = type === 'moneySmelling';
+                        const isMoneyOrNc = type === 'moneySmelling' || type === 'newClients';
                         const svgs = {
-                            green: isMoney ? '<span style="font-size:14px;line-height:1;margin-top:1px;">🔥</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
-                            yellow: isMoney ? '<span style="font-size:14px;line-height:1;margin-top:1px;">☀️</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
-                            orange: isMoney ? '<span style="font-size:14px;line-height:1;margin-top:1px;">⛅</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
-                            red: isMoney ? '<span style="font-size:14px;line-height:1;margin-top:1px;">❄️</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            green: isMoneyOrNc ? '<span style="font-size:14px;line-height:1;margin-top:1px;">🔥</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            yellow: isMoneyOrNc ? '<span style="font-size:14px;line-height:1;margin-top:1px;">☀️</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            orange: isMoneyOrNc ? '<span style="font-size:14px;line-height:1;margin-top:1px;">⛅</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            red: isMoneyOrNc ? '<span style="font-size:14px;line-height:1;margin-top:1px;">❄️</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
                             default: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="#8c9bab" stroke-width="2.5"/></svg>'
                         };
 
@@ -2322,7 +3407,7 @@ function updateAllTrackersSummaries(activeBoard) {
 
                     let finalHtml = `<div style="display:flex; flex-direction:column; gap:6px;">`;
                     
-                    if (hasTrello || hasCH || hasMS || (!hasTrello && !hasAds && !hasCH && !hasMS)) {
+                    if (hasTrello || hasCH || hasMS || hasNC || (!hasTrello && !hasAds && !hasCH && !hasMS && !hasNC)) {
                         const tText = tCards === 1 ? '1 Card' : `${tCards} Cards`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
@@ -2332,6 +3417,7 @@ function updateAllTrackersSummaries(activeBoard) {
                                 </div>
                                 ${hasCH && buildTally(chCol, list.id, 'clientHappiness') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(chCol, list.id, 'clientHappiness')}</div>` : ''}
                                 ${hasMS && buildTally(msCol, list.id, 'moneySmelling') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(msCol, list.id, 'moneySmelling')}</div>` : ''}
+                                ${hasNC && buildTally(ncCol, list.id, 'newClients') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(ncCol, list.id, 'newClients')}</div>` : ''}
                                 ${hasTrello && buildTally(tCol, list.id, 'trello') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(tCol, list.id, 'trello')}</div>` : ''}
                             </div>
                         `;
@@ -2373,6 +3459,8 @@ function updateAllTrackersSummaries(activeBoard) {
 let animatingOutIds = new Set();
 let animatingOrigins = {};
 function renderKanbanApp(activeBoard) {
+    document.body.style.background = '';
+    appContainer.style.padding = '';
     if (!activeBoard.camera) activeBoard.camera = { x: 0, y: 0, z: 1 };
 
     const canvas = document.createElement('div');
@@ -2482,13 +3570,14 @@ function renderKanbanApp(activeBoard) {
             let offsetPx = 0;
             const toggleEl = sourceEl.querySelector(`.port-toggle-${sourceEdge}`);
             if (toggleEl) {
-                let hasClientHappiness = false, hasMoneySmelling = false, hasPipedrive = false, hasTrello = false, hasAds = false;
+                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasAds = false;
                 activeBoard.connections.forEach(c => {
                     if (c.source === conn.source && c.sourcePort === sourceEdge) {
                         const targList = activeBoard.lists.find(l => l.id === c.target);
                         if (targList) {
                             if (targList.isClientHappiness) hasClientHappiness = true;
                             if (targList.isMoneySmelling) hasMoneySmelling = true;
+                            if (targList.isNewClients) hasNewClients = true;
                             if (targList.pipedriveStageId) hasPipedrive = true;
                             if ((targList.trelloTasksListId || targList.trelloBoardId || targList.trelloListId) && targList.trackerType !== 'ads') hasTrello = true;
                             if (targList.trackerType === 'ads') hasAds = true;
@@ -2501,6 +3590,7 @@ function renderKanbanApp(activeBoard) {
                 if (targetList) {
                     if (targetList.isClientHappiness) myType = 'clientHappiness';
                     else if (targetList.isMoneySmelling) myType = 'moneySmelling';
+                    else if (targetList.isNewClients) myType = 'newClients';
                     else if (targetList.pipedriveStageId) myType = 'pipedrive';
                     else if (targetList.trackerType === 'ads') myType = 'ads';
                 }
@@ -2509,12 +3599,13 @@ function renderKanbanApp(activeBoard) {
                 // Sort according to custom user edge preference, backing up to default otherwise
                 if (hasClientHappiness) activeTypes.push('clientHappiness');
                 if (hasMoneySmelling) activeTypes.push('moneySmelling');
+                if (hasNewClients) activeTypes.push('newClients');
                 if (hasPipedrive) activeTypes.push('pipedrive');
                 if (hasTrello) activeTypes.push('trello');
                 if (hasAds) activeTypes.push('ads');
                 
                 const sList = activeBoard.lists.find(l => l.id === conn.source);
-                const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'pipedrive', 'trello', 'ads'];
+                const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'ads'];
                 activeTypes.sort((a, b) => {
                     let iA = curOrder.indexOf(a);
                     let iB = curOrder.indexOf(b);
@@ -2663,16 +3754,18 @@ function renderKanbanApp(activeBoard) {
     };
 
     canvas.addEventListener('wheel', (e) => {
+        const isPinch = e.ctrlKey || e.metaKey;
         const scrollableList = e.target.closest('.card-list, .pinned-list');
-        // Only yield the scroll capture back to the browser OS if the list ACTUALLY has hidden overflow content to scroll.
-        // Otherwise, allow the wheel event to smoothly zoom/pan the dashboard canvas uninterrupted.
-        if (scrollableList && scrollableList.scrollHeight > Math.ceil(scrollableList.clientHeight) + 2) {
+        
+        // If they are scrolling vertically over a list normally, let the list scroll.
+        // If they are physically PINCHING over a list, bypass the list and zoom the board.
+        if (!isPinch && scrollableList && scrollableList.scrollHeight > Math.ceil(scrollableList.clientHeight) + 2) {
             return;
         }
         e.preventDefault();
         
-        // Default Canvas Behavior: Mouse Wheel / Trackpad Swipe always Zooms
-        const zoomSensitivity = (e.ctrlKey || e.metaKey) ? 0.01 : 0.001;
+        // Tuned for buttery smooth Mac Trackpad Pinch/Zoom and Mouse Wheel
+        const zoomSensitivity = isPinch ? 0.002 : 0.001;
         const delta = e.deltaY * -zoomSensitivity;
         const newZ = Math.min(Math.max(0.1, activeBoard.camera.z + delta), 3);
         
@@ -2735,6 +3828,7 @@ function renderKanbanApp(activeBoard) {
                         matches = false;
                         if (tType === 'clientHappiness' && tl.isClientHappiness) matches = true;
                         if (tType === 'moneySmelling' && tl.isMoneySmelling) matches = true;
+                        if (tType === 'newClients' && tl.isNewClients) matches = true;
                         if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                         if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads') matches = true;
                         if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
@@ -2786,6 +3880,8 @@ function renderKanbanApp(activeBoard) {
                     } else if (pType === 'clientHappiness' && cl.isClientHappiness) {
                         effectiveFilters[childId] = color;
                     } else if (pType === 'moneySmelling' && cl.isMoneySmelling) {
+                        effectiveFilters[childId] = color;
+                    } else if (pType === 'newClients' && cl.isNewClients) {
                         effectiveFilters[childId] = color;
                     }
                 }
@@ -2865,8 +3961,8 @@ function renderKanbanApp(activeBoard) {
                 const sourceId = e.dataTransfer.getData(transferTypeObj);
                 
                 if (sourceId && sourceId !== list.id) {
-                    const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : trackerType));
-                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'trello': 'Trello', 'ads': 'Ads' };
+                    const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : (trackerType === 'nc' ? 'newClients' : trackerType)));
+                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads' };
                     const formatName = formatNameMap[mappedType];
                     
                     const checkMatch = (t) => {
@@ -2874,8 +3970,9 @@ function renderKanbanApp(activeBoard) {
                         if (mappedType === 'pipedrive') return t.pipedriveStageId;
                         if (mappedType === 'clientHappiness') return t.isClientHappiness;
                         if (mappedType === 'moneySmelling') return t.isMoneySmelling;
+                        if (mappedType === 'newClients') return t.isNewClients;
                         if (mappedType === 'ads') return t.trackerType === 'ads';
-                        if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && !t.isClientHappiness && !t.isMoneySmelling;
+                        if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && !t.isClientHappiness && !t.isMoneySmelling && !t.isNewClients;
                         return false;
                     };
 
@@ -2914,6 +4011,9 @@ function renderKanbanApp(activeBoard) {
                                 } else if (mappedType === 'moneySmelling') {
                                     list.isMoneySmelling = true;
                                     delete srcList.isMoneySmelling;
+                                } else if (mappedType === 'newClients') {
+                                    list.isNewClients = true;
+                                    delete srcList.isNewClients;
                                 } else if (mappedType === 'trello') {
                                     if (srcList.trelloListId) { list.trelloListId = srcList.trelloListId; delete srcList.trelloListId; }
                                     if (srcList.trelloTasksListId) { list.trelloTasksListId = srcList.trelloTasksListId; delete srcList.trelloTasksListId; }
@@ -3310,6 +4410,46 @@ function renderKanbanApp(activeBoard) {
             }
         };
         optionsMenu.appendChild(moneySmellingOption);
+
+        const existingNewClientsConn = (activeBoard.connections || []).find(c => 
+            c.source === list.id && activeBoard.lists.find(l => l.id === c.target && l.isNewClients)
+        );
+        const curNewClientsIcon = existingNewClientsConn ? `<polyline points="20 6 9 17 4 12"></polyline>` : `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>`;
+        const curNewClientsText = existingNewClientsConn ? 'Update New Clients' : 'New Clients';
+
+        const newClientsOption = document.createElement('div');
+        newClientsOption.className = 'list-option-item';
+        newClientsOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curNewClientsIcon}</svg><span>${curNewClientsText}</span>`;
+        newClientsOption.onclick = (e) => {
+            e.stopPropagation();
+            optionsMenu.style.display = 'none';
+            pendingSourceList = list;
+            
+            const curBoard = boards.find(b => b.id === activeBoardId);
+            const existingConnections = (curBoard.connections || []).filter(c => c.source === list.id && curBoard.lists.find(l => l.id === c.target && l.isNewClients));
+            if (existingConnections.length > 0) {
+                const newClientsSpawnDirectionEl = document.getElementById('newClientsSpawnDirection');
+                const newClientsTargetPortEl = document.getElementById('newClientsTargetPort');
+                if (newClientsSpawnDirectionEl) newClientsSpawnDirectionEl.value = existingConnections[0].sourcePort || 'right';
+                const opp = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+                if (existingConnections[0].targetPort !== opp[existingConnections[0].sourcePort || 'right']) {
+                    if (newClientsTargetPortEl) newClientsTargetPortEl.value = existingConnections[0].targetPort || 'auto';
+                } else {
+                    if (newClientsTargetPortEl) newClientsTargetPortEl.value = 'auto';
+                }
+            } else {
+                const newClientsSpawnDirectionEl = document.getElementById('newClientsSpawnDirection');
+                const newClientsTargetPortEl = document.getElementById('newClientsTargetPort');
+                if(newClientsSpawnDirectionEl) newClientsSpawnDirectionEl.value = 'right';
+                if(newClientsTargetPortEl) newClientsTargetPortEl.value = 'auto';
+            }
+            
+            if (newClientsMappingModal) {
+                document.getElementById('generateNewClientsTrackerBtn').textContent = existingNewClientsConn ? "Update Tracker Position" : "Create Tracker";
+                newClientsMappingModal.classList.add('active');
+            }
+        };
+        optionsMenu.appendChild(newClientsOption);
         
         // GROUP 2: LAYOUT SETTINGS
         if (activeBoard.trelloBoardId) {
@@ -3489,7 +4629,7 @@ function renderKanbanApp(activeBoard) {
         let listTotalValue = 0;
         let showListTotal = false;
 
-        if (list.pipedriveStageId || list.isMoneySmelling) {
+        if (list.pipedriveStageId || list.isMoneySmelling || list.isNewClients) {
             showListTotal = true;
             list.cards.forEach(c => {
                 if (c.isPipedrive && c.pipedriveData && c.pipedriveData.value) {
@@ -3612,8 +4752,11 @@ function renderKanbanApp(activeBoard) {
             const hasMoneySmellingTrackers = activeBoard.connections && activeBoard.connections.some(c => 
                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.isMoneySmelling)
             );
+            const hasNewClientsTrackers = activeBoard.connections && activeBoard.connections.some(c => 
+                c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.isNewClients)
+            );
             
-            const hasTrackersOnEdge = hasTrelloTrackers || hasAdsTrackers || hasPipedriveTrackers || hasClientHappinessTrackers || hasMoneySmellingTrackers;
+            const hasTrackersOnEdge = hasTrelloTrackers || hasAdsTrackers || hasPipedriveTrackers || hasClientHappinessTrackers || hasMoneySmellingTrackers || hasNewClientsTrackers;
             
             if (hasTrackersOnEdge) {
                 const toggleBtn = document.createElement('div');
@@ -3630,12 +4773,13 @@ function renderKanbanApp(activeBoard) {
                     list.collapsedEdges = list.collapsedEdges.filter(e => e !== edge);
                     if (hasClientHappinessTrackers) list.collapsedEdges.push(`${edge}:clientHappiness`);
                     if (hasMoneySmellingTrackers) list.collapsedEdges.push(`${edge}:moneySmelling`);
+                    if (hasNewClientsTrackers) list.collapsedEdges.push(`${edge}:newClients`);
                     if (hasPipedriveTrackers) list.collapsedEdges.push(`${edge}:pipedrive`);
                     if (hasTrelloTrackers) list.collapsedEdges.push(`${edge}:trello`);
                 }
                 
                 list.edgeOrder = list.edgeOrder || {};
-                const userOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'pipedrive', 'trello', 'ads'];
+                const userOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'ads'];
                 const edgeDict = {};
                 
                 if (hasClientHappinessTrackers) {
@@ -3671,14 +4815,38 @@ function renderKanbanApp(activeBoard) {
                         edgeDict['moneySmelling'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ms', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="moneySmelling" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform: scale(1.1); margin-top:2px;">
                                 <circle cx="12" cy="12" r="10" fill="#2E7D32" stroke="#1B5E20" stroke-width="1.5"/>
-                                <path d="M12 6v12M15 9.5a3 3 0 0 0-3-3 3 3 0 0 0-2 5.5h-1a3 3 0 0 1-3-3" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <g transform="translate(2.4, 2.4) scale(0.8)">
+                                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" fill="#FFFFFF"/>
+                                </g>
                             </svg>
                         </div>`;
                     } else {
                         edgeDict['moneySmelling'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ms', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="moneySmelling" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 0px 12px rgba(76, 175, 80, 0.9)); transform: scale(1.1); margin-top:-2px;">
                                 <circle cx="12" cy="12" r="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="1.5"/>
-                                <path d="M12 6v12M15 9.5a3 3 0 0 0-3-3 3 3 0 0 0-2 5.5h-1a3 3 0 0 1-3-3" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <g transform="translate(2.4, 2.4) scale(0.8)">
+                                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" fill="#FFFFFF"/>
+                                </g>
+                            </svg>
+                        </div>`;
+                    }
+                }
+
+                if (hasNewClientsTrackers) {
+                    const isNcCollapsed = list.collapsedEdges.includes(`${edge}:newClients`);
+                    const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'newClients');"`;
+                    if (isNcCollapsed) {
+                        edgeDict['newClients'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-nc', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                            <svg data-tracker-type="newClients" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform: scale(1.1); margin-top:2px;">
+                                <circle cx="12" cy="12" r="10" fill="#1b8859" stroke="#126340" stroke-width="1.5"/>
+                                <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 7a5 5 0 0 1 10 0" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>`;
+                    } else {
+                        edgeDict['newClients'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-nc', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                            <svg data-tracker-type="newClients" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 0px 12px rgba(34, 160, 107, 0.9)); transform: scale(1.1); margin-top:-2px;">
+                                <circle cx="12" cy="12" r="10" fill="#22a06b" stroke="#1b8859" stroke-width="1.5"/>
+                                <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 7a5 5 0 0 1 10 0" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </div>`;
                     }
@@ -3816,6 +4984,7 @@ function renderKanbanApp(activeBoard) {
                             let matches = false;
                             if (tType === 'clientHappiness' && tl.isClientHappiness) matches = true;
                             if (tType === 'moneySmelling' && tl.isMoneySmelling) matches = true;
+                            if (tType === 'newClients' && tl.isNewClients) matches = true;
                             if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                             if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads') matches = true;
                             if (tType === 'ads' && tl.trelloListId && tl.trackerType === 'ads') matches = true;
@@ -3967,18 +5136,32 @@ function renderKanbanApp(activeBoard) {
         let cardsToRender = list.cards;
         if (activeBoard.isolateCardId) {
             cardsToRender = list.cards.filter(c => c.id === activeBoard.isolateCardId);
-        } else if ((list.isClientHappiness || list.isMoneySmelling) && (activeBoard.happinessFilter || activeBoard.serviceFilter)) {
-            cardsToRender = list.cards.filter(card => {
-                let match = true;
-                if (activeBoard.happinessFilter) {
-                    const color = (activeBoard.cardColors && activeBoard.cardColors[card.id]) ? activeBoard.cardColors[card.id] : 'default';
-                    match = match && color === activeBoard.happinessFilter;
-                }
-                if (activeBoard.serviceFilter) {
-                    match = match && card.services && card.services.includes(activeBoard.serviceFilter);
-                }
-                return match;
-            });
+        } else if (list.isClientHappiness || list.isMoneySmelling || list.isNewClients) {
+            let activeH = null, activeS = null;
+            const h = activeBoard.happinessFilters || {};
+            const s = activeBoard.serviceFilters || {};
+            
+            if (list.isClientHappiness && (h['clientHappiness'] || s['clientHappiness'])) { 
+                activeH = h['clientHappiness']; activeS = s['clientHappiness']; 
+            } else if (list.isMoneySmelling && (h['moneySmelling'] || s['moneySmelling'])) { 
+                activeH = h['moneySmelling']; activeS = s['moneySmelling']; 
+            } else if (list.isNewClients && (h['newClients'] || s['newClients'])) { 
+                activeH = h['newClients']; activeS = s['newClients']; 
+            }
+            
+            if (activeH || activeS) {
+                cardsToRender = list.cards.filter(card => {
+                    let match = true;
+                    if (activeH) {
+                        const color = (activeBoard.cardColors && activeBoard.cardColors[card.id]) ? activeBoard.cardColors[card.id] : 'default';
+                        match = match && color === activeH;
+                    }
+                    if (activeS) {
+                        match = match && card.services && card.services.includes(activeS);
+                    }
+                    return match;
+                });
+            }
         } else if (effectiveFilters[list.id]) {
             cardsToRender = list.cards.filter(card => {
                 const color = (activeBoard.cardColors && activeBoard.cardColors[card.id]) ? activeBoard.cardColors[card.id] : 'default';
@@ -4124,6 +5307,22 @@ function renderKanbanApp(activeBoard) {
             
             leftCol.appendChild(titleTextWrap);
             
+            if (card.isTrelloDeleted && card.isTrelloTask) {
+                const deletedBadge = document.createElement('div');
+                deletedBadge.textContent = "Done";
+                deletedBadge.style.backgroundColor = '#ffebe6';
+                deletedBadge.style.color = '#bf2600';
+                deletedBadge.style.fontSize = '11px';
+                deletedBadge.style.fontWeight = '700';
+                deletedBadge.style.padding = '3px 6px';
+                deletedBadge.style.borderRadius = '3px';
+                deletedBadge.style.alignSelf = 'flex-start';
+                deletedBadge.style.marginTop = '4px';
+                deletedBadge.style.lineHeight = '1';
+                leftCol.appendChild(deletedBadge);
+                cardEl.style.opacity = '0.6';
+            }
+            
             if (card.isPipedrive && activeBoard.pipedriveNoteFieldKey && card.pipedriveData) {
                 const noteVal = card.pipedriveData[activeBoard.pipedriveNoteFieldKey] || '';
                 if (noteVal.trim() !== '') {
@@ -4142,7 +5341,7 @@ function renderKanbanApp(activeBoard) {
             
             let globalValWrap = null;
             
-            if (card.isPipedrive || (list.isMoneySmelling && card.dealValue)) {
+            if (card.isPipedrive || ((list.isMoneySmelling || list.isNewClients) && card.dealValue)) {
                 if (card.isPipedrive && activeBoard.pipedriveQualificationFieldKey && 
                     String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId) && 
                     card.pipedriveData && 
@@ -4273,6 +5472,106 @@ function renderKanbanApp(activeBoard) {
             }
 
             cardEl.appendChild(titleEl);
+
+            if (list.isNewClients) {
+                const checklist = ensureCardChecklist(card);
+                if (checklist.length > 0) {
+                    const checklistWrap = document.createElement('div');
+                    checklistWrap.className = 'nc-checklist-wrap';
+
+                    const doneCount = checklist.filter(i => i.checked).length;
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'nc-progress-bar';
+                    const progressFill = document.createElement('div');
+                    progressFill.className = 'nc-progress-fill';
+                    progressFill.style.width = `${Math.round((doneCount / checklist.length) * 100)}%`;
+                    progressBar.appendChild(progressFill);
+                    checklistWrap.appendChild(progressBar);
+
+                    checklist.forEach((item, index) => {
+                        const row = document.createElement('div');
+                        row.className = 'nc-card-row';
+                        row.onmousedown = (e) => e.stopPropagation();
+                        row.onclick = (e) => e.stopPropagation();
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = !!item.checked;
+                        checkbox.onchange = (e) => {
+                            const isChecked = e.target.checked;
+                            text.classList.toggle('nc-done', isChecked);
+                            setTimeout(() => {
+                                const liveChecklist = ensureCardChecklist(card);
+                                liveChecklist[index].checked = isChecked;
+                                saveState();
+                                render();
+                            }, 0);
+                        };
+
+                        const text = document.createElement('input');
+                        text.type = 'text';
+                        text.value = item.text;
+                        text.className = 'nc-card-text' + (item.checked ? ' nc-done' : '');
+                        text.spellcheck = false;
+                        text.onclick = (e) => e.stopPropagation();
+                        text.oninput = (e) => {
+                            const liveChecklist = ensureCardChecklist(card);
+                            liveChecklist[index].text = e.target.value;
+                        };
+                        text.onblur = (e) => {
+                            const val = e.target.value.trim();
+                            const liveChecklist = ensureCardChecklist(card);
+                            if (!val) {
+                                liveChecklist.splice(index, 1);
+                                saveState();
+                                setTimeout(() => render(), 0);
+                            } else {
+                                if (liveChecklist[index].text !== val) {
+                                    liveChecklist[index].text = val;
+                                    saveState();
+                                }
+                            }
+                        };
+                        text.onkeydown = (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                text.blur();
+                            }
+                        };
+
+                        row.appendChild(checkbox);
+                        row.appendChild(text);
+                        checklistWrap.appendChild(row);
+                    });
+
+                    const addBtnWrap = document.createElement('div');
+                    addBtnWrap.style.display = 'flex';
+                    addBtnWrap.style.alignItems = 'center';
+                    addBtnWrap.style.paddingLeft = '4px';
+                    addBtnWrap.style.marginTop = '2px';
+                    
+                    const addIcon = document.createElement('div');
+                    addIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+                    addIcon.style.cursor = 'pointer';
+                    addIcon.style.display = 'flex';
+                    addIcon.style.transition = 'stroke 0.2s';
+                    addIcon.onmouseover = () => addIcon.querySelector('svg').style.stroke = '#22a06b';
+                    addIcon.onmouseout = () => addIcon.querySelector('svg').style.stroke = '#94a3b8';
+                    addIcon.onmousedown = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault(); // Prevents input focus from being stolen before render
+                        const liveChecklist = ensureCardChecklist(card);
+                        liveChecklist.push({ text: 'New task...', checked: false });
+                        saveState();
+                        render();
+                    };
+
+                    addBtnWrap.appendChild(addIcon);
+                    checklistWrap.appendChild(addBtnWrap);
+
+                    cardEl.appendChild(checklistWrap);
+                }
+            }
             
             if (list.trackerType === 'ads') {
                 const hud = document.createElement('div');
@@ -5743,17 +7042,19 @@ function renderKanbanApp(activeBoard) {
 
         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
 
-        const targetHappinessLists = (activeBoard.connections || [])
+        const __allHappinessTargets = (activeBoard.connections || [])
             .filter(c => c.source === list.id)
-            .map(c => activeBoard.lists.find(l => l.id === c.target))
-            .filter(l => l && (l.isClientHappiness || l.isMoneySmelling));
-
-        if (targetHappinessLists.length > 0) {
+            .map(c => activeBoard.lists.find(l => l.id === c.target));
+            
+        const renderTrackerStats = (trackerType, checkFn, svgIcon, xferData) => {
+            const targets = __allHappinessTargets.filter(l => l && checkFn(l));
+            if (targets.length === 0) return;
+            
             const counts = {};
             const colorCounts = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
             let totalCards = 0;
             
-            targetHappinessLists.forEach(happinessList => {
+            targets.forEach(happinessList => {
                 if (happinessList.cards) {
                     totalCards += happinessList.cards.length;
                     happinessList.cards.forEach(c => {
@@ -5779,12 +7080,16 @@ function renderKanbanApp(activeBoard) {
                 'Marketplaces': '🛒'
             };
             
+            let localTotalSummaryEl = null;
+            
             if (totalCards > 0) {
                 const totalSummaryEl = document.createElement('div');
-                totalSummaryEl.className = 'client-happiness-total';
+                totalSummaryEl.className = 'client-happiness-total tracker-total-' + trackerType;
                 totalSummaryEl.style.display = 'flex';
                 totalSummaryEl.style.gap = '6px';
                 totalSummaryEl.style.margin = '0px 20px 6px 20px';
+                
+                localTotalSummaryEl = totalSummaryEl;
                 
                 const totalPill = document.createElement('div');
                 totalPill.style.display = 'flex';
@@ -5797,11 +7102,12 @@ function renderKanbanApp(activeBoard) {
                 totalPill.style.fontSize = '12px';
                 totalPill.style.fontWeight = '700';
                 totalPill.style.color = '#172b4d';
-                totalPill.title = 'Total Clients Tracked';
+                totalPill.title = trackerType === 'clientHappiness' ? 'Total Clients Tracked' : 'Total Money Tracked';
                 totalPill.style.cursor = 'pointer';
                 
-                const allTrackerCards = targetHappinessLists.flatMap(l => l.cards || []);
-                totalPill.onclick = () => openServiceCardsModal('Total Clients Tracked', '👥', allTrackerCards);
+                const allTrackerCards = targets.flatMap(l => l.cards || []);
+                const titleText = trackerType === 'clientHappiness' ? 'Total Clients Tracked' : 'Total Money Tracked';
+                totalPill.onclick = () => openServiceCardsModal(titleText, '👥', allTrackerCards);
                 
                 totalPill.innerHTML = `<span style="font-size:14px;">👥</span> <span>${totalCards}</span>`;
                 totalSummaryEl.appendChild(totalPill);
@@ -5817,11 +7123,12 @@ function renderKanbanApp(activeBoard) {
             ];
 
             const colorSummaryEl = document.createElement('div');
-            colorSummaryEl.className = 'client-happiness-colors';
+            colorSummaryEl.className = 'client-happiness-colors tracker-colors-' + trackerType;
             colorSummaryEl.style.display = 'flex';
             colorSummaryEl.style.flexWrap = 'wrap';
             colorSummaryEl.style.gap = '6px';
-            colorSummaryEl.style.margin = '0px 20px 6px 20px';
+            colorSummaryEl.style.margin = '-4px 16px 2px 16px';
+            colorSummaryEl.style.padding = '4px';
 
             let addedAnyColors = false;
 
@@ -5837,25 +7144,29 @@ function renderKanbanApp(activeBoard) {
                     pill.style.background = st.bg;
                     pill.style.borderRadius = '6px';
                     pill.style.cursor = 'pointer';
-                    
                     pill.style.transition = 'all 0.15s ease';
+                    pill.style.position = 'relative';
+                    pill.style.boxSizing = 'border-box';
                     
-                    const currentFilter = activeBoard.happinessFilter || null;
+                    const currentFilter = activeBoard.happinessFilters ? activeBoard.happinessFilters[trackerType] : null;
                     if (currentFilter === st.val) {
                         pill.style.transform = 'scale(1.1)';
-                        pill.style.border = '1px solid ' + (st.val === 'default' ? '#8c9bab' : st.bg.replace('0.15', '0.5').replace('0.2', '0.5'));
+                        pill.style.boxShadow = '0 0 0 1px ' + st.textCol;
                         pill.style.opacity = '1';
+                        pill.style.zIndex = '10';
                     } else {
-                        pill.style.border = '1px solid transparent';
+                        pill.style.boxShadow = 'none';
                         pill.style.opacity = currentFilter ? '0.4' : '1';
+                        pill.style.zIndex = '1';
                     }
                     
-                    pill.onmouseenter = () => { if (currentFilter !== st.val) pill.style.transform = 'scale(1.05)'; pill.style.opacity = '1'; };
-                    pill.onmouseleave = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1)'; pill.style.opacity = currentFilter ? '0.4' : '1'; } };
+                    pill.onmouseenter = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1.05)'; pill.style.zIndex = '5'; } pill.style.opacity = '1'; };
+                    pill.onmouseleave = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1)'; pill.style.opacity = currentFilter ? '0.4' : '1'; pill.style.zIndex = '1'; } };
                     
                     pill.onclick = (e) => {
                         e.stopPropagation();
-                        activeBoard.happinessFilter = activeBoard.happinessFilter === st.val ? null : st.val;
+                        activeBoard.happinessFilters = activeBoard.happinessFilters || {};
+                        activeBoard.happinessFilters[trackerType] = activeBoard.happinessFilters[trackerType] === st.val ? null : st.val;
                         saveState();
                         
                         const cl = pill.closest('.kanban-list').querySelector('.card-list');
@@ -5889,7 +7200,7 @@ function renderKanbanApp(activeBoard) {
                 exitBtn.style.alignItems = 'center';
                 exitBtn.style.justifyContent = 'center';
                 exitBtn.style.cursor = 'pointer';
-                exitBtn.style.marginLeft = 'auto'; // push extreme right
+                exitBtn.style.marginLeft = 'auto'; 
                 exitBtn.style.transition = 'all 0.15s ease';
                 
                 exitBtn.onmouseenter = () => { exitBtn.style.background = 'rgba(9, 30, 66, 0.15)'; exitBtn.style.color = '#172b4d'; };
@@ -5908,7 +7219,7 @@ function renderKanbanApp(activeBoard) {
 
             if (addedAnyColors) {
                 const labelWrap = document.createElement('div');
-                labelWrap.style.margin = '0px 20px 4px 20px';
+                labelWrap.style.margin = '10px 20px 4px 20px'; // Add slight top margin to separate blocks visually
                 
                 const labelPill = document.createElement('div');
                 labelPill.style.display = 'inline-flex';
@@ -5919,25 +7230,19 @@ function renderKanbanApp(activeBoard) {
                 labelPill.style.background = 'transparent';
                 labelPill.style.borderRadius = '6px';
                 labelPill.style.fontSize = '14px';
-                labelPill.title = 'Drag to transfer Client Happiness tracking';
+                labelPill.title = `Drag to transfer ${trackerType} tracking`;
                 labelPill.draggable = true;
                 labelPill.style.cursor = 'grab';
                 labelPill.ondragstart = (e) => {
-                    e.dataTransfer.setData('application/x-transfer-ch', list.id);
+                    e.dataTransfer.setData(xferData, list.id);
                     e.dataTransfer.effectAllowed = 'move';
                 };
-                labelPill.innerHTML = `<svg data-tracker-type="clientHappiness" width="22" height="22" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top:2px;">
-                            <circle cx="12" cy="12" r="10" fill="#FFCA28" stroke="#F57F17" stroke-width="1.5"></circle>
-                            <circle cx="8.5" cy="9" r="1.5" fill="#4E342E"></circle>
-                            <circle cx="15.5" cy="9" r="1.5" fill="#4E342E"></circle>
-                            <path d="M7 13.5 Q12 18.5 17 13.5" fill="none" stroke="#4E342E" stroke-width="2" stroke-linecap="round"></path>
-                        </svg>`;
+                labelPill.innerHTML = svgIcon;
                 
                 labelWrap.appendChild(labelPill);
                 
-                const existingTotal = listContainer.querySelector('.client-happiness-total');
-                if (existingTotal) {
-                    listContainer.insertBefore(labelWrap, existingTotal);
+                if (localTotalSummaryEl) {
+                    listContainer.insertBefore(labelWrap, localTotalSummaryEl);
                 } else {
                     listContainer.insertBefore(labelWrap, cardListEl);
                 }
@@ -5951,11 +7256,12 @@ function renderKanbanApp(activeBoard) {
             
             if (hasAnyServices) {
                 const serviceSummaryEl = document.createElement('div');
-                serviceSummaryEl.className = 'client-happiness-services';
+                serviceSummaryEl.className = 'client-happiness-services tracker-services-' + trackerType;
                 serviceSummaryEl.style.display = 'flex';
                 serviceSummaryEl.style.flexWrap = 'wrap';
                 serviceSummaryEl.style.gap = '6px';
-                serviceSummaryEl.style.margin = '0px 20px 6px 20px';
+                serviceSummaryEl.style.margin = '-4px 16px 6px 16px';
+                serviceSummaryEl.style.padding = '4px';
                 
                 Object.keys(counts).forEach(svc => {
                     if (counts[svc] > 0) {
@@ -5963,8 +7269,6 @@ function renderKanbanApp(activeBoard) {
                         pill.style.display = 'flex';
                         pill.style.alignItems = 'center';
                         pill.style.gap = '4px';
-                        pill.style.background = 'rgba(9, 30, 66, 0.06)';
-                        pill.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
                         pill.style.borderRadius = '6px';
                         pill.style.padding = '4px 8px';
                         pill.style.fontSize = '12px';
@@ -5974,23 +7278,26 @@ function renderKanbanApp(activeBoard) {
                         pill.style.cursor = 'pointer';
                         pill.style.transition = 'all 0.15s ease';
                         
-                        const curSvcFilter = activeBoard.serviceFilter || null;
+                        const curSvcFilter = activeBoard.serviceFilters ? activeBoard.serviceFilters[trackerType] : null;
                         if (curSvcFilter === svc) {
                             pill.style.transform = 'scale(1.1)';
                             pill.style.background = 'rgba(9, 30, 66, 0.15)';
                             pill.style.border = '1px solid rgba(9, 30, 66, 0.5)';
                             pill.style.opacity = '1';
                         } else {
+                            pill.style.transform = 'scale(1)';
+                            pill.style.background = 'rgba(9, 30, 66, 0.04)';
                             pill.style.border = '1px solid transparent';
                             pill.style.opacity = curSvcFilter ? '0.4' : '1';
                         }
                         
-                        pill.onmouseenter = () => { if (curSvcFilter !== svc) pill.style.transform = 'scale(1.05)'; pill.style.opacity = '1'; };
+                        pill.onmouseenter = () => { if (curSvcFilter !== svc) { pill.style.transform = 'scale(1.05)'; } pill.style.opacity = '1'; };
                         pill.onmouseleave = () => { if (curSvcFilter !== svc) { pill.style.transform = 'scale(1)'; pill.style.opacity = curSvcFilter ? '0.4' : '1'; } };
                         
                         pill.onclick = (e) => {
                             e.stopPropagation();
-                            activeBoard.serviceFilter = activeBoard.serviceFilter === svc ? null : svc;
+                            activeBoard.serviceFilters = activeBoard.serviceFilters || {};
+                            activeBoard.serviceFilters[trackerType] = activeBoard.serviceFilters[trackerType] === svc ? null : svc;
                             saveState();
                             
                             const cl = pill.closest('.kanban-list').querySelector('.card-list');
@@ -6005,14 +7312,31 @@ function renderKanbanApp(activeBoard) {
                             }
                         };
                         
-                        pill.innerHTML = `<span style="font-size:14px;">${emojiMap[svc] || '🔧'}</span> <span>${counts[svc]}</span>`;
+                        pill.innerHTML = `<span style="font-size:14px;">${emojiMap[svc] || '🔧'}</span> <span style="margin-left:4px; font-weight:500; font-size:11px;">${svc}</span> <span style="margin-left:6px; font-weight:700; opacity:0.8;">${counts[svc]}</span>`;
                         serviceSummaryEl.appendChild(pill);
                     }
                 });
                 
                 listContainer.insertBefore(serviceSummaryEl, cardListEl);
             }
-        }
+        };
+
+        const staticSvgCH = `<svg data-tracker-type="clientHappiness" width="22" height="22" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top:2px;">
+            <circle cx="12" cy="12" r="10" fill="#FFCA28" stroke="#F57F17" stroke-width="1.5"></circle>
+            <circle cx="8.5" cy="9" r="1.5" fill="#4E342E"></circle>
+            <circle cx="15.5" cy="9" r="1.5" fill="#4E342E"></circle>
+            <path d="M7 13.5 Q12 18.5 17 13.5" fill="none" stroke="#4E342E" stroke-width="2" stroke-linecap="round"></path>
+        </svg>`;
+
+        const staticSvgMS = `<svg data-tracker-type="moneySmelling" width="22" height="22" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); margin-top:2px;">
+            <circle cx="12" cy="12" r="10" fill="#2E7D32" stroke="#1B5E20" stroke-width="1.5"/>
+            <g transform="translate(2.4, 2.4) scale(0.8)">
+                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" fill="#FFFFFF"/>
+            </g>
+        </svg>`;
+
+        renderTrackerStats('moneySmelling', l => l.isMoneySmelling, staticSvgMS, 'application/x-transfer-ms');
+        renderTrackerStats('clientHappiness', l => l.isClientHappiness, staticSvgCH, 'application/x-transfer-ch');
 
         const isAdsTrackerNode = list.trackerType === 'ads';
         const isTrelloTrackerNode = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && !list.isClientHappiness && !list.isMoneySmelling;
@@ -6487,17 +7811,29 @@ function renderKanbanApp(activeBoard) {
 }
 
 function renderSocialSchedulerApp(activeBoard) {
+    document.body.style.background = '#f4f5f7';
+    appContainer.style.padding = '0';
+    appContainer.style.margin = '0';
+    appContainer.style.maxWidth = 'none';
+
     const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    const defaultSelectedDate = today;
+    
+    // Initialize global viewing month if it doesn't exist
+    if (!window.activeSocialMonthView) {
+        window.activeSocialMonthView = { year: today.getFullYear(), month: today.getMonth() };
+    }
+    
+    const currentYear = window.activeSocialMonthView.year;
+    const currentMonth = window.activeSocialMonthView.month;
+    
+    window.activeSocialDateOptions = window.activeSocialDateOptions || { year: today.getFullYear(), month: today.getMonth(), date: today.getDate() };
+    const defaultSelectedDate = new Date(window.activeSocialDateOptions.year, window.activeSocialDateOptions.month, window.activeSocialDateOptions.date);
     
     const monthNamesArabic = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
     const dayNamesArabic = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
     let calendarHtml = '';
     let dayCounter = 1;
 
@@ -6509,39 +7845,231 @@ function renderSocialSchedulerApp(activeBoard) {
             } else if (dayCounter > daysInMonth) {
                 rowHtml += '<div class="sm-cal-cell empty"></div>';
             } else {
-                const isToday = dayCounter === today.getDate();
-                const isSelected = isToday; 
+                const isToday = dayCounter === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+                const isSelected = window.activeSocialDateOptions 
+                    && window.activeSocialDateOptions.date === dayCounter
+                    && window.activeSocialDateOptions.month === currentMonth
+                    && window.activeSocialDateOptions.year === currentYear;
                 
+                const dayPosts = (activeBoard.cards || []).filter(c => c.dateStr === `${currentYear}-${currentMonth}-${dayCounter}`);
+                const postThumbnailsHtml = dayPosts.slice(0, 4).map((p, idx) => {
+                    const safeFullText = p.fullText ? window.smEscapeHTML(p.fullText) : '';
+                    const safeDesc = p.description ? window.smEscapeHTML(p.description) : '';
+                    const textSnippetRaw = p.fullText ? p.fullText.substring(0, 25) + '...' : (p.description ? p.description.substring(0, 25) + '...' : 'مسودة منشور...');
+                    const textSnippet = window.smEscapeHTML(textSnippetRaw);
+                    const items = p.mediaItems || (p.mediaObj ? [p.mediaObj] : []);
+                    
+                    let mediaThumb = `<div style="font-size:12px; margin-left:6px; flex-shrink:0;">📝</div>`;
+                    if (items.length > 0) {
+                        const m = items[0];
+                        if (m.dataUrl && (!m.type || m.type === 'image')) {
+                            mediaThumb = `<img src="${m.dataUrl}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
+                        } else if (m.thumbnail) {
+                            mediaThumb = `<img src="${m.thumbnail}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
+                        } else if (m.type === 'frame-io' || m.type === 'video' || (m.dataUrl && m.dataUrl.startsWith('data:video/'))) {
+                            mediaThumb = `<div style="width:24px; height:24px; border-radius:4px; background:#1e293b; color:white; display:flex; align-items:center; justify-content:center; margin-left:6px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div>`;
+                        }
+                    }
+                    
+                    let bg = '#ffffff';
+                    let border = '1px solid #e2e8f0';
+                    let accentColor = '#94a3b8'; // draft gray
+                    
+                    if (p.status === 'فوري') { bg = '#f0fdf4'; border = '1px solid #bbf7d0'; accentColor = '#22c55e'; }
+                    else if (p.status === 'جدولة') { bg = '#fffbeb'; border = '1px solid #fde68a'; accentColor = '#f59e0b'; }
+                    
+                    return `
+                    <div onclick="event.stopPropagation(); window.openCreatePostModal('${p.id}');" title="${safeFullText || safeDesc || ''}" style="margin-bottom: 4px; padding: 4px 6px; border-radius: 6px; background: ${bg}; border: ${border}; border-right: 3px solid ${accentColor}; font-size: 11px; color: #1e293b; cursor: pointer; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s, box-shadow 0.1s; direction: rtl;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';">
+                        ${mediaThumb}
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; flex: 1; font-weight: 500;">${textSnippet}</div>
+                    </div>`;
+                }).join('');
+                
+                const postBoxContainer = dayPosts.length > 0 ? `<div style="display: flex; flex-direction: column; width: 100%; margin-top: 4px;">${postThumbnailsHtml}</div>` : '';
+                
+                const specialAwarenessDays = window.specialAwarenessDays;
+                let specialEventHtml = '';
+                let hiddenEvents = [];
+                try { 
+                    const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
+                    hiddenEvents = JSON.parse(localStorage.getItem(boardKey) || '[]'); 
+                } catch(e) {}
+                
+                const dayEvents = specialAwarenessDays.filter(e => e.m === currentMonth && e.d === dayCounter && !hiddenEvents.includes(`${e.m}-${e.d}`));
+                if (dayEvents.length > 0) {
+                    specialEventHtml = dayEvents.map(eventOpt => {
+                        const styleMap = window.eventCategoryMap[eventOpt.category] || { bg: '#ffdce8', text: '#880e4f', dot: '#fb2c71' };
+                        return `
+                        <div data-special-event="true" style="background: ${styleMap.bg}; color: ${styleMap.text}; display: flex; align-items: flex-start; padding: 5px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; width: fit-content; max-width: 100%; min-height: 26px; box-sizing: border-box; direction: rtl; cursor: help;" title="${eventOpt.name} - ${eventOpt.desc}">
+                            <div style="background: ${styleMap.dot}; color: white; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; margin-left: 6px; flex-shrink: 0; margin-top: 1px;">
+                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </div>
+                            <span style="white-space: normal; flex: 1; min-width: 0; line-height: 1.35; padding-bottom: 1px;">${eventOpt.name}</span>
+                            <div onclick="window.hideSpecialEvent(event, '${eventOpt.m}-${eventOpt.d}')" style="cursor: pointer; margin-right: 6px; border-radius: 50%; opacity: 0.5; display: flex; align-items: center; justify-content: center; padding: 2px; flex-shrink: 0; margin-top: 1px;" onmouseover="this.style.opacity='1'; this.style.background='rgba(0,0,0,0.05)';" onmouseout="this.style.opacity='0.5'; this.style.background='transparent';" title="إخفاء هذه المناسبة">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
                 rowHtml += `
-                    <div class="sm-cal-cell ${isSelected ? 'selected' : ''}">
-                        <div class="sm-cal-date ${isToday ? 'today' : ''}">${dayCounter}</div>
+                    <div class="sm-cal-cell ${isSelected ? 'selected' : ''}" style="display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px; width: 100%;">
+                            <div class="sm-cal-date ${isToday ? 'today' : ''}">${dayCounter}</div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; padding-top: 2px;">
+                                ${specialEventHtml}
+                            </div>
+                        </div>
+                        ${postBoxContainer}
+                        ${dayPosts.length > 4 ? `<div style="font-size:10px; color:#3b82f6; font-weight: bold; text-align: center; margin-top:auto; padding-top:4px; cursor:pointer;" onclick="event.stopPropagation(); window.openCreatePostModal(null, {year:${currentYear},month:${currentMonth},date:${dayCounter}});">+${dayPosts.length-4} المزيد من المنشورات</div>` : ''}
                     </div>
                 `;
                 dayCounter++;
             }
         }
         rowHtml += '</div>';
-        if (dayCounter > daysInMonth) {
-            calendarHtml += rowHtml;
-            break;
-        }
         calendarHtml += rowHtml;
+        if (dayCounter > daysInMonth) break;
     }
 
-    const headerHtml = `
-        <div class="sm-header-banner">
-            <div class="sm-header-right">
+    const socialBoards = boards.filter(b => b.type === 'social_scheduler');
+    // Safe scoped setter for switching clients via UI
+    window.switchSocialClient = function(id) {
+        activeBoardId = id;
+        if (typeof saveState === 'function') saveState();
+        if (typeof render === 'function') render();
+    };
+
+    window.renameSocialClient = function(e, id) {
+        e.stopPropagation();
+        const board = boards.find(b => b.id === id);
+        if (!board) return;
+        
+        let rnModal = document.getElementById('renameClientModal');
+        if (!rnModal) {
+            rnModal = document.createElement('div');
+            rnModal.id = 'renameClientModal';
+            rnModal.className = 'modal-overlay';
+            rnModal.innerHTML = `
+                <div class="modal-content" style="max-width: 380px;">
+                    <div class="modal-header">
+                        <h3>تعديل اسم العميل</h3>
+                        <button class="icon-btn" onclick="document.getElementById('renameClientModal').classList.remove('active')">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="padding-top: 12px;">
+                        <input type="text" id="renameClientInput" class="modal-input" placeholder="اسم العميل..." style="width: 100%; box-sizing: border-box; border: 1.5px solid #cbd5e0; border-radius: 6px; padding: 10px; font-size: 15px; outline: none; transition: border-color 0.2s;">
+                    </div>
+                    <div class="modal-footer" style="padding-top: 16px; margin-top: 16px; border-top: 1px solid #edf2f7; display: flex; justify-content: space-between; gap: 8px;">
+                        <button id="renameClientDeleteBtn" style="padding: 8px 16px; border-radius: 6px; border: none; background: #fee2e2; color: #dc2626; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">حذف العميل</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="document.getElementById('renameClientModal').classList.remove('active')" style="padding: 8px 16px; border-radius: 6px; border: none; background: #edf2f7; color: #4a5568; cursor: pointer; font-weight: 600;">إلغاء</button>
+                            <button id="renameClientConfirmBtn" style="padding: 8px 16px; border-radius: 6px; border: none; background: #f97316; color: white; cursor: pointer; font-weight: 600;">حفظ</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(rnModal);
+            
+            const inputEl = document.getElementById('renameClientInput');
+            inputEl.addEventListener('focus', () => inputEl.style.borderColor = '#f97316');
+            inputEl.addEventListener('blur', () => inputEl.style.borderColor = '#cbd5e0');
+            
+            inputEl.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('renameClientConfirmBtn').click();
+                }
+            });
+        }
+        
+        const input = document.getElementById('renameClientInput');
+        input.value = board.title;
+        
+        document.getElementById('renameClientConfirmBtn').onclick = () => {
+            const newName = input.value.trim();
+            input.blur();
+            rnModal.classList.remove('active');
+            
+            if (newName && newName !== board.title) {
+                board.title = newName;
+                saveState();
+                render();
+            }
+        };
+        
+        document.getElementById('renameClientDeleteBtn').onclick = (e) => {
+            rnModal.classList.remove('active');
+            window.promptSecureDelete(board.id, board.title);
+        };
+        
+        rnModal.classList.add('active');
+        setTimeout(() => input.focus(), 50);
+    };
+
+    const clientTabsHtml = `
+        <div style="display: flex; gap: 8px; overflow-x: auto; padding: 2px 0; align-items: center; flex-wrap: nowrap;">
+            ${socialBoards.map(b => `
+                <button 
+                    onclick="window.switchSocialClient('${b.id}')" 
+                    ondblclick="window.renameSocialClient(event, '${b.id}')"
+                    title="انقر نقراً مزدوجاً لـتعديل اسم العميل"
+                    style="
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 16px; 
+                    background: ${activeBoard.id === b.id ? 'white' : 'transparent'}; 
+                    color: #1a202c; 
+                    border: 2px solid ${activeBoard.id === b.id ? '#f97316' : '#cbd5e0'}; 
+                    border-radius: 9999px; 
+                    font-weight: 700; 
+                    font-size: 14px; 
+                    white-space: nowrap; 
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    box-shadow: ${activeBoard.id === b.id ? '0 2px 4px rgba(249, 115, 22, 0.15)' : 'none'};
+                ">
+                    ${b.title || 'Client '}
+                </button>
+            `).join('')}
+            <button onclick="window.openAddClientModal();" style="
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 16px; 
+                background: transparent; 
+                color: #718096; 
+                border: 2px dashed #cbd5e0; 
+                border-radius: 9999px; 
+                font-weight: 600; 
+                font-size: 13px; 
+                white-space: nowrap; 
+                cursor: pointer;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='#f7fafc'; this.style.color='#4a5568'; this.style.border='2px dashed #a0aec0';" onmouseout="this.style.background='transparent'; this.style.color='#718096'; this.style.border='2px dashed #cbd5e0';">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                إضافة عميل
+            </button>
+        </div>
+    `;
+
+    const topRowHtml = `
+        <div class="sm-header-banner" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: flex-start; gap: 24px;">
+            <!-- Title & Icon -->
+            <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
                 <div class="sm-title-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                 </div>
                 <div class="sm-title-text">
-                    <h2>النشر على وسائل التواصل</h2>
-                    <p>أنشئ وجدول محتواك على جميع منصاتك</p>
+                    <h2 style="font-size: 20px; font-weight: 800; color: #1a202c; margin: 0;">النشر على وسائل التواصل</h2>
                 </div>
             </div>
-            <div class="sm-header-left">
-                <button class="sm-primary-btn">+ منشور جديد</button>
-            </div>
+
+            <!-- Client Tabs injected directly to the left of the title -->
+            ${clientTabsHtml}
         </div>
     `;
     window.activeSocialTab = window.activeSocialTab || 'calendar';
@@ -6553,10 +8081,10 @@ function renderSocialSchedulerApp(activeBoard) {
         { id: 'history', title: 'سجل النشر', svg: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>' }
     ];
 
-    let tabsHtml = '<div class="sm-tabs-container">';
+    let tabsHtml = '<div class="sm-tabs-container" style="max-width: fit-content;">';
     tabData.forEach(t => {
         tabsHtml += `
-            <div class="sm-tab ${window.activeSocialTab === t.id ? 'active' : ''}" data-tab="${t.id}">
+            <div class="sm-tab ${window.activeSocialTab === t.id ? 'active' : ''}" data-tab="${t.id}" style="padding: 10px 16px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>
                 ${t.title}
             </div>
@@ -6566,41 +8094,145 @@ function renderSocialSchedulerApp(activeBoard) {
 
     let mainContentHtml = '';
 
+    // Inject safe window global if not already present
+    window.navigateSocialMonth = window.navigateSocialMonth || function(direction) {
+        if (!window.activeSocialMonthView) return;
+        window.activeSocialMonthView.month += direction;
+        if (window.activeSocialMonthView.month > 11) {
+            window.activeSocialMonthView.month = 0;
+            window.activeSocialMonthView.year += 1;
+        } else if (window.activeSocialMonthView.month < 0) {
+            window.activeSocialMonthView.month = 11;
+            window.activeSocialMonthView.year -= 1;
+        }
+        render(); // trigger a full re-render
+    };
+
+    window.resetSocialMonthToToday = window.resetSocialMonthToToday || function() {
+        const t = new Date();
+        window.activeSocialMonthView = { year: t.getFullYear(), month: t.getMonth() };
+        window.activeSocialDateOptions = { year: t.getFullYear(), month: t.getMonth(), date: t.getDate() };
+        render();
+    };
+
     if (window.activeSocialTab === 'calendar') {
+        const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
+        const hiddenEventsGlobal = JSON.parse(localStorage.getItem(boardKey) || '[]');
+        const currentMonthEvents = window.specialAwarenessDays.filter(e => e.m === currentMonth && !hiddenEventsGlobal.includes(`${e.m}-${e.d}`));
+        
+        let monthEventsHtml = '';
+        if (currentMonthEvents.length > 0) {
+            monthEventsHtml = currentMonthEvents.map(ev => {
+                const styleMap = window.eventCategoryMap[ev.category] || { bg: '#f1f5f9', text: '#64748b', dot: '#94a3b8' };
+                return `
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: right; direction: rtl;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #1e293b;">${ev.d} ${monthNamesArabic[currentMonth]}</span>
+                        <span style="background: ${styleMap.bg}; color: ${styleMap.text}; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">${ev.category}</span>
+                    </div>
+                    <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">${ev.name}</div>
+                    <div style="font-size: 12px; color: #64748b; line-height: 1.5;">${ev.desc}</div>
+                </div>`;
+            }).join('');
+        }
+        
+        const sidebarEventsSection = '';
+
+        const legendHtml = currentMonthEvents.length > 0 ? `
+            <div class="sm-cal-legend" style="margin-top: 24px; background: #fffcf8; border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap: 16px; direction: rtl;">
+                <div style="font-weight: 700; color: #d97706; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                    ✨ ${currentMonthEvents.length} أحداث عالمية هذا الشهر
+                </div>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    ${Object.keys(window.eventCategoryMap).map(cat => {
+                        const map = window.eventCategoryMap[cat];
+                        return `<div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #475569;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${map.dot}; flex-shrink: 0;"></div>
+                            ${cat}
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        const calHeaderHtml = `
+            <!-- Top Row: Title + Clients -->
+            <div style="margin-bottom: 24px;">
+                ${topRowHtml}
+            </div>
+            
+            <!-- Bottom Row: New Post Button + Tabs -->
+            <div style="display: flex; justify-content: flex-start; gap: 24px; align-items: center; margin-bottom: 24px;">
+                <button class="sm-primary-btn" style="padding: 10px 20px;" onclick="window.openCreatePostModal()">+ منشور جديد</button>
+                ${tabsHtml}
+            </div>
+        `;
+
         mainContentHtml = `
-            <div class="sm-main-content">
-                <div class="sm-calendar-wrap">
-                    <div class="sm-calendar-header">
-                        <h3 class="sm-cal-month-title">${monthNamesArabic[currentMonth]} ${currentYear}</h3>
-                        <div class="sm-cal-nav">
-                            <button class="sm-icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                            <button class="sm-icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <div class="sm-main-content" style="padding: 24px 32px 16px 32px;">
+                <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                    ${calHeaderHtml}
+                    <div class="sm-calendar-wrap" style="flex: 1; overflow: auto; margin-bottom: 0;">
+                        <div class="sm-calendar-header">
+                            <h3 class="sm-cal-month-title">${monthNamesArabic[currentMonth]} ${currentYear}</h3>
+                            <div class="sm-cal-nav">
+                                ${(currentMonth !== today.getMonth() || currentYear !== today.getFullYear()) ? `<button class="sm-icon-btn" onclick="window.resetSocialMonthToToday()" style="width:auto; padding: 0 12px; font-weight: 600; font-family: inherit; font-size: 13px;">اليوم</button>` : ''}
+                                <button class="sm-icon-btn" onclick="window.hideAllMonthEvents(${currentMonth})" title="إخفاء جميع المناسبات في هذا الشهر" style="margin-left: 4px; border: none; color:#ef4444;" onmouseover="this.style.background='#fef2f2';" onmouseout="this.style.background='transparent';">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                                </button>
+                                <button class="sm-icon-btn" onclick="window.restoreMonthEvents(${currentMonth})" title="إظهار جميع المناسبات في هذا الشهر" style="margin-left: 8px; border: none; color:#10b981;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='transparent';">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                                </button>
+                                <button class="sm-icon-btn" onclick="window.navigateSocialMonth(-1)" style="margin-left: 4px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                                <button class="sm-icon-btn" onclick="window.navigateSocialMonth(1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="sm-cal-days-header">
-                        ${dayNamesArabic.map(d => `<span>${d}</span>`).join('')}
-                    </div>
-                    
-                    <div class="sm-cal-grid">
-                        ${calendarHtml}
+                        
+                        <div class="sm-cal-days-header">
+                            ${dayNamesArabic.map(d => `<span>${d}</span>`).join('')}
+                        </div>
+                        
+                        <div class="sm-cal-grid">
+                            ${calendarHtml}
+                        </div>
+                        ${legendHtml}
                     </div>
                 </div>
 
-                <div class="sm-sidebar">
-                    <div class="sm-sidebar-header">
-                        <div class="sm-selected-date-text">
-                            <h3>${dayNamesArabic[defaultSelectedDate.getDay()]}</h3>
-                            <p>${defaultSelectedDate.getDate()} ${monthNamesArabic[currentMonth]}</p>
+                <div class="sm-sidebar" style="height: 100%;">
+                    <div class="sm-sidebar-header" style="display:flex; align-items:flex-start; justify-content:space-between; border-bottom:2px solid #f1f5f9; padding-bottom:20px; margin-bottom:20px;">
+                        <div class="sm-selected-date-text" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start; text-align:right;">
+                            <h3 style="margin:0; font-size:22px; font-weight:800; color:#0f172a;">${dayNamesArabic[defaultSelectedDate.getDay()]}</h3>
+                            <p style="margin:0; font-size:15px; font-weight:600; color:#64748b;">${defaultSelectedDate.getDate()} ${monthNamesArabic[currentMonth]}</p>
+                            <div style="display:flex; gap:8px; margin-top:6px;">
+                                <div onclick="window.handleSocialIconClick('facebook', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#e0f2fe; border:2px solid ${window.activePreviewPlatform === 'facebook' ? '#0ea5e9' : 'transparent'}; border-radius:50%; color:#0ea5e9; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                </div>
+                                <div onclick="window.handleSocialIconClick('instagram', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#fce7f3; border:2px solid ${window.activePreviewPlatform === 'instagram' ? '#ec4899' : 'transparent'}; border-radius:50%; color:#ec4899; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm3.98-10.181a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z"/></svg>
+                                </div>
+                                <div onclick="window.handleSocialIconClick('twitter', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#f1f5f9; border:2px solid ${window.activePreviewPlatform === 'twitter' ? '#0f172a' : 'transparent'}; border-radius:50%; color:#0f172a; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                </div>
+                                <div onclick="window.handleSocialIconClick('linkedin', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#dbeafe; border:2px solid ${window.activePreviewPlatform === 'linkedin' ? '#2563eb' : 'transparent'}; border-radius:50%; color:#2563eb; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                                </div>
+                                <div onclick="window.handleSocialIconClick('tiktok', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#f4f4f5; border:2px solid ${window.activePreviewPlatform === 'tiktok' ? '#18181b' : 'transparent'}; border-radius:50%; color:#18181b; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                                </div>
+                            </div>
                         </div>
-                        <div class="sm-post-count">0</div>
                     </div>
+                    ${sidebarEventsSection}
                     <div class="sm-sidebar-body">
-                        <div class="sm-empty-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <div class="sm-empty-icon" style="margin-bottom:12px; opacity: 0.6;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                         </div>
-                        <p class="sm-empty-text">لا توجد منشورات لهذا اليوم</p>
-                        <button class="sm-link-btn">إضافة منشور</button>
+                        <p class="sm-empty-text" style="font-size:14px; color:#64748b; margin-bottom:20px; font-weight:500;">لا توجد منشورات لهذا اليوم</p>
+                        <button onclick="window.openCreatePostModal()" style="width:100%; background:#ea580c; color:white; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.2s ease; display:flex; align-items:center; justify-content:center; gap:8px;" onmouseover="this.style.background='#c2410c';" onmouseout="this.style.background='#ea580c';">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            إضافة منشور
+                        </button>
                     </div>
                 </div>
             </div>
@@ -6729,13 +8361,23 @@ function renderSocialSchedulerApp(activeBoard) {
             </div>
         `;
     }
+    window.activePreviewPlatform = window.activePreviewPlatform || null;
+    window.handleSocialIconClick = function(platform, element) {
+        if (window.activePreviewPlatform === platform) {
+            window.activePreviewPlatform = null;
+            element.parentElement.querySelectorAll('div').forEach(el=>el.style.border='2px solid transparent');
+        } else {
+            window.activePreviewPlatform = platform;
+            element.parentElement.querySelectorAll('div').forEach(el=>el.style.border='2px solid transparent');
+            const colors = {facebook: '#0ea5e9', instagram: '#ec4899', twitter: '#0f172a', linkedin: '#2563eb', tiktok: '#18181b'};
+            element.style.border = '2px solid ' + colors[platform];
+        }
+        const selectedCell = document.querySelector('.sm-cal-cell.selected');
+        if (selectedCell) selectedCell.click();
+    };
 
     const html = `
-        <div class="sm-app-wrapper" style="display:flex; flex-direction:column; width:100%; height:100%; overflow:auto; background:#f4f5f7; direction:rtl;">
-            ${headerHtml}
-            <div style="padding: 0 32px;">
-                ${tabsHtml}
-            </div>
+        <div class="sm-app-wrapper" style="display:flex; flex-direction:column; width:100%; height:100%; overflow:hidden; background:#f4f5f7; direction:rtl;">
             ${mainContentHtml}
         </div>
     `;
@@ -6764,17 +8406,248 @@ function renderSocialSchedulerApp(activeBoard) {
                 const clickedDate = new Date(currentYear, currentMonth, dateNum);
                 const dayOfWeekArabic = dayNamesArabic[clickedDate.getDay()];
                 
+                window.activeSocialDateOptions = { year: currentYear, month: currentMonth, date: dateNum };
+                
                 sidebarDayName.textContent = dayOfWeekArabic;
                 sidebarDateFull.textContent = `${dateNum} ${monthNamesArabic[currentMonth]}`;
+                
+                // Render the day's posts into the sidebar
+                const todayPosts = (activeBoard.cards || []).filter(c => c.dateStr === `${currentYear}-${currentMonth}-${dateNum}`);
+                const postCountEl = appContainer.querySelector('.sm-post-count');
+                const sidebarBody = appContainer.querySelector('.sm-sidebar-body');
+                
+                if (postCountEl) postCountEl.textContent = todayPosts.length;
+                
+                if (window.activePreviewPlatform === 'instagram') {
+                    let allBoardPosts = [];
+                    if (activeBoard && activeBoard.cards) {
+                        allBoardPosts = activeBoard.cards.filter(p => {
+                            let hasMedia = (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].dataUrl && p.mediaItems[0].dataUrl !== 'undefined') || 
+                                           (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].type === 'frame-io') ||
+                                           (p.mediaObj && p.mediaObj.dataUrl && p.mediaObj.dataUrl !== 'undefined') ||
+                                           (p.cover && (p.cover.scaled || typeof p.cover === 'string'));
+                            return hasMedia || p.title;
+                        });
+                        allBoardPosts.sort((a, b) => {
+                            if (!a.dateStr) return 1;
+                            if (!b.dateStr) return -1;
+                            const d1 = new Date(a.dateStr).getTime();
+                            const d2 = new Date(b.dateStr).getTime();
+                            return d2 - d1;
+                        });
+                    }
+
+                    // Also dynamically update the grid post count
+                    const igPostsCountDisplay = document.querySelector('.ig-mockup span.posts-count');
+                    if (igPostsCountDisplay) igPostsCountDisplay.textContent = allBoardPosts.length > 0 ? allBoardPosts.length : 0;
+                    
+                    let gridItemsHtml = '';
+                    if (allBoardPosts.length === 0) {
+                        for (let i = 0; i < 9; i++) {
+                            gridItemsHtml += `<div style="aspect-ratio:1/1; position:relative; background:#f0f4f8;"></div>`;
+                        }
+                    } else {
+                        for (let i = 0; i < allBoardPosts.length; i++) {
+                            const p = allBoardPosts[i];
+                            let itemMedia = null;
+                            if (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].dataUrl && p.mediaItems[0].dataUrl !== 'undefined') {
+                                itemMedia = p.mediaItems[0].dataUrl;
+                            } else if (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].type === 'frame-io') {
+                                itemMedia = p.mediaItems[0].thumbnail || 'FRAME_IO';
+                            } else if (p.mediaObj && p.mediaObj.dataUrl && p.mediaObj.dataUrl !== 'undefined') {
+                                itemMedia = p.mediaObj.dataUrl;
+                            } else if (p.cover && p.cover.scaled && p.cover.scaled.length > 0) {
+                                itemMedia = p.cover.scaled[p.cover.scaled.length - 1].url;
+                            } else if (p.cover && typeof p.cover === 'string' && p.cover.startsWith('http')) {
+                                itemMedia = p.cover;
+                            }
+                            
+                            if (itemMedia === 'FRAME_IO') {
+                                gridItemsHtml += `<div style="aspect-ratio:1/1; position:relative; background:#1e293b; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;" onclick="window.openCreatePostModal('${p.id}')">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                                    <span style="font-size:10px; margin-top:8px; font-weight:bold;">Frame.io</span>
+                                </div>`;
+                            } else if (itemMedia) {
+                                gridItemsHtml += `<div style="aspect-ratio:1/1; position:relative; background:#f0f0f0; cursor:pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'" onclick="window.openCreatePostModal('${p.id}')">
+                                    <img src="${itemMedia}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'display:flex; align-items:center; justify-content:center; height:100%; padding:8px; text-align:center; font-size:10px; color:#ef4444; background:#fee2e2;\\'>تعذر تحميل الصورة</div>'">
+                                </div>`;
+
+                            } else {
+                                gridItemsHtml += `<div style="aspect-ratio:1/1; background:#f0f4f8; display:flex; align-items:center; justify-content:center; padding:8px; text-align:center; font-size:12px; color:#334155; font-weight:700; overflow:hidden; cursor:pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'" onclick="window.openCreatePostModal('${p.id}')">${p.title || 'منشور'}</div>`;
+                            }
+                        }
+                    }
+
+                    sidebarBody.innerHTML = `
+                        <div style="display:flex; justify-content:center; padding:0; transform: scale(0.92); transform-origin: top center; margin-top: -15px;">
+                            <div style="width:340px; height:700px; border:14px solid #111; border-radius:36px; overflow:hidden; position:relative; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); background:#fff; flex-shrink:0;">
+                                <!-- Front Camera -->
+                                <div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:#000; border-radius:50%; z-index:10; box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
+                                
+                                <div class="ig-mockup" style="height:100%; overflow-y:auto; overflow-x:hidden; background:#fff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; direction:ltr;">
+                                    ${(() => {
+                                        const currentStorageKey = 'sm_ig_mockup_' + activeBoard.id;
+                                        window.updateIgMockup = window.updateIgMockup || function(key, value, boardId) {
+                                            const storageKey = 'sm_ig_mockup_' + boardId;
+                                            const settings = JSON.parse(localStorage.getItem(storageKey)) || {
+                                                username: 'm7.omar1', profilePic: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop',
+                                                name: 'محمد عمر | كيو 🛒', bioCategory: 'Shopping & retail', bioText: 'التطبيق متاح للجميع 🤯🚀🚀🔥🔥🔥🔥🔥', link: 'qeu.app'
+                                            };
+                                            settings[key] = value.trim();
+                                            localStorage.setItem(storageKey, JSON.stringify(settings));
+                                        };
+                                        window.changeIgProfilePic = window.changeIgProfilePic || function(el, boardId) {
+                                            const input = document.createElement('input');
+                                            input.type = 'file';
+                                            input.accept = 'image/*';
+                                            input.onchange = e => {
+                                                const file = e.target.files[0];
+                                                if (!file) return;
+                                                const reader = new FileReader();
+                                                reader.onload = event => {
+                                                    const img = new Image();
+                                                    img.onload = () => {
+                                                        const canvas = document.createElement('canvas');
+                                                        const ctx = canvas.getContext('2d');
+                                                        let width = img.width;
+                                                        let height = img.height;
+                                                        // Cap the image to smaller dimensions for local storage
+                                                        if (width > height) {
+                                                            if (width > 300) { height *= 300 / width; width = 300; }
+                                                        } else {
+                                                            if (height > 300) { width *= 300 / height; height = 300; }
+                                                        }
+                                                        canvas.width = width;
+                                                        canvas.height = height;
+                                                        ctx.drawImage(img, 0, 0, width, height);
+                                                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                                                        
+                                                        el.style.backgroundImage = "url('" + dataUrl + "')";
+                                                        window.updateIgMockup('profilePic', dataUrl, boardId);
+                                                    };
+                                                    img.src = event.target.result;
+                                                };
+                                                reader.readAsDataURL(file);
+                                            };
+                                            input.click();
+                                        };
+                                        const igSettings = JSON.parse(localStorage.getItem(currentStorageKey)) || {
+                                            username: 'm7.omar1', profilePic: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop',
+                                            name: 'محمد عمر | كيو 🛒', bioCategory: 'Shopping & retail', bioText: 'التطبيق متاح للجميع 🤯🚀🚀🔥🔥🔥🔥🔥', link: 'qeu.app'
+                                        };
+                                        return `
+                                            <div style="display:flex; align-items:center; padding:18px 16px 12px; border-bottom:1px solid #efefef;">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                                <h3 style="margin:0; font-size:16px; font-weight:700; flex-grow:1; text-align:center;">
+                                                    <span contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('username', this.innerText, '${activeBoard.id}')" style="outline:none; padding:2px 4px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${igSettings.username}</span> 
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#38bdf8" stroke="none" style="vertical-align:middle; margin-left:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                                </h3>
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                            </div>
+                                            <div style="display:flex; padding:0 16px; margin-top:16px; align-items:center;">
+                                                <div style="width:76px; height:76px; border-radius:50%; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding:2px; flex-shrink:0;">
+                                                    <div onclick="window.changeIgProfilePic(this, '${activeBoard.id}')" title="انقر لتغيير الصورة" style="cursor:pointer; width:100%; height:100%; border-radius:50%; border:2px solid #fff; background:url('${igSettings.profilePic}') center/cover;"></div>
+                                                </div>
+                                                <div style="display:flex; flex-grow:1; justify-content:space-evenly; margin-left:16px;">
+                                                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="font-weight:700; font-size:16px;">707</span><span style="font-size:13px; color:#262626;">posts</span></div>
+                                                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="font-weight:700; font-size:16px;">471K</span><span style="font-size:13px; color:#262626;">followers</span></div>
+                                                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="font-weight:700; font-size:16px;">1</span><span style="font-size:13px; color:#262626;">following</span></div>
+                                                </div>
+                                            </div>
+                                            <div style="padding:12px 16px;">
+                                                <div contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('name', this.innerText, '${activeBoard.id}')" style="font-weight:700; font-size:14px; margin-bottom:2px; text-align:right; outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" dir="rtl">${igSettings.name}</div>
+                                                <div contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('bioCategory', this.innerText, '${activeBoard.id}')" style="font-size:14px; color:#737373; margin-bottom:2px; text-align:right; outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" dir="rtl">${igSettings.bioCategory}</div>
+                                                <div contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('bioText', this.innerText, '${activeBoard.id}')" style="font-size:14px; margin-bottom:4px; text-align:right; outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" dir="rtl">${igSettings.bioText}</div>
+                                                <div style="font-size:14px; font-weight:600; margin-bottom:2px; text-align:right;" dir="rtl">See translation</div>
+                                                <div style="font-size:14px; color:#00376b; font-weight:600; text-align:right;" dir="rtl"><qeu contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('link', this.innerText, '${activeBoard.id}')" class="app" style="outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${igSettings.link}</qeu> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+                                            </div>
+                                        `;
+                                    })()}
+                                    <div style="display:flex; gap:8px; padding:0 16px 12px;">
+                                        <button style="flex:1; background:#0095f6; color:#fff; border:none; border-radius:8px; padding:7px 0; font-weight:600; font-size:14px; cursor:pointer;">Follow</button>
+                                        <button style="flex:1; background:#efefef; color:#000; border:none; border-radius:8px; padding:7px 0; font-weight:600; font-size:14px; cursor:pointer;">Message</button>
+                                        <button style="width:34px; background:#efefef; border:none; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg></button>
+                                    </div>
+                                    <div style="display:flex; border-top:1px solid #efefef;">
+                                        <div style="flex:1; display:flex; justify-content:center; padding:10px 0; border-top:1px solid #000;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg></div>
+                                        <div style="flex:1; display:flex; justify-content:center; padding:10px 0; color:#a8a8a8;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg></div>
+                                        <div style="flex:1; display:flex; justify-content:center; padding:10px 0; color:#a8a8a8;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                                    </div>
+                                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; padding-bottom:12px;">
+                                        ${gridItemsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (window.activePreviewPlatform) {
+                    sidebarBody.innerHTML = `<div style="padding:40px 20px; text-align:center; color:#64748b; background:white; border-radius:12px; border:1px solid #e2e8f0; font-weight:600;">معاينة ${window.activePreviewPlatform} قيد التطوير...</div>`;
+                } else {
+                    if (todayPosts.length > 0) {
+                        sidebarBody.innerHTML = todayPosts.map(p => {
+                            const items = p.mediaItems || (p.mediaObj ? [p.mediaObj] : []);
+                            let mediaHtmlStr = '';
+                            if (items.length > 0 && items[0].dataUrl) {
+                                mediaHtmlStr = `<div style="display:flex; gap:4px; max-width:80px; flex-wrap:wrap; flex-shrink:0;">`;
+                                items.slice(0,4).forEach((it, idx) => {
+                                    mediaHtmlStr += `<div style="position:relative; width:${items.length === 1 ? '56px' : '26px'}; height:${items.length === 1 ? '56px' : '26px'}; border-radius:8px; overflow:hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                                        <img src="${it.dataUrl}" style="width:100%; height:100%; object-fit:cover;">
+                                        ${idx === 3 && items.length > 4 ? `<div style="position:absolute; top:0; right:0; width:100%; height:100%; background:rgba(0,0,0,0.6); color:white; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;">+${items.length-4}</div>` : ''}
+                                    </div>`;
+                                });
+                                mediaHtmlStr += `</div>`;
+                            } else {
+                                mediaHtmlStr = `<div style="width:56px; height:56px; border-radius:8px; background:#f8fafc; border: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></div>`;
+                            }
+
+                            return `
+                            <div onclick="window.openCreatePostModal('${p.id}')" style="cursor:pointer; background:white; border-radius:12px; padding:14px; margin-bottom:14px; border:1px solid #f1f5f9; box-shadow:0 3px 6px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.04); display:flex; gap:14px; align-items:center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0);" onmouseover="this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='0 3px 6px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.04)'; this.style.transform='translateY(0)';">
+                                ${mediaHtmlStr}
+                                <div style="flex-grow:1; overflow:hidden; display:flex; flex-direction:column; gap:6px;">
+                                    <p style="font-size:15px; font-weight:700; color:#0f172a; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title || 'منشور بدون نص'}</p>
+                                    <span style="font-size:12px; background:#f3e8ff; color:#7e22ce; padding:4px 10px; border-radius:6px; font-weight:600; align-self:flex-start;">${p.status || 'مسودة'}</span>
+                                </div>
+                            </div>`;
+                        }).join('') + `
+                        <button onclick="window.openCreatePostModal()" style="width:100%; background:transparent; color:#ea580c; border:2px dashed #fdba74; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px;" onmouseover="this.style.background='#fff7ed'; this.style.borderColor='#ea580c';" onmouseout="this.style.background='transparent'; this.style.borderColor='#fdba74';">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            إضافة منشور آخر
+                        </button>`;
+                    } else {
+                        sidebarBody.innerHTML = `
+                            <div class="sm-empty-icon" style="margin-bottom:12px; opacity: 0.6;">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            </div>
+                            <p class="sm-empty-text" style="font-size:14px; color:#64748b; margin-bottom:20px; font-weight:500;">لا توجد منشورات لهذا اليوم</p>
+                            <button onclick="window.openCreatePostModal()" style="width:100%; background:#ea580c; color:white; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.2s ease; display:flex; align-items:center; justify-content:center; gap:8px;" onmouseover="this.style.background='#c2410c';" onmouseout="this.style.background='#ea580c';">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                إضافة منشور
+                            </button>
+                        `;
+                    }
+                }
+            };
+            
+            cell.ondblclick = () => {
+                if (!cell.classList.contains('selected')) {
+                    cell.click();
+                }
+                if (typeof window.openCreatePostModal === 'function') {
+                    window.openCreatePostModal();
+                }
             };
         });
+        
+        // Trigger click on explicitly selected day to initialize sidebar!
+        const selectedCell = Array.from(cells).find(c => c.classList.contains('selected'));
+        if (selectedCell) selectedCell.click();
     }
 
     const createBtn = appContainer.querySelector('.sm-primary-btn');
     const addEmptyBtn = appContainer.querySelector('.sm-link-btn');
     
     const openModal = () => {
-        if (createPostModal) createPostModal.classList.add('active');
+        if (typeof window.openCreatePostModal === 'function') window.openCreatePostModal();
     };
     
     if (createBtn) createBtn.onclick = openModal;
@@ -6782,6 +8655,8 @@ function renderSocialSchedulerApp(activeBoard) {
 }
 
 function renderTimerApp(activeBoard) {
+    document.body.style.background = '';
+    appContainer.style.padding = '';
     let savedScrollPos = 0;
     const existingList = document.getElementById('ui-card-list');
     if (existingList) savedScrollPos = existingList.scrollTop;
@@ -7000,7 +8875,10 @@ function renderTimerApp(activeBoard) {
         }
     });
 
-    if (activeBoard.happinessFilter || activeBoard.serviceFilter) {
+    const hasAnyFilter = (activeBoard.happinessFilters && Object.keys(activeBoard.happinessFilters).some(k => activeBoard.happinessFilters[k])) || 
+                         (activeBoard.serviceFilters && Object.keys(activeBoard.serviceFilters).some(k => activeBoard.serviceFilters[k]));
+                         
+    if (hasAnyFilter) {
         const btnText = 'Clear Filter';
         const clearBtn = document.createElement('button');
         clearBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> ${btnText}`;
@@ -7027,8 +8905,8 @@ function renderTimerApp(activeBoard) {
         clearBtn.onmouseleave = () => clearBtn.style.background = '#0c66e4';
         
         clearBtn.onclick = () => {
-            activeBoard.happinessFilter = null;
-            activeBoard.serviceFilter = null;
+            activeBoard.happinessFilters = {};
+            activeBoard.serviceFilters = {};
             saveState();
             render();
         };
@@ -7038,6 +8916,17 @@ function renderTimerApp(activeBoard) {
 
 // Add Card Flow
 closeAddModal.onclick = () => addCardModal.classList.remove('active');
+
+const modalLinkAccountsBtn = document.getElementById('modalLinkAccountsBtn');
+if (modalLinkAccountsBtn) {
+    modalLinkAccountsBtn.onclick = () => {
+        const popup = document.getElementById('createPostModal');
+        if (popup) popup.classList.remove('active');
+        window.activeSocialTab = 'accounts';
+        const activeBoard = boards.find(b => b.id === activeBoardId);
+        if (activeBoard) renderSocialSchedulerApp(activeBoard);
+    };
+}
 confirmAddBtn.onclick = async () => {
     const title = newCardTitle.value.trim();
     if (title) {
@@ -7227,6 +9116,9 @@ confirmAddBtn.onclick = async () => {
                 return;
             } else {
                 const newLocalCard = { id: Date.now().toString(), title, dueDate: null };
+                if (list.isNewClients) {
+                    newLocalCard.serviceChecklist = [];
+                }
                 
                 if (list.isMoneySmelling) {
                     const pipedriveExtras = document.getElementById('pipedriveExtras');
@@ -7284,7 +9176,10 @@ function openTimerModal(cardId, listId) {
     activeTargetListId = listId;
 
     const servicesSection = document.getElementById('servicesSection');
+    const servicesSectionTitle = document.getElementById('servicesSectionTitle');
     const servicesList = document.getElementById('servicesList');
+    const servicesAddRow = document.getElementById('servicesAddRow');
+    const servicesItemInput = document.getElementById('servicesItemInput');
 
     if (activeBoard.type === 'kanban') {
         modalTitle.textContent = 'Card Options';
@@ -7294,9 +9189,25 @@ function openTimerModal(cardId, listId) {
         
         const list = activeBoard.lists.find(l => l.id === listId);
         
-        if (list && (list.isClientHappiness || list.isMoneySmelling)) {
+        if (list && list.isNewClients) {
+            modalTitle.textContent = card.title || 'New Client';
             deleteCardBtn.textContent = 'Delete Client';
             deleteCardBtn.style.width = '100%';
+
+            if (servicesSection) servicesSection.style.display = 'flex';
+            if (servicesSectionTitle) servicesSectionTitle.textContent = 'Agreed Services Checklist';
+            if (servicesAddRow) servicesAddRow.style.display = 'flex';
+            if (servicesItemInput) servicesItemInput.value = '';
+
+            renderCardChecklistEditor(card, {
+                emptyText: ''
+            });
+        } else if (list && (list.isClientHappiness || list.isMoneySmelling)) {
+            deleteCardBtn.textContent = 'Delete Client';
+            deleteCardBtn.style.width = '100%';
+            if (servicesSectionTitle) servicesSectionTitle.textContent = 'Provided Services';
+            if (servicesAddRow) servicesAddRow.style.display = 'none';
+            if (servicesItemInput) servicesItemInput.value = '';
             
             if (servicesSection && servicesList) {
                 servicesSection.style.display = 'flex';
@@ -7389,6 +9300,8 @@ function openTimerModal(cardId, listId) {
             deleteCardBtn.textContent = 'Delete Card';
             deleteCardBtn.style.width = '100%';
             if (servicesSection) servicesSection.style.display = 'none';
+            if (servicesAddRow) servicesAddRow.style.display = 'none';
+            if (servicesItemInput) servicesItemInput.value = '';
         }
     } else {
         modalTitle.textContent = card.title;
@@ -7397,6 +9310,8 @@ function openTimerModal(cardId, listId) {
         if (saveTimerBtn) saveTimerBtn.style.display = 'inline-block';
         deleteCardBtn.textContent = 'Delete Account';
         deleteCardBtn.style.width = 'auto';
+        if (servicesAddRow) servicesAddRow.style.display = 'none';
+        if (servicesItemInput) servicesItemInput.value = '';
 
         if (card.dueDate) {
             const diffMs = new Date(card.dueDate) - new Date();
@@ -7617,6 +9532,99 @@ function openPipedriveActionModal(cardId, listId) {
     
     if (deleteConfirmContainer) deleteConfirmContainer.style.display = 'none';
     if (deleteBtnContainer) deleteBtnContainer.style.display = 'flex';
+    
+    // Services Checklist Logic
+    const servicesContainer = document.getElementById('localServicesChecklistContainer');
+    const servicesItemsDiv = document.getElementById('servicesChecklistItems');
+    const newServiceInput = document.getElementById('newServiceInput');
+    const addNewServiceBtn = document.getElementById('addNewServiceBtn');
+    
+    if (servicesContainer && servicesItemsDiv) {
+        // We will show it for both Pipedrive and Local cards to allow maximal flexibility, or you can restrict `card.isPipedrive`. Setup requires empty arrays if undefined.
+        if (!card.services) {
+            card.services = [];
+        }
+        
+        const renderChecklist = () => {
+            servicesItemsDiv.innerHTML = '';
+            if (card.services.length === 0) {
+                servicesItemsDiv.innerHTML = '<span style="font-size: 13px; color: #5e6c84; font-style: italic;">No services added yet. Add one below.</span>';
+            } else {
+                card.services.forEach((serviceObj, idx) => {
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.alignItems = 'center';
+                    row.style.gap = '10px';
+                    row.style.background = '#f4f5f7';
+                    row.style.padding = '8px 12px';
+                    row.style.borderRadius = '6px';
+                    
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = serviceObj.checked;
+                    cb.style.width = '16px';
+                    cb.style.height = '16px';
+                    cb.style.cursor = 'pointer';
+                    cb.onchange = () => {
+                        card.services[idx].checked = cb.checked;
+                        saveState();
+                        render();
+                    };
+                    
+                    const label = document.createElement('span');
+                    label.style.flex = '1';
+                    label.style.fontSize = '14px';
+                    label.style.color = serviceObj.checked ? '#5e6c84' : '#172b4d';
+                    label.style.textDecoration = serviceObj.checked ? 'line-through' : 'none';
+                    label.style.transition = 'all 0.2s';
+                    label.innerText = serviceObj.name;
+                    
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = '×';
+                    delBtn.style.background = 'transparent';
+                    delBtn.style.border = 'none';
+                    delBtn.style.color = '#ae2e24';
+                    delBtn.style.fontSize = '18px';
+                    delBtn.style.fontWeight = 'bold';
+                    delBtn.style.cursor = 'pointer';
+                    delBtn.style.padding = '0 4px';
+                    delBtn.onclick = () => {
+                        card.services.splice(idx, 1);
+                        saveState();
+                        render();
+                        renderChecklist();
+                    };
+                    
+                    row.appendChild(cb);
+                    row.appendChild(label);
+                    row.appendChild(delBtn);
+                    servicesItemsDiv.appendChild(row);
+                });
+            }
+        };
+        
+        renderChecklist();
+        
+        if (addNewServiceBtn && newServiceInput) {
+            addNewServiceBtn.onclick = () => {
+                const val = newServiceInput.value.trim();
+                if (val) {
+                    card.services.push({ name: val, checked: false });
+                    newServiceInput.value = '';
+                    saveState();
+                    render();
+                    renderChecklist();
+                }
+            };
+            
+            // Allow pressing Enter
+            newServiceInput.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    addNewServiceBtn.click();
+                }
+            };
+        }
+    }
     
     modal.classList.add('active');
 }
@@ -7886,6 +9894,44 @@ if (pipedriveActionWonBtn) {
             if (res.ok) {
                 showToast("Deal Marked as Won!");
                 document.getElementById('pipedriveActionModal').classList.remove('active');
+                
+                // Duplicate into New Clients
+                const b = boards.find(bd => bd.id === activeBoardId);
+                if (b) {
+                    let sourceList = null;
+                    let theDeal = null;
+                    for (let l of b.lists) {
+                        theDeal = l.cards.find(c => c.id === window.activePipedriveCardId);
+                        if (theDeal) {
+                            sourceList = l;
+                            break;
+                        }
+                    }
+                    if (theDeal) {
+                        let targetLists = [];
+                        if (b.connections) {
+                            targetLists = b.connections.filter(conn => conn.source === sourceList.id).map(conn => b.lists.find(l => l.id === conn.target)).filter(l => l && l.isNewClients);
+                        }
+                        if (targetLists.length === 0) targetLists = b.lists.filter(l => l.isNewClients);
+                        
+                        if (targetLists.length > 0) {
+                            const newClientsList = targetLists[0];
+                            if (!newClientsList.cards) newClientsList.cards = [];
+                            
+                            const extractedTitle = theDeal.pipedriveData ? (theDeal.pipedriveData.person_id_name || theDeal.pipedriveData.title || theDeal.title) : theDeal.title;
+                            
+                            newClientsList.cards.push({
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                                title: extractedTitle,
+                                dueDate: null,
+                                serviceChecklist: cloneCardChecklist(theDeal)
+                            });
+                            saveState();
+                            render();
+                        }
+                    }
+                }
+                
                 syncPipedrive();
             } else {
                 throw new Error("Failed");
@@ -7895,6 +9941,65 @@ if (pipedriveActionWonBtn) {
         } finally {
             pipedriveActionWonBtn.innerHTML = '🏆 Mark Won';
             pipedriveActionWonBtn.disabled = false;
+        }
+    };
+}
+
+const pipedriveActionDuplicateBtn = document.getElementById('pipedriveActionDuplicateBtn');
+if (pipedriveActionDuplicateBtn) {
+    pipedriveActionDuplicateBtn.onclick = async () => {
+        if (!activePipedriveDealId || !activeBoardId) return;
+        
+        try {
+            pipedriveActionDuplicateBtn.innerHTML = '📋 Duplicating...';
+            pipedriveActionDuplicateBtn.disabled = true;
+            
+            const activeBoard = boards.find(b => b.id === activeBoardId);
+            let foundCard = null;
+            let targetList = null;
+            if (activeBoard) {
+                for (let l of activeBoard.lists) {
+                    foundCard = l.cards.find(c => c.id === window.activePipedriveCardId);
+                    if (foundCard) {
+                        targetList = l;
+                        break;
+                    }
+                }
+            }
+            
+            if (foundCard && !foundCard.isPipedrive) {
+                // Local duplicate (e.g. money smelling or local deal)
+                if (activeBoard && targetList) {
+                    const newCard = { ...foundCard, id: Date.now().toString() + Math.random().toString(36).substr(2, 5) };
+                    newCard.title = foundCard.title + " (Copy)";
+                    targetList.cards.push(newCard);
+                    saveState();
+                    render();
+                }
+                showToast("Card Duplicated!");
+                document.getElementById('pipedriveActionModal').classList.remove('active');
+            } else {
+                // Pipedrive duplicate
+                // we'll try recreating it via POST /v1/deals/{id}/duplicate
+                let res = await fetch(`https://${pipedriveDomain}.pipedrive.com/api/v1/deals/${activePipedriveDealId}/duplicate?api_token=${pipedriveToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (res.ok) {
+                    showToast("Deal Duplicated!");
+                    document.getElementById('pipedriveActionModal').classList.remove('active');
+                    syncPipedrive();
+                } else {
+                    throw new Error("Failed");
+                }
+            }
+        } catch(e) {
+            console.error("Duplicate err", e);
+            showToast("Error duplicating deal.");
+        } finally {
+            pipedriveActionDuplicateBtn.innerHTML = '📋 Duplicate Deal';
+            pipedriveActionDuplicateBtn.disabled = false;
         }
     };
 }
@@ -8194,6 +10299,7 @@ async function syncTrello() {
         const colorMemory = {};
         const adsMetricsMemory = {};
         const pinnedMemory = {};
+        const existingTrelloTasks = [];
         curBoard.lists.forEach(l => {
             l.cards.forEach(c => {
                 if (c.color && (c.isTrello || c.isTrelloTask)) {
@@ -8204,6 +10310,9 @@ async function syncTrello() {
                 }
                 if (c.isPinned && (c.isTrello || c.isTrelloTask)) {
                     pinnedMemory[c.id] = c.isPinned;
+                }
+                if (c.isTrelloTask) {
+                    existingTrelloTasks.push({ card: JSON.parse(JSON.stringify(c)), listId: l.id });
                 }
             });
             l.cards = l.cards.filter(c => !c.isTrello && !c.isTrelloTask);
@@ -8278,6 +10387,17 @@ async function syncTrello() {
                     startTime: Date.now()
                 });
             });
+        });
+        
+        const activeTrelloCardIds = new Set(allTrelloCards.map(t => t.id));
+        existingTrelloTasks.forEach(taskObj => {
+            if (!activeTrelloCardIds.has(taskObj.card.id)) {
+                taskObj.card.isTrelloDeleted = true;
+                const parentList = curBoard.lists.find(l => l.id === taskObj.listId);
+                if (parentList) {
+                    parentList.cards.push(taskObj.card);
+                }
+            }
         });
         
         const newStateStr = JSON.stringify(curBoard.lists.map(l => l.cards.filter(c => c.isTrello || c.isTrelloTask)));
@@ -8696,7 +10816,7 @@ restartSyncTimers();
 
 function formatTrelloTime(startTime, hideMinutes = false, hideHours = false) {
     if (!startTime) return hideMinutes ? (hideHours ? '0d' : '0h') : '0m';
-    const diffMs = Date.now() - parseInt(startTime);
+    const diffMs = Math.max(0, Date.now() - parseInt(startTime));
     const totalSecs = Math.floor(diffMs / 1000);
     const mins = Math.floor(totalSecs / 60);
     const hours = Math.floor(mins / 60);
@@ -8751,3 +10871,413 @@ setInterval(() => {
     const isHoveringCard = !!document.querySelector('.card:hover, .trello-task-card:hover, .kanban-card:hover');
     if (!isGlobalDragging && !isHoveringCard) render(); 
 }, 60000);
+
+window.openAddClientModal = function() {
+    const smCount = boards.filter(b => b.type === 'social_scheduler').length;
+    document.getElementById('newBoardTitle').value = 'Client ' + (smCount + 1);
+    pendingNewBoardType = 'social_scheduler';
+    document.querySelector('#addBoardModal h3').textContent = 'إضافة عميل جديد';
+    document.getElementById('addBoardModal').classList.add('active');
+    setTimeout(() => document.getElementById('newBoardTitle').focus(), 50);
+};
+
+window.reindexMediaBadges = function() {
+    const gallery = document.getElementById('smMediaGallery');
+    if (!gallery) return;
+    const badges = gallery.querySelectorAll('.sm-gallery-badge');
+    badges.forEach((badge, index) => {
+        badge.textContent = index + 1;
+    });
+};
+
+window.removeMediaItem = function(elem) {
+    if (elem) {
+        window.showConfirmModal(() => {
+            const wrap = elem.closest('.frame-io-media') || (elem.closest('#smMediaGallery') ? elem.closest('#smMediaGallery > div') : null);
+            const targetToRemove = wrap || elem.parentElement;
+            if (targetToRemove) targetToRemove.remove();
+            
+            const gallery = document.getElementById('smMediaGallery');
+            if (gallery && gallery.children.length === 0) {
+                document.getElementById('smMediaPreviewContainer').style.display = 'none';
+            } else {
+                window.reindexMediaBadges();
+            }
+
+            // Immediately save the changes so reopening the modal doesn't bring the deleted media back
+            if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                window.saveSocialDraft(true);
+            }
+        });
+    }
+};
+
+window.showConfirmModal = function(callback, titleText, descText) {
+    const modal = document.getElementById('globalConfirmModal');
+    if (!modal) {
+        if(callback) callback();
+        return;
+    }
+    
+    const titleEl = modal.querySelector('h3');
+    const descEl = modal.querySelector('p');
+    
+    if (titleEl && descEl) {
+        if (!titleEl.hasAttribute('data-orig')) titleEl.setAttribute('data-orig', titleEl.innerText);
+        if (!descEl.hasAttribute('data-orig')) descEl.setAttribute('data-orig', descEl.innerText);
+        
+        titleEl.innerText = titleText || titleEl.getAttribute('data-orig');
+        descEl.innerText = descText || descEl.getAttribute('data-orig');
+    }
+    
+    const btnYes = document.getElementById('globalConfirmYesBtn');
+    const btnCancel = document.getElementById('globalConfirmCancelBtn');
+    
+    // Clear old listeners by cloning
+    const newBtnYes = btnYes.cloneNode(true);
+    const newBtnCancel = btnCancel.cloneNode(true);
+    btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    
+    modal.classList.add('active');
+    
+    newBtnYes.onclick = function() {
+        modal.classList.remove('active');
+        if(callback) callback();
+    };
+    
+    newBtnCancel.onclick = function() {
+        modal.classList.remove('active');
+    };
+};
+
+window.handleMediaUpload = function(input) {
+    if (input.files && input.files.length > 0) {
+        const previewContainer = document.getElementById('smMediaPreviewContainer');
+        const gallery = document.getElementById('smMediaGallery');
+        
+        previewContainer.style.display = 'block';
+        
+        Array.from(input.files).forEach((file) => {
+            const fileUrl = URL.createObjectURL(file);
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position: relative; width: 100%; max-width: 160px; border-radius: 8px; overflow: hidden; border: 1px solid #edf2f7; background: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);';
+            
+            const delBtn = `<button style="position: absolute; top: 6px; right: 6px; z-index: 10; background: rgba(255,255,255,0.95); color: #e53e3e; border-radius: 50%; width: 22px; height: 22px; border: none; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; line-height: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onclick="event.stopPropagation(); window.removeMediaItem(this)">×</button>`;
+            const badge = `<div class="sm-gallery-badge" style="position: absolute; top: 6px; left: 6px; z-index: 10; background: #f97316; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>`;
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            const sizeBadge = `<div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(0,0,0,0.65); color: white; border-radius: 4px; padding: 3px 6px; font-size: 10px; font-weight: 500; white-space: nowrap;">MB ${sizeMB}</div>`;
+            
+            const isVideo = file.type.startsWith('video/');
+            const mediaTypeLabel = isVideo ? 'فيديو' : 'صورة';
+            const mediaElem = isVideo 
+                ? `<video class="sm-gallery-vid" src="${fileUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; z-index: 1;" muted></video>`
+                : `<img class="sm-gallery-img" src="${fileUrl}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0; z-index: 1;">`;
+            const clickHandler = isVideo ? `window.viewMediaFull('${fileUrl}', 'video')` : `window.viewMediaFull('${fileUrl}', 'image')`;
+            
+            wrap.innerHTML = `
+                <div style="width: 100%; aspect-ratio: 9/16; background: #1e293b; position: relative; overflow: hidden; cursor:pointer;" onclick="${clickHandler}">
+                    ${mediaElem}
+                    ${delBtn}
+                    ${badge}
+                    ${sizeBadge}
+                </div>
+                <div style="padding: 10px; background: #ffffff; display: flex; justify-content: center; border-top: 1px solid #edf2f7;">
+                    <button onclick="${clickHandler}" style="width: 100%; background: #3b82f6; color: white; border: none; border-radius: 6px; padding: 8px 0; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                        عرض ال${mediaTypeLabel}
+                    </button>
+                </div>
+            `;
+            gallery.appendChild(wrap);
+        });
+        
+        window.reindexMediaBadges();
+        
+        // Reset file input so picking the identical file again still triggers change event
+        input.value = '';
+    }
+};
+
+window.clearMediaUpload = function(event) {
+    if (event) event.stopPropagation();
+    const input = document.getElementById('smMediaInput');
+    if (input) input.value = '';
+    
+    const previewContainer = document.getElementById('smMediaPreviewContainer');
+    if (previewContainer) previewContainer.style.display = 'none';
+    const uploadPrompt = document.getElementById('smUploadPrompt');
+    if (uploadPrompt) uploadPrompt.style.display = 'flex';
+    
+    const gallery = document.getElementById('smMediaGallery');
+    if (gallery) {
+        // Pause all videos before clearing to kill audio
+        const vids = gallery.querySelectorAll('video');
+        vids.forEach(v => { v.pause(); v.src = ''; });
+        gallery.innerHTML = '';
+    }
+};
+
+// Intelligently compresses media into a tiny base64 thumbnail to save localStorage space!
+window.saveSocialDraft = async function(isAutoSave = false) {
+    try {
+        const activeBoard = boards.find(b => b.id === activeBoardId);
+        
+        if (!activeBoard || activeBoard.type !== 'social_scheduler') {
+            if (!isAutoSave) console.error('No active board or wrong type', activeBoard);
+            return;
+        }
+        
+        const textArea = document.querySelector('.sm-textarea');
+        const textContent = textArea ? textArea.value.trim() : '';
+        const input = document.getElementById('smMediaInput');
+        
+        let mediaItems = [];
+        
+        // Safety check - we extract a thumbnail immediately so it doesn't break localStorage limits
+        const gallery = document.getElementById('smMediaGallery');
+        const hasInputFiles = input && input.files && input.files.length > 0;
+        const nodes = gallery ? gallery.querySelectorAll('.sm-gallery-img, .sm-gallery-vid') : [];
+        const frameIoNodes = gallery ? gallery.querySelectorAll('.frame-io-media') : [];
+        
+        if (hasInputFiles || nodes.length > 0 || frameIoNodes.length > 0) {
+            if (gallery) {
+                if (nodes.length > 0) {
+                    const MAX_THUMB_SIZE = 1200;
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    for (let i = 0; i < nodes.length; i++) {
+                        const node = nodes[i];
+                        const isVid = node.classList.contains('sm-gallery-vid');
+                        let compressedDataUrl = null;
+                        
+                        try {
+                            if (!isVid && node.src && node.src !== window.location.href) {
+                                if (!node.complete) {
+                                    await new Promise(res => { node.onload = res; node.onerror = res; });
+                                }
+                                if (node.naturalWidth > 0) {
+                                    const scale = Math.min(MAX_THUMB_SIZE / node.naturalWidth, MAX_THUMB_SIZE / node.naturalHeight, 1);
+                                    canvas.width = node.naturalWidth * scale;
+                                    canvas.height = node.naturalHeight * scale;
+                                    ctx.drawImage(node, 0, 0, canvas.width, canvas.height);
+                                    compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                }
+                            } else if (isVid && node.src && node.src !== window.location.href) {
+                                if (node.readyState >= 2 && node.videoWidth > 0) {
+                                    const scale = Math.min(MAX_THUMB_SIZE / node.videoWidth, MAX_THUMB_SIZE / node.videoHeight, 1);
+                                    canvas.width = node.videoWidth * scale;
+                                    canvas.height = node.videoHeight * scale;
+                                    ctx.drawImage(node, 0, 0, canvas.width, canvas.height);
+                                    compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Failed to compress thumbnail index ' + i, err);
+                        }
+                        
+                        if (compressedDataUrl) {
+                            mediaItems.push({ type: isVid ? 'video' : 'image', dataUrl: compressedDataUrl });
+                        }
+                    }
+                }
+                
+                if (frameIoNodes.length > 0) {
+                    for (let i = 0; i < frameIoNodes.length; i++) {
+                        const urlAttr = frameIoNodes[i].getAttribute('data-url');
+                        const urlThumb = frameIoNodes[i].getAttribute('data-thumbnail');
+                        const mediaType = frameIoNodes[i].getAttribute('data-media-type');
+                        const duration = frameIoNodes[i].getAttribute('data-duration');
+                        if (urlAttr) {
+                            mediaItems.push({ 
+                                type: 'frame-io', 
+                                url: urlAttr,
+                                thumbnail: urlThumb || null,
+                                mediaType: mediaType || null,
+                                duration: duration || null
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!textContent && mediaItems.length === 0) {
+            if (!isAutoSave) {
+                alert('يرجى إضافة نص أو وسائط');
+                return;
+            } else {
+                // If the post is auto-saving but has become completely empty, we brutally delete it
+                if (window.currentEditingSocialPostId) {
+                    const idx = activeBoard.cards.findIndex(c => c.id === window.currentEditingSocialPostId);
+                    if (idx > -1) {
+                        activeBoard.cards.splice(idx, 1);
+                        saveState();
+                        render();
+                        
+                        const listEl = document.getElementById('smModalPostsList');
+                        if (listEl) {
+                            const activeSidebarItem = listEl.querySelector(`div[data-id="${window.currentEditingSocialPostId}"]`);
+                            if (activeSidebarItem) activeSidebarItem.remove();
+                        }
+                        
+                        // Since it's totally empty and deleted, clear the current editing id
+                        // so any further typing spawns a fresh new post
+                        window.currentEditingSocialPostId = null;
+                        
+                        // highlight the "+ new post" area intuitively
+                        setTimeout(() => window.openCreatePostModal(null), 50);
+                    }
+                }
+                return;
+            }
+        }
+        
+        const opts = window.activeSocialDateOptions || { year: new Date().getFullYear(), month: new Date().getMonth(), date: new Date().getDate() };
+        const dateStr = `${opts.year}-${opts.month}-${opts.date}`;
+        let status = 'مسودة';
+        
+        const statusBtn = document.querySelector('.sm-toggle-btn.active');
+        if (statusBtn) status = statusBtn.textContent.trim();
+        
+        const newDraft = {
+            id: window.currentEditingSocialPostId || ('post-' + Date.now()),
+            title: textContent.substring(0, 50) + (textContent.length > 50 ? '...' : ''),
+            fullText: textContent,
+            dateStr: dateStr,
+            status: status,
+            mediaItems: mediaItems.length > 0 ? mediaItems : null
+        };
+        
+        activeBoard.cards = activeBoard.cards || [];
+        
+        if (window.currentEditingSocialPostId) {
+            const idx = activeBoard.cards.findIndex(c => c.id === window.currentEditingSocialPostId);
+            if (idx > -1) {
+                activeBoard.cards[idx] = newDraft;
+            } else {
+                activeBoard.cards.push(newDraft);
+            }
+        } else {
+            activeBoard.cards.push(newDraft);
+        }
+        
+        saveState();
+        
+        if (!isAutoSave) {
+            // Close modal and reset fields
+            const modal = document.getElementById('createPostModal');
+            if (modal) modal.classList.remove('active');
+            if (textArea) textArea.value = '';
+            if (window.clearMediaUpload) window.clearMediaUpload();
+        }
+        
+        render();
+        if (typeof showToast === 'function' && !isAutoSave) showToast('تم الحفظ بنجاح');
+        
+        if (isAutoSave) {
+            const listEl = document.getElementById('smModalPostsList');
+            if (listEl) {
+                const activeSidebarItem = listEl.querySelector(`div[data-id="${newDraft.id}"]`);
+                if (activeSidebarItem && activeSidebarItem.children.length >= 3) {
+                    let mediaThumbHtml = `<div style="font-size:12px; margin-left:6px; flex-shrink:0;">📝</div>`;
+                    if (newDraft.mediaItems && newDraft.mediaItems.length > 0) {
+                        const m = newDraft.mediaItems[0];
+                        if (m.dataUrl && (!m.type || m.type === 'image')) {
+                            mediaThumbHtml = `<img src="${m.dataUrl}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
+                        } else if (m.thumbnail) {
+                            mediaThumbHtml = `<img src="${m.thumbnail}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
+                        } else if (m.type === 'frame-io' || m.type === 'video' || (m.dataUrl && m.dataUrl.startsWith('data:video/'))) {
+                            mediaThumbHtml = `<div style="width:24px; height:24px; border-radius:4px; background:#1e293b; color:white; display:flex; align-items:center; justify-content:center; margin-left:6px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div>`;
+                        }
+                    }
+                    activeSidebarItem.children[1].outerHTML = mediaThumbHtml;
+                }
+            }
+        }
+        
+        // Auto select sidebar
+        setTimeout(() => {
+            const cells = document.querySelectorAll('.sm-cal-cell.selected');
+            if (cells.length > 0) cells[0].click();
+        }, 50);
+
+    } catch (e) {
+        console.error("Critical error in saveSocialDraft:", e);
+        alert("حدث خطأ أثناء حفظ المنشور: " + e.message);
+    }
+};
+
+window.viewMediaFull = function(src, type) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); z-index:999999; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transition:opacity 0.2s;';
+    
+    let content = '';
+    if (type === 'video') {
+        content = `<video src="${src}" controls autoplay style="height:90vh; width:auto; max-width:90vw; border-radius:8px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5); cursor:default; object-fit:contain;" onclick="event.stopPropagation()"></video>`;
+    } else {
+        content = `<img src="${src}" style="height:90vh; width:auto; max-width:90vw; border-radius:8px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5); cursor:default; object-fit:contain;" onclick="event.stopPropagation()">`;
+    }
+    
+    overlay.innerHTML = `
+        <button style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:40px; height:40px; border-radius:50%; font-size:24px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">×</button>
+        ${content}
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // trigger reflow for opacity transition
+    void overlay.offsetWidth;
+    overlay.style.opacity = '1';
+    
+    const closeOverlay = () => {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 200);
+    };
+    
+    // allow clicking on backdrop or X to close
+    overlay.onclick = closeOverlay;
+    const closeBtn = overlay.querySelector('button');
+    if (closeBtn) closeBtn.onclick = closeOverlay;
+};
+
+window.deleteSocialPost = function(postId) {
+    window.showConfirmModal(() => {
+        const board = boards.find(b => b.id === activeBoardId);
+        if (!board) return;
+        
+        const idx = board.cards.findIndex(c => c.id === postId);
+        if (idx > -1) {
+            board.cards.splice(idx, 1);
+            saveState();
+            render();
+            
+            if (window.currentEditingSocialPostId === postId) {
+                // If we deleted the post we were currently viewing, empty the modal
+                window.openCreatePostModal(null);
+            } else {
+                // If we deleted another post from the sidebar, refresh the sidebar
+                window.openCreatePostModal(window.currentEditingSocialPostId);
+            }
+        }
+    }, "حذف المنشور", "هل أنت متأكد من رغبتك في حذف هذا المنشور؟ لا يمكن التراجع عن هذا الإجراء.");
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const gallery = document.getElementById('smMediaGallery');
+    if (gallery && typeof Sortable !== 'undefined') {
+        new Sortable(gallery, {
+            animation: 150,
+            onEnd: function() {
+                if (typeof window.reindexMediaBadges === 'function') {
+                    window.reindexMediaBadges();
+                }
+                
+                // Immediately auto-save if editing so order is preserved
+                if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                    window.saveSocialDraft(true);
+                }
+            }
+        });
+    }
+});

@@ -683,36 +683,37 @@ input[type=number] {
     transform-origin: center !important;
 }
 
-/* Duplicate Hover Animation */
+/* Hover Action Buttons */
 .menu-right-wrap {
     display: flex;
     align-items: center;
-    position: relative;
     justify-content: flex-end;
     min-width: 80px; 
+    gap: 4px;
 }
 .board-count-text {
-    transition: opacity 0.15s ease;
-    opacity: 1;
     font-size: 14px;
     color: #6b778c;
 }
-.duplicate-board-btn {
-    position: absolute;
-    right: 0;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
+.duplicate-board-btn, .delete-board-btn {
+    display: none;
     background: transparent;
     border: none;
     padding: 4px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
 }
+.duplicate-board-btn:hover { color: #0c66e4; transform: scale(1.1); }
+.delete-board-btn { color: #ef4444; }
+.delete-board-btn:hover { transform: scale(1.1); }
+
 .board-menu-item:hover .board-count-text {
-    opacity: 0;
+    display: none;
 }
-.board-menu-item:hover .duplicate-board-btn {
-    opacity: 1;
-    pointer-events: auto;
+.board-menu-item:hover .duplicate-board-btn,
+.board-menu-item:hover .delete-board-btn {
+    display: flex;
 }
 
 /* List Options Menu */
@@ -1106,7 +1107,9 @@ input[type=number] {
     display: flex;
     gap: 24px;
     width: 100%;
-    padding: 0 32px 32px 32px;
+    padding: 0 32px 16px 32px; /* reduced bottom padding */
+    flex: 1;
+    min-height: 0;
 }
 
 /* Left Sidebar */
@@ -1257,14 +1260,15 @@ input[type=number] {
 
 .sm-cal-grid {
     display: grid;
-    gap: 8px;
+    gap: 6px;
 }
 
 .sm-cal-row {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    height: 100px;
-    gap: 8px;
+    height: auto;
+    min-height: 80px;
+    gap: 6px;
 }
 
 .sm-cal-cell {
@@ -1275,6 +1279,9 @@ input[type=number] {
     transition: all 0.2s;
     display: flex;
     flex-direction: column;
+    user-select: none;
+    -webkit-user-select: none;
+    min-width: 0;
 }
 
 .sm-cal-cell:not(.empty):hover {
@@ -1379,7 +1386,7 @@ input[type=number] {
     gap: 32px;
     padding: 32px;
     max-height: 70vh;
-    overflow-y: auto;
+    overflow-y: scroll;
 }
 
 /* Content Column (Visually Right in RTL) */
@@ -1398,7 +1405,7 @@ input[type=number] {
 .sm-textarea {
     width: 100%;
     min-height: 140px;
-    border: 1px solid #edf2f7;
+    border: 1px solid #cbd5e0;
     border-radius: 8px;
     padding: 16px;
     font-family: inherit;
@@ -1419,9 +1426,14 @@ input[type=number] {
 }
 
 .sm-upload-zone {
+    display: flex;
+    flex-direction: column;
+}
+
+.sm-upload-prompt-dashed {
     border: 1px dashed #cbd5e0;
     border-radius: 8px;
-    padding: 32px 24px;
+    padding: 16px 24px;
     text-align: center;
     background: white;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -1429,7 +1441,7 @@ input[type=number] {
     transition: all 0.2s;
 }
 
-.sm-upload-zone:hover {
+.sm-upload-prompt-dashed:hover {
     background: #fbfbfb;
     border-color: #a0aec0;
 }
@@ -1506,12 +1518,7 @@ input[type=number] {
     font-weight: 600;
     color: #4a5568;
     cursor: pointer;
-    border-left: 1px solid #edf2f7; /* Visual separation in RTL */
     transition: all 0.2s;
-}
-
-.sm-toggle-btn:first-child {
-    border-left: none; /* remove border on visually leftmost item in RTL flow */
 }
 
 .sm-toggle-btn.active {
@@ -1531,10 +1538,9 @@ input[type=number] {
 }
 
 .sm-collapsible-wrapper.collapsed {
-    max-height: 0;
     opacity: 0;
-    margin-top: -24px; /* Collapse the grid gap from parent flex layout */
     pointer-events: none;
+    visibility: hidden;
 }
 
 /* Datetime Inputs */
@@ -1554,19 +1560,19 @@ input[type=number] {
     width: 100%;
     border: 1px solid #edf2f7;
     border-radius: 6px;
-    padding: 10px 10px 10px 36px; /* Space for icon on left in RTL? Wait, if it's RTL, icon is on the left usually? No, icon is on the left in the screenshot */
+    padding: 10px 32px 10px 12px; /* Space for icon on right, padding on left */
     font-size: 13px;
     color: #4a5568;
     outline: none;
     background: white;
-    direction: ltr; /* keep time/date format logic consistent visually */
-    text-align: right;
+    direction: ltr; /* Date/Time formats are LTR */
+    text-align: left; /* Start text from left edge to avoid squishing against icon */
 }
 
-.sm-time-input-wrap .sm-icon-left, 
-.sm-date-input-wrap .sm-icon-left {
+.sm-time-input-wrap .sm-icon-right, 
+.sm-date-input-wrap .sm-icon-right {
     position: absolute;
-    left: 10px; /* actually left edge */
+    right: 10px; /* shift icon to the right side */
     color: #a0aec0;
     display: flex;
 }
@@ -1642,6 +1648,234 @@ input[type=number] {
     align-items: center;
     gap: 8px;
     cursor: pointer;
+}
+
+/* ===== New Clients Checklist — Card View ===== */
+.nc-checklist-wrap {
+    margin-top: 12px;
+    padding: 8px 10px;
+    background-color: #f7f9fa; /* Very subtle light grey/blue */
+    border: 1px solid #ebecf0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.nc-progress-bar {
+    display: none;
+}
+.nc-progress-fill {
+    display: none;
+}
+.nc-card-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    line-height: 1.4;
+    padding: 6px 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    user-select: none;
+    margin: 0;
+}
+.nc-card-row:hover {
+    background-color: #f8fafc;
+}
+.nc-card-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+    position: relative;
+    transition: all 0.25s ease;
+}
+.nc-card-row input[type="checkbox"]:checked {
+    background: #22a06b;
+    border-color: #22a06b;
+}
+.nc-card-row input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 3px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+}
+.nc-card-row input[type="checkbox"]:hover:not(:checked) {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+}
+.nc-card-text {
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+    transition: color 0.2s ease, border-color 0.2s;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    padding: 2px 4px;
+    margin-left: -4px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+}
+.nc-card-text:focus {
+    border-color: #cbd5e1;
+    background: #fff;
+}
+.nc-card-text.nc-done {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+.nc-more-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #94a3b8;
+    padding-left: 28px;
+    margin-top: 2px;
+}
+
+/* ===== New Clients Service Checklist — Modal ===== */
+#servicesSectionTitle {
+    margin: 0 0 4px 0 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b7a99 !important;
+}
+.nc-service-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+}
+.nc-service-row:hover {
+    background: #f8fafc;
+}
+.nc-service-row.nc-is-checked {
+    background: transparent;
+}
+.nc-modal-cb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+.nc-modal-cb:hover:not(:checked) {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+}
+.nc-modal-cb:checked {
+    background: #22a06b;
+    border-color: #22a06b;
+}
+.nc-modal-cb:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 3px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+}
+.nc-service-text {
+    flex: 1;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+    color: #334155;
+    outline: none !important;
+    font-family: inherit;
+    min-width: 0;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+.nc-service-text.nc-done {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+.nc-del-btn {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    opacity: 0; 
+}
+.nc-service-row:hover .nc-del-btn {
+    opacity: 1;
+}
+.nc-del-btn:hover {
+    color: #ef4444;
+    background: #fee2e2;
+}
+#servicesItemInput {
+    flex: 1;
+    padding: 10px 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    background: transparent !important;
+    outline: none;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+#servicesItemInput:focus {
+    border-color: #22a06b !important;
+    box-shadow: 0 0 0 3px rgba(34, 160, 107, 0.1);
+    background: #fff !important;
+}
+#addServicesItemBtn {
+    background: #22a06b !important;
+    color: white;
+    border: none;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+#addServicesItemBtn:hover { background: #2563eb !important; transform: scale(0.98); }
+#addServicesItemBtn:active { transform: scale(0.95); }
+.delete-card-btn {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    padding: 12px 16px !important;
 }
 
 .sm-select {
