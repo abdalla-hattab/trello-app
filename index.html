@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Accounts Timer</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='13' r='8'/><polyline points='12 9 12 13 14 15'/><line x1='12' y1='2' x2='12' y2='4'/><line x1='8' y1='2' x2='16' y2='2'/></svg>">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <div class="top-nav-bar">
+        <button class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+            Inbox
+        </button>
+        <button class="nav-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            Planner
+        </button>
+        <button class="nav-item active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+            Board
+        </button>
+        <div class="nav-divider"></div>
+        <button class="nav-btn-outline" id="openSwitchBoardsBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Switch boards
+        </button>
+        <button class="icon-btn" id="toggleNavPosBtn" style="margin-left: 4px;" title="Toggle Position">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+        </button>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <div class="app-container" id="appContainer">
+        <!-- Single isolated board will be injected here -->
+    </div>
+
+    <!-- Modal for Switching Boards -->
+    <div class="modal-overlay" id="switchBoardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Switch Boards</h3>
+                <button class="close-btn" id="closeSwitchBoardModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <div class="board-list" id="boardListMenu">
+                    <!-- Boards injected here -->
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; border-top: 1px solid #dfe1e6; padding-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <button class="nav-btn-outline" id="openAddKanbanBoardBtn" style="width: 100%; border-style: dashed; padding: 10px; font-weight: 600; font-size: 13px;">
+                    + New Flowchart Board
+                </button>
+                <button class="nav-btn-outline" id="openAddTimerBoardBtn" style="width: 100%; border-style: dashed; padding: 10px; font-weight: 600; font-size: 13px;">
+                    + New Timer Board
+                </button>
+                <button class="save-btn" id="openAddSocialBoardBtn" style="width: 100%; padding: 12px; background: #f97316; border: none; font-weight: 600; transition: all 0.2s;">
+                    + Social Media Scheduler (New)
+                </button>
+                <div style="height: 1px; background: #dfe1e6; margin: 8px 0;"></div>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <button class="nav-btn-outline" id="exportBackupBtn" style="flex: 1; padding: 8px; font-size: 12px; font-weight: 600; color: #4a5568; border-color: #dfe1e6; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export Backup
+                    </button>
+                    <button class="nav-btn-outline" id="importBackupBtn" style="flex: 1; padding: 8px; font-size: 12px; font-weight: 600; color: #4a5568; border-color: #dfe1e6; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="document.getElementById('importBackupFile').click()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Import Backup
+                    </button>
+                    <input type="file" id="importBackupFile" accept=".json" style="display: none;" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Account -->
+    <div class="modal-overlay" id="addCardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Account</h3>
+                <button class="close-btn" id="closeAddModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label id="mainTitleLabel">Account Email</label>
+                    <input type="text" id="newCardTitle" placeholder="e.g. name123@gmail.com">
+                </div>
+                
+                <div id="pipedriveExtras" style="display:none; margin-bottom: 20px;">
+                    <div class="input-group full-width" style="margin-bottom: 12px;">
+                        <label>Deal Value (Optional)</label>
+                        <input type="number" id="newDealValue" placeholder="e.g. 1500" value="">
+                    </div>
+                    <div class="input-group full-width" style="margin-bottom: 12px;">
+                        <label>WA Link (Optional)</label>
+                        <input type="text" id="newDealWaLink" placeholder="e.g. https://wa.me/...">
+                    </div>
+                    <div class="input-group full-width" style="margin-bottom: 12px;">
+                        <label>Note / Extras (Optional)</label>
+                        <input type="text" id="newDealNote" placeholder="e.g. VIP Client, urgent">
+                    </div>
+                </div>
+                
+                <div id="addCardTimerSection">
+                    <div style="margin-bottom: 12px; font-size: 12px; font-weight: 600; color: #5e6c84;">Optional Timer</div>
+                    <div class="modal-body" style="padding:0; margin-bottom: 24px;">
+                        <div class="input-group">
+                            <label>Days</label>
+                            <input type="number" id="newCardDays" min="0" value="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Hours</label>
+                            <input type="number" id="newCardHours" min="0" max="23" value="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Minutes</label>
+                            <input type="number" id="newCardMins" min="0" max="59" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions right">
+                    <button class="save-btn" id="confirmAddBtn">Add Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding a new Board -->
+    <div class="modal-overlay" id="addBoardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Board</h3>
+                <button class="close-btn" id="closeAddBoardModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label>Board Name</label>
+                    <input type="text" id="newBoardTitle" placeholder="e.g. Shopify Apps">
+                </div>
+                <div class="modal-actions right">
+                    <button class="save-btn" id="confirmAddBoardBtn">Create Workspace</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Settings / Timers -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Set Timer</h3>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="timerInputsSection">
+                <div class="input-group">
+                    <label>Days</label>
+                    <input type="number" id="inputDays" min="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label>Hours</label>
+                    <input type="number" id="inputHours" min="0" max="23" value="0">
+                </div>
+                <div class="input-group">
+                    <label>Minutes</label>
+                    <input type="number" id="inputMins" min="0" max="59" value="0">
+                </div>
+            </div>
+            <div id="servicesSection" style="display:none; flex-direction:column; gap:12px; margin-bottom: 24px; align-items: flex-start;">
+                <h4 id="servicesSectionTitle" style="margin: 0 0 6px 0; color:var(--text-color); font-size:14px; width: 100%;">Provided Services</h4>
+                <div id="servicesList" style="display:flex; flex-direction:column; gap:12px; width: 100%;"></div>
+                <div id="servicesAddRow" style="display:none; gap:8px; width:100%;">
+                    <input type="text" id="servicesItemInput" placeholder="Service">
+                    <button id="addServicesItemBtn">Add</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="danger-btn" id="removeTimerBtn">Clear Timer</button>
+                <button class="delete-card-btn" id="deleteCardBtn">Delete Account</button>
+                <div class="spacer"></div>
+                <button class="save-btn" id="saveTimerBtn">Save Timer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Trello Settings -->
+    <div class="modal-overlay" id="trelloSettingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Trello Integration Settings</h3>
+                <button class="close-btn" id="closeTrelloSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <div class="input-group full-width" style="margin-bottom: 12px;">
+                    <label>Trello API Key</label>
+                    <input type="text" id="trelloApiKey" placeholder="Enter your 32-character API key">
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label>Trello Token</label>
+                    <input type="password" id="trelloToken" placeholder="Enter your secret token">
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <button class="nav-btn-outline" id="fetchTrelloBoardsBtn" style="width: 100%;">Fetch My Boards</button>
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 20px; display: none;" id="trelloBoardSelectGroup">
+                    <label>Link to Board</label>
+                    <select id="trelloBoardSelect" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6;"></select>
+                </div>
+                <div class="modal-actions right">
+                    <button class="save-btn" id="saveTrelloSettingsBtn">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Pipedrive Settings -->
+    <div class="modal-overlay" id="pipedriveSettingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pipedrive Integration Settings</h3>
+                <button class="close-btn" id="closePipedriveSettingsModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <div class="input-group full-width" style="margin-bottom: 12px;">
+                    <label>Company Domain</label>
+                    <input type="text" id="pipedriveDomain" placeholder="e.g. yourcompany">
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label>Pipedrive API Token</label>
+                    <input type="password" id="pipedriveToken" placeholder="Enter your secret token">
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <button class="nav-btn-outline" id="fetchPipedrivePipelinesBtn" style="width: 100%;">Fetch My Pipelines</button>
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 20px; display: none;" id="pipedrivePipelineSelectGroup">
+                    <label>Link to Pipeline</label>
+                    <select id="pipedrivePipelineSelect" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6;"></select>
+                </div>
+                <div class="modal-actions right">
+                    <button class="save-btn" id="savePipedriveSettingsBtn">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Pipedrive Tracker Spawning -->
+    <div class="modal-overlay" id="pipedriveMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect Trackers</h3>
+                <button class="close-btn" id="closePipedriveMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Select the live Pipedrive Pipeline stages you wish to project onto your flowchart.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">0. Select Pipeline</label>
+                    <select id="pipedriveMappingPipelineSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">Loading pipelines...</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin: 0; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Select Stages to Spawn</label>
+                        <button id="pipedriveSelectAllBtn" style="background:none; border:none;  font-size:11px; font-weight:700; cursor:pointer; padding:0; text-transform:uppercase; letter-spacing:0.8px; color:#0c66e4;">Select All</button>
+                    </div>
+                    <div id="pipedriveTrackerCheckboxes" style="max-height: 220px; overflow-y: auto; background: #F4F5F7; padding: 10px; border-radius: 6px; box-shadow: inset 0 2px 4px rgba(9, 30, 66, 0.04);">
+                        <!-- Checkboxes injected here -->
+                    </div>
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1.5 Select WhatsApp Field (Optional)</label>
+                    <select id="pipedriveWhatsappFieldSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">-- None --</option>
+                    </select>
+                </div>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1.6 Select Qualification Field (First List Only)</label>
+                    <select id="pipedriveQualificationFieldSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">-- None --</option>
+                    </select>
+                </div>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1.7 Select Note Custom Field</label>
+                    <select id="pipedriveNoteFieldSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">-- None --</option>
+                    </select>
+                </div>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Geometric Flow Path</label>
+                    <select id="pipedriveSpawnDirection" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="top">Spawn Above (Top)</option>
+                        <option value="right">Spawn Right (Side)</option>
+                        <option value="bottom">Spawn Below (Bottom)</option>
+                        <option value="left">Spawn Left (Side)</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">3. Tracker Entry Port</label>
+                    <select id="pipedriveTargetPort" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="auto">Auto (Opposite Side)</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                        <option value="left">Left</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generatePipedriveTrackersBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; width: 100%; transition: background 0.2s;">Save Trackers</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Single Trello Tasks List -->
+    <div class="modal-overlay" id="trelloTasksMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect Trello Tasks</h3>
+                <button class="close-btn" id="closeTrelloTasksMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Select a single Trello list to act as your team's task inbox for this node.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Select Trello Board</label>
+                    <select id="trelloTasksMappingBoardSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">Loading boards...</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Select Task List</label>
+                    <select id="trelloTasksMappingListSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">Select a board first...</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generateTrelloTasksBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; width: 100%; transition: background 0.2s;">Save Link</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Viewing Trello Tasks -->
+    <div class="modal-overlay" id="trelloTasksViewModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background:#e9f2ff; color:#0c66e4; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    </div>
+                    <h3 style="margin: 0; font-size: 18px;" id="trelloTasksViewTitle">Team Tasks</h3>
+                </div>
+                <button class="close-btn" id="closeTrelloTasksViewModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block; max-height: 60vh; overflow-y: auto; padding-right: 8px; background: #F4F5F7; border-radius: 6px; padding: 12px;">
+                <div id="trelloTasksViewList" style="display:flex; flex-direction:column; gap:8px;">
+                    <!-- Task cards injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Viewing Service Cards -->
+    <div class="modal-overlay" id="serviceCardsModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background:#e9f2ff; color:#0c66e4; width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size: 32px;" id="serviceCardsModalIcon">
+                        👥
+                    </div>
+                    <h3 style="margin: 0; font-size: 18px;" id="serviceCardsModalTitle">Tracked Clients</h3>
+                </div>
+                <button class="close-btn" id="closeServiceCardsModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block; max-height: 60vh; overflow-y: auto; padding-right: 8px; background: #F4F5F7; border-radius: 6px; padding: 12px;">
+                <div id="serviceCardsModalList" style="display:flex; flex-direction:column; gap:8px;">
+                    <!-- Filtered cards injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Client Happiness Spawning -->
+    <div class="modal-overlay" id="clientHappinessMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect Client Happiness Tracker</h3>
+                <button class="close-btn" id="closeClientHappinessMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Configure the flow layout for this new tracker.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Geometric Flow Path</label>
+                    <select id="clientHappinessSpawnDirection" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="right">Spawn Right (Side)</option>
+                        <option value="top">Spawn Above (Top)</option>
+                        <option value="bottom">Spawn Below (Bottom)</option>
+                        <option value="left">Spawn Left (Side)</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Tracker Entry Port</label>
+                    <select id="clientHappinessTargetPort" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="auto">Auto (Opposite Side)</option>
+                        <option value="left">Left</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generateClientHappinessTrackerBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; width: 100%; transition: background 0.2s;">Create Tracker</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Money Smelling Spawning -->
+    <div class="modal-overlay" id="moneySmellingMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect Money Smelling Tracker</h3>
+                <button class="close-btn" id="closeMoneySmellingMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Configure the flow layout for this new tracker.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Geometric Flow Path</label>
+                    <select id="moneySmellingSpawnDirection" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="right">Spawn Right (Side)</option>
+                        <option value="top">Spawn Above (Top)</option>
+                        <option value="bottom">Spawn Below (Bottom)</option>
+                        <option value="left">Spawn Left (Side)</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Tracker Entry Port</label>
+                    <select id="moneySmellingTargetPort" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="auto">Auto (Opposite Side)</option>
+                        <option value="left">Left</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generateMoneySmellingTrackerBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; background: #1f845a; color: white; border: none; width: 100%; transition: background 0.2s;">Create Tracker</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for New Clients Spawning -->
+    <div class="modal-overlay" id="newClientsMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect New Clients Tracker</h3>
+                <button class="close-btn" id="closeNewClientsMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Configure the flow layout for this new tracker.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Geometric Flow Path</label>
+                    <select id="newClientsSpawnDirection" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="right">Spawn Right (Side)</option>
+                        <option value="top">Spawn Above (Top)</option>
+                        <option value="bottom">Spawn Below (Bottom)</option>
+                        <option value="left">Spawn Left (Side)</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Tracker Entry Port</label>
+                    <select id="newClientsTargetPort" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="auto">Auto (Opposite Side)</option>
+                        <option value="left">Left</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generateNewClientsTrackerBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; background: #2563eb; color: white; border: none; width: 100%; transition: background 0.2s;">Create Tracker</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Trello Tracker Spawning -->
+    <div class="modal-overlay" id="trelloMappingModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Connect Trackers</h3>
+                <button class="close-btn" id="closeTrelloMappingModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height: 1.5;">Select the live Trello lists you wish to project onto your flowchart.</p>
+                
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">0. Select Trello Board</label>
+                    <select id="trelloMappingBoardSelect" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="">Loading boards...</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin: 0; display: block; text-transform: uppercase; letter-spacing: 0.8px;">1. Select Lists to Spawn</label>
+                        <button id="trelloSelectAllBtn" style="background:none; border:none;  font-size:11px; font-weight:700; cursor:pointer; padding:0; text-transform:uppercase; letter-spacing:0.8px; color:#0c66e4;">Select All</button>
+                    </div>
+                    <div id="trelloTrackerCheckboxes" style="max-height: 220px; overflow-y: auto; background: #F4F5F7; padding: 10px; border-radius: 6px; box-shadow: inset 0 2px 4px rgba(9, 30, 66, 0.04);">
+                        <!-- Checkboxes injected here -->
+                    </div>
+                </div>
+                
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">2. Geometric Flow Path</label>
+                    <select id="trelloSpawnDirection" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="top">Spawn Above (Top)</option>
+                        <option value="right">Spawn Right (Side)</option>
+                        <option value="bottom">Spawn Below (Bottom)</option>
+                        <option value="left">Spawn Left (Side)</option>
+                    </select>
+                </div>
+
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.8px;">3. Tracker Entry Port</label>
+                    <select id="trelloTargetPort" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; background: #ffffff; font-size: 14px; font-weight: 500; color: var(--text-color); cursor: pointer; transition: all 0.2s;">
+                        <option value="auto">Auto (Opposite Side)</option>
+                        <option value="top">Top</option>
+                        <option value="right">Right</option>
+                        <option value="bottom">Bottom</option>
+                        <option value="left">Left</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions right" style="margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="generateTrelloTrackersBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; width: 100%; transition: background 0.2s;">Save Trackers</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Trello Layout Config -->
+    <div class="modal-overlay" id="trelloLayoutModal">
+        <div class="modal-content" style="max-width: 380px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Layout Settings</h3>
+                <button class="close-btn" id="closeTrelloLayoutModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height:1.5;">Move the spawned lists left, right, up, or down.</p>
+                <div class="input-group full-width" style="margin-bottom: 16px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Move Left / Right (px)</label>
+                    <input type="number" id="layoutSpacingX" value="0" class="modal-input" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #dfe1e6;">
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Move Up / Down (px)</label>
+                    <input type="number" id="layoutSpacingY" value="60" class="modal-input" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #dfe1e6;">
+                </div>
+                <!-- Removed alignment axis completely -->
+                <div class="modal-actions right" style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="saveTrelloLayoutBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; width: 100%;">Save Layout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Ads Layout Config -->
+    <div class="modal-overlay" id="adsLayoutModal">
+        <div class="modal-content" style="max-width: 380px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Ads Tracker Layout</h3>
+                <button class="close-btn" id="closeAdsLayoutModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:20px; line-height:1.5;">Move the spawned Ads lists left, right, up, or down.</p>
+                <div class="input-group full-width" style="margin-bottom: 16px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Move Left / Right (px)</label>
+                    <input type="number" id="adsLayoutSpacingX" value="0" class="modal-input" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #dfe1e6;">
+                </div>
+                <div class="input-group full-width" style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Move Up / Down (px)</label>
+                    <input type="number" id="adsLayoutSpacingY" value="60" class="modal-input" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #dfe1e6;">
+                </div>
+                <!-- Removed complex base vertical drop and alignment axis completely -->
+                <div class="modal-actions right" style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="saveAdsLayoutBtn" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; width: 100%;">Save Layout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trello Card Details Modal -->
+    <div id="trelloCardDetailsModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background:#e9f2ff; color:#0c66e4; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <h3 style="margin: 0; font-size: 18px;">Trello Card Details</h3>
+                </div>
+                <button class="close-btn" id="closeTrelloCardDetailsModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="display: block; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+                
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Task Title</label>
+                    <input type="text" id="trelloCardTitleInput" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #dfe1e6; font-size: 14px; font-weight: 600; color: var(--text-color); margin-bottom: 16px;" placeholder="Loading...">
+                    
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Description</label>
+                    <textarea id="trelloCardDescInput" style="width: 100%; height: 120px; padding: 10px; border-radius: 6px; border: 1px solid #dfe1e6; font-size: 13px; color: var(--text-color); resize: vertical; margin-bottom: 12px; font-family: inherit;" placeholder="Add a more detailed description..."></textarea>
+                    
+                    <div id="trelloCardDescPreviewArea" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;"></div>
+                    
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Local Focus Highlight (App Only)</label>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+                        <button id="trelloActionColorRedBtn" style="flex:1; min-width:80px; background:#fff2f0; color:#ae2e24; border:1px solid #ffbdad; border-radius:6px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">🔥 Hot</button>
+                        <button id="trelloActionColorGreenBtn" style="flex:1; min-width:80px; background:#eaf2e3; color:#1f822b; border:1px solid #b3dfb8; border-radius:6px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">✅ Ready</button>
+                        <button id="trelloActionColorYellowBtn" style="flex:1; min-width:80px; background:rgba(245,205,71,0.2); color:#b38600; border:1px solid #f5cd47; border-radius:6px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">😐 Neutral</button>
+                        <button id="trelloActionColorOrangeBtn" style="flex:1; min-width:80px; background:rgba(255,152,0,0.15); color:#e65100; border:1px solid #ff9800; border-radius:6px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">😔 Sad</button>
+                        <button id="trelloActionColorClearBtn" style="flex:1; min-width:80px; background:#f4f5f7; color:#5e6c84; border:1px solid #dfe1e6; border-radius:6px; padding:8px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">⚪ Clear</button>
+                    </div>
+
+                    <div style="height: 1px; background: rgba(0,0,0,0.05); margin: 24px 0;"></div>
+                    
+                    <div id="adsMetricsSection" style="display: none; background: #e9f2ff; border-radius: 8px; padding: 16px; margin-bottom: 24px; border: 1px solid #c7dfff;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c66e4" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            <h4 style="margin: 0; color: #0c66e4; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Ads Performance Data</h4>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="font-size: 11px; font-weight: 700; color: #172b4d; margin-bottom: 4px; display: block; text-transform: uppercase;">Ad Spend ($)</label>
+                                <input type="number" id="adsMetricSpend" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 13px;" placeholder="e.g. 1500">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; font-weight: 700; color: #172b4d; margin-bottom: 4px; display: block; text-transform: uppercase;">ROAS</label>
+                                <input type="number" step="0.1" id="adsMetricRoas" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 13px;" placeholder="e.g. 2.5">
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div>
+                                <label style="font-size: 11px; font-weight: 700; color: #172b4d; margin-bottom: 4px; display: block; text-transform: uppercase;">CPA ($)</label>
+                                <input type="number" id="adsMetricCpa" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 13px;" placeholder="e.g. 15">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; font-weight: 700; color: #172b4d; margin-bottom: 4px; display: block; text-transform: uppercase;">Conversions</label>
+                                <input type="number" id="adsMetricConversions" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 13px;" placeholder="e.g. 100">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <label style="font-size: 11px; font-weight: 700; color: #172b4d; margin-bottom: 4px; display: block; text-transform: uppercase;">Status</label>
+                                <select id="adsMetricStatus" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 13px; background: white;">
+                                    <option value="">None</option>
+                                    <option value="Active">🟢 Active</option>
+                                    <option value="Paused">⏸️ Paused</option>
+                                    <option value="Scaling">🚀 Scaling</option>
+                                    <option value="Review">⚠️ Needs Review</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; font-weight: 700; color: #172b4d; margin-bottom: 4px; display: block; text-transform: uppercase;">Platform</label>
+                                <select id="adsMetricPlatform" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dfe1e6; font-size: 13px; background: white;">
+                                    <option value="">None</option>
+                                    <option value="Meta">🔵 Meta</option>
+                                    <option value="TikTok">⚫ TikTok</option>
+                                    <option value="Google">🔴 Google</option>
+                                    <option value="Snapchat">🟡 Snapchat</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="trelloCardSaveBtn" style="width: 100%; padding: 10px; background: #0c66e4; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Save Description & Title to Trello</button>
+                    <div id="trelloCardSaveStatus" style="font-size: 11px; text-align: center; margin-top: 6px; color: #00875A; font-weight: 600; opacity: 0; transition: opacity 0.3s;">Saved Details Globally!</div>
+                    <button id="trelloCardDeleteBtn" style="width: 100%; padding: 8px; background: transparent; color: #c9372c; border: 1px solid #ffbdad; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 16px;" onmouseover="this.style.background='#fff2f0'" onmouseout="this.style.background='transparent'">Delete Task from Trello</button>
+                </div>
+
+                <div id="trelloHistorySection">
+                    <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-top:0; margin-bottom:20px; line-height:1.5;">This timeline tracks every list this card was physically inside of while your tracker monitored it.</p>
+                    <div id="trelloHistoryDisplayArea"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipedrive Action UI Modal -->
+    <div id="pipedriveActionModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; padding-right: 12px;">
+                    <div style="background:#eaf2e3; color:#1f822b; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink: 0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </div>
+                    <input type="text" id="pipedriveActionDealTitleInput" style="margin: 0; font-size: 18px; font-weight: 700; color: #172b4d; border: 1px solid transparent; width: 100%; outline: none; background: transparent; transition: background 0.2s, border-color 0.2s; border-radius: 4px; padding: 4px 6px; margin-left: -6px;" placeholder="Deal Title">
+                </div>
+                <button class="close-btn" id="closePipedriveActionModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" style="display: block;">
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Deal Value</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="number" id="pipedriveEditDealValueInput" placeholder="Enter deal value..." style="flex:1; padding:10px 12px; border:2px solid #dfe1e6; border-radius:6px; font-size:14px; outline:none; transition:border-color 0.2s;">
+                        <button id="pipedriveEditDealValueSaveBtn" style="background:#0052cc; color:white; border:none; border-radius:6px; padding:10px 16px; font-weight:600; font-size:14px; cursor:pointer; transition:background 0.2s;">Save</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;" id="pipedriveActionNoteContainer">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Deal Notes</label>
+                    <textarea id="pipedriveActionNoteInput" placeholder="Add a note to this deal..." style="width:100%; min-height:80px; padding:10px 12px; border:2px solid #dfe1e6; border-radius:6px; font-size:14px; outline:none; transition:border-color 0.2s; resize:vertical; font-family: inherit; margin-bottom: 4px; box-sizing: border-box;"></textarea>
+                    <div id="pipedriveActionNoteStatus" style="font-size: 11px; color: #5e6c84; height: 16px; min-height: 16px; line-height: 16px;"></div>
+                </div>
+
+                <div style="margin-bottom: 24px;" id="localServicesChecklistContainer">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Agreed Services Checklist</label>
+                    <div id="servicesChecklistItems" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                        <!-- Checkboxes will be rendered here dynamically -->
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="newServiceInput" placeholder="Add a service..." style="flex:1; padding:10px 12px; border:2px solid #dfe1e6; border-radius:6px; font-size:14px; outline:none; transition:border-color 0.2s;">
+                        <button id="addNewServiceBtn" style="background:#091e42; color:white; border:none; border-radius:6px; padding:10px 16px; font-weight:600; font-size:14px; cursor:pointer; transition:background 0.2s;">Add</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Local Focus Highlight</label>
+                    <div style="display:flex; gap:8px;">
+                        <button id="pipedriveActionColorRedBtn" style="flex:1; background:#fff2f0; color:#ae2e24; border:1px solid #ffbdad; border-radius:6px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">🔥 Hot</button>
+                        <button id="pipedriveActionColorGreenBtn" style="flex:1; background:#eaf2e3; color:#1f822b; border:1px solid #b3dfb8; border-radius:6px; padding:8px; font-weight:700; font-size:13px; cursor:pointer; transition:all 0.2s;">✅ Ready</button>
+                        <button id="pipedriveActionColorClearBtn" style="flex:1; background:#f4f5f7; color:#5e6c84; border:1px solid #dfe1e6; border-radius:6px; padding:8px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">⚪ Clear</button>
+                    </div>
+                </div>
+                
+                <div id="pipedriveActionPrimaryBtns" style="display:flex; gap:12px; margin-bottom: 12px;">
+                    <button id="pipedriveActionWonBtn" style="flex:1; background:#22a06b; color:white; border:none; border-radius:8px; padding:16px; font-weight:700; font-size:16px; cursor:pointer; box-shadow:0 4px 12px rgba(34,160,107,0.3); transition:all 0.2s;">🏆 Mark Won</button>
+                    <button id="pipedriveActionLostBtn" style="flex:1; background:#ae2e24; color:white; border:none; border-radius:8px; padding:16px; font-weight:700; font-size:16px; cursor:pointer; box-shadow:0 4px 12px rgba(174,46,36,0.3); transition:all 0.2s;">❌ Mark Lost</button>
+                </div>
+                
+                <div style="display:flex; gap: 12px;">
+                    <button id="pipedriveActionDuplicateBtn" style="flex:1; background:#e9f2ff; color:#0c66e4; border:1px solid #c7dfff; border-radius:8px; padding:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s;">📋 Duplicate Deal</button>
+                    <button id="pipedriveActionDeleteBtn" style="flex:1; background:#f4f5f7; color:#5e6c84; border:1px solid #dfe1e6; border-radius:8px; padding:12px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s;">🗑️ Delete Deal</button>
+                </div>
+
+                <div id="pipedriveActionDeleteConfirmContainer" style="display:none; margin-top:16px; padding: 16px; background: #fff2f0; border: 2px solid #ffbdad; border-radius: 8px; animation: fadeIn 0.3s ease;">
+                    <label style="font-size: 14px; font-weight: 700; color: #ae2e24; display: block; margin-bottom: 12px; text-align: center;">Are you sure you want to permanently delete this deal?</label>
+                    <div style="display:flex; gap:12px;">
+                        <button id="pipedriveActionDeleteCancelBtn" style="flex:1; background:white; color:#5e6c84; border:1px solid #dfe1e6; border-radius:6px; padding:10px; font-weight:700; cursor:pointer; transition:all 0.2s;">Cancel</button>
+                        <button id="pipedriveActionDeleteConfirmBtn" style="flex:1; background:#ae2e24; color:white; border:none; border-radius:6px; padding:10px; font-weight:700; cursor:pointer; transition:all 0.2s;">Yes, Delete It</button>
+                    </div>
+                </div>
+                
+                <div id="pipedriveActionLostReasonContainer" style="display:none; margin-top:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 8px;">
+                        <label style="font-size: 12px; font-weight: 700; color: #ae2e24; display: block; text-transform: uppercase;">Provide Loss Reason</label>
+                        <div style="display:flex; gap:6px;">
+                            <button id="pipedriveActionTemplateDropshippingBtn" style="background:#ffbdad; color:#ae2e24; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; transition:background 0.2s;">Quick: "Dropshipping"</button>
+                            <button id="pipedriveActionTemplateNoResponseBtn" style="background:#ffbdad; color:#ae2e24; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; transition:background 0.2s;">Quick: "No Response"</button>
+                        </div>
+                    </div>
+                    <textarea id="pipedriveActionLostReasonInput" style="width:100%; height:80px; padding:12px; border-radius:6px; border:2px solid #ffbdad; background:#fff2f0; resize:none; font-family:inherit; outline:none; transition:border 0.2s; margin-bottom:16px;" placeholder="Why was this deal lost?"></textarea>
+                    
+                    <button id="pipedriveActionSubmitLostBtn" style="width:100%; background:#ae2e24; color:white; border:none; border-radius:6px; padding:12px; font-weight:700; cursor:pointer; transition:background 0.2s;">Confirm Loss to Pipedrive</button>
+                    <button id="pipedriveActionCancelLostBtn" style="width:100%; background:transparent; color:#0c66e4; border:none; margin-top:8px; font-weight:600; cursor:pointer; font-size:13px;">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Ads Calculator Spreadsheet -->
+    <div class="modal-overlay" id="adsCalculatorModal">
+        <div class="modal-content" style="max-width: 960px; padding: 32px;">
+            <div class="modal-header" style="border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 24px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="background:#eaf2e3; color:#1f822b; width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="14.01"></line><line x1="16" x2="16" y1="18" y2="18.01"></line><line x1="12" x2="12" y1="14" y2="14.01"></line><line x1="12" x2="12" y1="18" y2="18.01"></line><line x1="8" x2="8" y1="14" y2="14.01"></line><line x1="8" x2="8" y1="18" y2="18.01"></line></svg>
+                    </div>
+                    <h3 id="adsModalTitle" style="margin: 0; font-size: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px;" title="Advanced Margin Calculator">Advanced Margin Calculator</h3>
+                </div>
+                <button class="close-btn" id="closeAdsCalculatorModalBtn" style="font-size: 32px;">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="display: block; max-height: 75vh; overflow-y: auto;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid #dfe1e6; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                    
+                    <!-- Column 1: Inputs -->
+                    <div style="border-right: 1px solid #dfe1e6;">
+                        <div style="background: #f4f5f7; padding: 16px; font-weight: 800; text-align: center; border-bottom: 1px solid #dfe1e6; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #172b4d; white-space: nowrap;">Fill in variables below</div>
+                        <div style="padding: 20px; display: flex; flex-direction: column; gap: 18px;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <span style="color: #172b4d;">Average Order Value</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="calcAOV" style="width: 90px; padding: 10px; border: 2px solid #dfe1e6; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #172b4d; transition: border-color 0.2s;" value="0">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #44546f; font-size: 16px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" style="width: 1em; height: 1em; vertical-align: middle;"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"></path><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"></path></svg></span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <span style="color: #172b4d;">Average Fees</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="calcFees" style="width: 90px; padding: 10px; border: 2px solid #dfe1e6; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #172b4d; transition: border-color 0.2s;" value="1.5">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #44546f; font-size: 16px;">%</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="color: #172b4d;">Average COGS</span>
+                                    <span style="color: #5e6c84; font-size: 12px; font-weight: 400; margin-top: 2px;">(incl. Shipping)</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="calcCOGS" style="width: 90px; padding: 10px; border: 2px solid #dfe1e6; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #172b4d; transition: border-color 0.2s;" value="0">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #44546f; font-size: 16px;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" style="width: 1em; height: 1em; vertical-align: middle;"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"></path><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"></path></svg></span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <span style="color: #172b4d;">Profit Target</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="calcTarget" style="width: 90px; padding: 10px; border: 2px solid #dfe1e6; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #172b4d; transition: border-color 0.2s;" value="20">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #44546f; font-size: 16px;">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: #e9f2ff; padding: 16px; font-weight: 700; text-align: center; border-top: 1px solid #dfe1e6; border-bottom: 1px solid #dfe1e6; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; color: #0c66e4;">Advanced variables</div>
+                        <div style="padding: 20px; display: flex; flex-direction: column; gap: 18px; background: #fbfdff;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <span style="color: #172b4d;">Add to cart</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" step="0.01" id="calcATC" style="width: 90px; padding: 10px; border: 2px solid #c7dfff; background: #e9f2ff; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #0052cc;" value="13.02">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #0c66e4; font-size: 16px;">%</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <span style="color: #172b4d;">Reached checkout</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" step="0.01" id="calcCO" style="width: 90px; padding: 10px; border: 2px solid #c7dfff; background: #e9f2ff; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #0052cc;" value="9.26">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #0c66e4; font-size: 16px;">%</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 500;">
+                                <span style="color: #172b4d;">Purchased</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" step="0.01" id="calcPUR" style="width: 90px; padding: 10px; border: 2px solid #c7dfff; background: #e9f2ff; border-radius: 6px; text-align: right; font-size: 16px; font-weight: 600; color: #0052cc;" value="6.37">
+                                    <span style="width: 18px; text-align: center; font-weight: 700; color: #0c66e4; font-size: 16px;">%</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Breakeven -->
+                    <div style="border-right: 1px solid #dfe1e6;">
+                        <div style="background: #f4f5f7; padding: 16px; font-weight: 800; text-align: center; border-bottom: 1px solid #dfe1e6; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #172b4d; white-space: nowrap;">Breakeven KPIs <span style="opacity:0.7;font-weight:500;">(no profit, no loss)</span></div>
+                        <div style="padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; font-size: 15px; color: #172b4d;">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per Purchase</span>
+                                <strong id="outBeCPP" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; background:#e9f2ff; padding: 12px; border-radius: 8px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per Initiate Checkout</span>
+                                <strong id="outBeCPIC" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; background:#e9f2ff; padding: 12px; border-radius: 8px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per Add to Cart</span>
+                                <strong id="outBeCPATC" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; background:#e9f2ff; padding: 12px; border-radius: 8px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per View Content</span>
+                                <strong id="outBeCPC" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; border-top: 2px dashed #dfe1e6; padding-top: 16px;">
+                                <span style="font-weight: 700; color: #172b4d; font-size: 16px;">Return on Ad Spend (ROAS)</span>
+                                <strong id="outBeROAS" style="font-size: 24px; color: #d97008;">0.00</strong>
+                            </div>
+
+                            <div style="background: #f4f5f7; border-radius: 8px; padding: 12px; margin-top: 24px; border: 1px solid #dfe1e6;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600; color: #44546f; font-size: 13px;">Baseline PUR Conversion (Est.*)</span>
+                                    <strong id="outBaselinePUR" style="font-size: 16px; color: #172b4d;">0.00%</strong>
+                                </div>
+                                <div style="margin-top: 8px; font-size: 11px; color: #6b778c; font-style: italic; line-height: 1.4; border-top: 1px dashed #dcdfe4; padding-top: 8px;">
+                                    * calculated using a 1:1 ratio of earnings to sessions
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Profit Target -->
+                    <div>
+                        <div style="background: #f4f5f7; padding: 16px; font-weight: 800; text-align: center; border-bottom: 1px solid #dfe1e6; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #172b4d; white-space: nowrap;">Profit Target KPIs</div>
+                        <div style="padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; font-size: 15px; color: #172b4d;">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per Purchase</span>
+                                <strong id="outProjCPP" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; background:#e9f2ff; padding: 12px; border-radius: 8px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per Initiate Checkout</span>
+                                <strong id="outProjCPIC" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; background:#e9f2ff; padding: 12px; border-radius: 8px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per Add to Cart</span>
+                                <strong id="outProjCPATC" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; background:#e9f2ff; padding: 12px; border-radius: 8px;">
+                                <span style="font-weight: 500; color: #5e6c84;">Cost Per View Content</span>
+                                <strong id="outProjCPC" style="font-size: 20px; color: #172b4d;">$0.00</strong>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; border-top: 2px dashed #dfe1e6; padding-top: 16px;">
+                                <span style="font-weight: 700; color: #172b4d; font-size: 16px;">Return on Ad Spend (ROAS)</span>
+                                <strong id="outProjROAS" style="font-size: 24px; color: #22a06b;">0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Creating Social Media Post -->
+    <div class="modal-overlay" id="createPostModal">
+        <div class="modal-content sm-modal-box">
+            <div class="modal-header sm-modal-head">
+                <button class="close-btn" id="closeCreatePostModal">&times;</button>
+                <div class="sm-head-title">
+                    <h3>إنشاء منشور</h3>
+                    <p id="createPostSubtitle">أنشئ وانشر محتواك على منصاتك</p>
+                </div>
+            </div>
+            
+            <div class="sm-modal-body">
+                <!-- Content Column (First in DOM due to RTL flowing from right) -->
+                <div class="sm-modal-right-col">
+                    <!-- Format Selectors Wrapper for Overlapping Animation -->
+                    <div id="formatSelectorsWrapper" style="display: grid; grid-template-columns: 1fr; margin-bottom: 0px; transition: margin-bottom 0.4s ease;">
+                        <!-- IG Format Selector -->
+                        <div id="igFormatSelector" style="grid-area: 1/1; max-height: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-height 0.4s ease, opacity 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-top: 4px;">
+                            <h4 style="margin:0; font-size: 14px; font-weight: 600; color: #1e293b;">اختر شكل المحتوى لـ <span style="color: #e1306c;">إنستغرام</span>:</h4>
+                            <span style="font-size: 13px; color: #64748b; cursor: pointer;" onclick="resetSocialPlatforms()">إلغاء</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                            <!-- Post -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">📝</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">منشور</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">نص وصور وفيديو</span>
+                            </div>
+                            
+                            <!-- Carousel -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">🎠</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">كاروسيل</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">عدة صور/فيديوهات (حتى 10)</span>
+                            </div>
+
+                            <!-- Story -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">📱</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">قصة (Story)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">صورة أو فيديو يختفي بعد 24 ساعة</span>
+                            </div>
+
+                            <!-- Reel -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">🎬</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">ريلز (Reel)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">فيديو قصير طولي</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tiktok Format Selector -->
+                    <div id="tiktokFormatSelector" style="grid-area: 1/1; max-height: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-height 0.4s ease, opacity 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-top: 4px;">
+                            <h4 style="margin:0; font-size: 14px; font-weight: 600; color: #1e293b;">اختر شكل المحتوى لـ <span style="color: #000000;">تيك توك</span>:</h4>
+                            <span style="font-size: 13px; color: #64748b; cursor: pointer;" onclick="resetSocialPlatforms()">إلغاء</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                            <!-- Reel -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">🎬</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">ريلز (Reel)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">فيديو قصير طولي</span>
+                            </div>
+
+                            <!-- Story -->
+                            <div class="ig-format-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; background: #fff;" onmouseover="this.style.borderColor='#f97316'; this.style.boxShadow='0 2px 8px rgba(249,115,22,0.1)';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                                <span style="font-size: 20px; margin-bottom: 8px;">📱</span>
+                                <span style="font-weight: 600; font-size: 13px; margin-bottom: 4px; display: block; color: #1e293b;">قصة (Story)</span>
+                                <span style="font-size: 10px; color: #64748b; line-height: 1.4;">صورة أو فيديو يختفي بعد 24 ساعة</span>
+                            </div>
+                        </div>
+                    </div>
+                    </div> <!-- Close formatSelectorsWrapper -->
+
+                    <div id="smActivePostIndicator" style="display:none; font-weight: 600; font-size: 14px; color: #475569; align-items: center; margin-bottom: 12px; padding: 8px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        المنشور <span id="smActivePostNum" style="font-size: 15px; margin-right: 4px; color: #f97316; font-weight: bold;">1</span>
+                    </div>
+
+                    <div class="sm-upload-zone" id="smUploadZone" style="position: relative; width: 100%; margin-bottom: 24px;">
+                        <!-- The prompt area triggers the upload -->
+                        <div id="smUploadPrompt" class="sm-upload-prompt-dashed" style="width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 24px;">
+                            <input type="file" id="smMediaInput" multiple accept="image/*,video/*" style="display:none;" onchange="window.handleMediaUpload(this)">
+                            
+                            <div style="color: #f97316; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                أضف رابط Frame.io
+                            </div>
+                            
+                            <div id="frameIoContainer" style="display:flex; width: 100%; max-width: 400px; gap: 8px;">
+                                <input type="text" id="frameIoInput" placeholder="الصق الرابط هنا..." style="flex:1; border: 1px solid #cbd5e0; border-radius: 6px; padding: 10px 12px; font-size: 13px; outline:none;" dir="ltr">
+                                <button onclick="event.stopPropagation(); window.addFrameIoMedia()" style="background:#f97316; color:white; border:none; border-radius:6px; padding:0 20px; font-size:13px; font-weight:600; cursor:pointer;">إضافة</button>
+                            </div>
+                        </div>
+
+                        <!-- The preview container horizontally scrolls directly below the dashed box -->
+                        <div id="smMediaPreviewContainer" style="display:none; width: 100%; margin-top: 12px;">
+                            <div id="smMediaGallery" style="display:flex; gap: 12px; flex-wrap: wrap; justify-content: flex-start; align-items: flex-start;">
+                                <!-- Dynamic thumbnails generated by app.js go here -->
+                            </div>
+                        </div>
+                        
+                        <script>
+                            window.addFrameIoMedia = function() {
+                                const input = document.getElementById('frameIoInput');
+                                let url = input.value.trim();
+                                if (!url) return;
+                                
+                                let isGoogleDrive = url.includes('drive.google.com');
+                                if (isGoogleDrive) {
+                                    url = url.replace(/\/view.*$/, '/preview');
+                                }
+                                
+                                let labelText = isGoogleDrive ? 'Google Drive' : 'Frame.io';
+
+                                // Auto-convert standard tracking links to player embed logic if needed
+                                if(url.includes('app.frame.io')) {
+                                    // Normally you extract the project/review ID and re-map to player.frame.io
+                                }
+
+                                const galleryContainer = document.getElementById('smMediaPreviewContainer');
+                                const gallery = document.getElementById('smMediaGallery');
+                                
+                                galleryContainer.style.display = 'block';
+                                
+                                const card = document.createElement('div');
+                                card.className = 'frame-io-media';
+                                card.setAttribute('data-url', url);
+                                card.style.cssText = "position: relative; width: 100%; max-width: 160px; border-radius: 8px; overflow: hidden; border: 1px solid #edf2f7; background: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); opacity: 0; transform: scale(0.95); transition: opacity 0.3s ease, transform 0.3s ease;";
+                                
+                                const placeholderId = 'frameIoPlaceholder-' + Date.now();
+                                
+                                window.showFrameIoVideo = window.showFrameIoVideo || function(btn, videoUrl, pId) {
+                                    const overlay = document.createElement('div');
+                                    overlay.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.95); z-index: 999999; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;";
+                                    
+                                    const closeBtn = document.createElement('div');
+                                    closeBtn.innerHTML = "×";
+                                    closeBtn.style.cssText = "position: absolute; top: 24px; right: 32px; color: white; font-size: 40px; cursor: pointer; z-index: 1000000; font-weight: 300;";
+                                    closeBtn.onclick = function() { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 300); };
+                                    
+                                    const iframe = document.createElement('iframe');
+                                    iframe.src = videoUrl;
+                                    iframe.style.cssText = "width: 90%; height: 90%; border: none; opacity: 0; transform: scale(0.98); transition: opacity 0.4s ease, transform 0.4s ease;";
+                                    iframe.onload = () => { iframe.style.opacity = '1'; iframe.style.transform = 'scale(1)'; };
+                                    iframe.setAttribute('allowfullscreen', 'true');
+                                    
+                                    overlay.appendChild(closeBtn);
+                                    overlay.appendChild(iframe);
+                                    document.body.appendChild(overlay);
+                                    
+                                    setTimeout(() => overlay.style.opacity = '1', 10);
+                                };
+
+                                card.innerHTML = `
+                                    <div id="${placeholderId}-img" style="width: 100%; aspect-ratio: 9/16; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                                        <div class="sm-gallery-badge">1</div>
+                                        
+                                        <!-- Sleek Scanning Effect -->
+                                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, transparent, rgba(59, 130, 246, 0.1), transparent); transform: translateY(-100%); animation: scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
+                                        
+                                        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; z-index: 2;">
+                                            <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+                                                <div style="position:absolute; width:100%; height:100%; border-radius:12px; background:rgba(59, 130, 246, 0.2); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
+                                                <div style="position:absolute; width:60%; height:60%; border-radius:8px; background:rgba(59, 130, 246, 0.4); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; animation-delay: 0.2s;"></div>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" style="animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; animation-delay: 0.4s;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                            </div>
+                                            <span style="font-size:12px; font-weight:700; color:#3b82f6; letter-spacing:0.5px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">جاري المعاينة</span>
+                                        </div>
+                                        
+                                        <style>
+                                            @keyframes scan {
+                                                0% { transform: translateY(-100%); }
+                                                100% { transform: translateY(100%); }
+                                            }
+                                        </style>
+                                    </div>
+                                    <div style="padding: 10px; background: #ffffff; display: flex; justify-content: center; border-top: 1px solid #edf2f7;">
+                                        <button id="${placeholderId}-btn" onclick="event.stopPropagation(); window.showFrameIoVideo(this, '${url}', '${placeholderId}')" style="display:flex; align-items:center; justify-content:center; gap:6px; width: 100%; background: #e2e8f0; color: #94a3b8; border: none; border-radius: 6px; padding: 8px 0; font-size: 12px; font-weight: 600; cursor: default; transition: all 0.3s; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;">
+                                            <div style="width:14px; height:14px; border:2px solid #cbd5e1; border-top-color:transparent; border-radius:50%;" class="animate-spin"></div>
+                                        </button>
+                                    </div>
+                                    <button onclick="event.stopPropagation(); window.removeMediaItem(this.closest('.frame-io-media'));" style="position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.95); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#e53e3e; font-weight:bold; font-size:14px; box-shadow:0 1px 3px rgba(0,0,0,0.2); z-index:10; line-height: 1;">×</button>
+                                `;
+                                
+                                gallery.appendChild(card);
+
+                                setTimeout(() => {
+                                    card.style.opacity = '1';
+                                    card.style.transform = 'scale(1)';
+                                }, 10);
+                                
+                                if (window.reindexMediaBadges) window.reindexMediaBadges();
+                                
+                                if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                    window.saveSocialDraft(true);
+                                }
+                                
+                                fetch('https://api.microlink.io/?url=' + encodeURIComponent(url))
+                                    .then(r => r.json())
+                                    .then(data => {
+                                        let isVideo = false;
+                                        let durationStr = '';
+                                        // Default to video unless we specifically lack ANY video indicators
+                                        if (data && data.data && (data.data.video || data.data.type === 'video')) {
+                                            isVideo = true;
+                                            if (data.data.video && data.data.video.duration) {
+                                                let d = Math.round(data.data.video.duration);
+                                                let m = Math.floor(d / 60);
+                                                let s = d % 60;
+                                                durationStr = `${m}:${s < 10 ? '0' : ''}${s}`;
+                                            }
+                                        }
+                                        
+                                        // Set data attributes for saving state
+                                        card.setAttribute('data-media-type', isVideo ? 'video' : 'image');
+                                        if (durationStr) card.setAttribute('data-duration', durationStr);
+                                        
+                                        // Update button text and icon and restore active styling
+                                        const btnElement = document.getElementById(`${placeholderId}-btn`);
+                                        if (btnElement) {
+                                            btnElement.style.background = '#3b82f6';
+                                            btnElement.style.color = 'white';
+                                            btnElement.style.cursor = 'pointer';
+                                            btnElement.style.animation = 'none';
+                                            if (isVideo) {
+                                                btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> عرض الفيديو ${durationStr ? '('+durationStr+')' : ''}`;
+                                            } else {
+                                                btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> عرض الصورة`;
+                                            }
+                                        }
+
+                                        // Use logo if image is missing, or fallback to an empty string.
+                                        let imgUrl = '';
+                                        let bgStyle = '#1e293b';
+                                        if (data && data.data) {
+                                            if (data.data.image && data.data.image.url) imgUrl = data.data.image.url;
+                                            else if (data.data.logo && data.data.logo.url) {
+                                                imgUrl = data.data.logo.url;
+                                                bgStyle = '#f8fafc'; // lighter background for logo
+                                            }
+                                        }
+
+                                        if (imgUrl) card.setAttribute('data-thumbnail', imgUrl);
+                                        
+                                        const previewDiv = document.getElementById(placeholderId + '-img');
+                                        
+                                        if (isGoogleDrive) {
+                                            if (previewDiv) {
+                                                previewDiv.style.cursor = 'pointer';
+                                                previewDiv.onclick = function(e) { e.stopPropagation(); window.showFrameIoVideo(null, url, placeholderId); };
+                                                
+                                                const typeBadgeHtml = `<div onclick="window.toggleMediaType(this, '${placeholderId}', event)" style="cursor: pointer; position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; z-index: 10; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'; this.style.transform='scale(1)'">
+                                                    <span class="type-icon">${isVideo ? '▶️ فيديو' : '🖼️ صورة'}</span>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M12 5v14M5 12h14"></path></svg>
+                                                </div>`;
+                                                previewDiv.insertAdjacentHTML('beforeend', typeBadgeHtml);
+                                            }
+                                            if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                                window.saveSocialDraft(true);
+                                            }
+                                            input.value = '';
+                                            return;
+                                        }
+                                        
+                                        // Add click-to-toggle badge for Frame.io
+                                        const typeBadgeHtml = `<div onclick="window.toggleMediaType(this, '${placeholderId}', event)" style="cursor: pointer; position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; z-index: 10; transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(0,0,0,0.7)'; this.style.transform='scale(1)'">
+                                            <span class="type-icon">${isVideo ? '▶️ فيديو' : '🖼️ صورة'}</span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><path d="M12 5v14M5 12h14"></path></svg>
+                                        </div>`;
+                                        
+                                        if (previewDiv) {
+                                            previewDiv.style.cursor = 'pointer';
+                                            previewDiv.onclick = function(e) { e.stopPropagation(); window.showFrameIoVideo(null, url, placeholderId); };
+                                            let badgeHtml = previewDiv.querySelector('.sm-gallery-badge');
+                                            badgeHtml = badgeHtml ? badgeHtml.outerHTML : '';
+                                            
+                                            let visualContent = '';
+                                            if (imgUrl) {
+                                                visualContent = `<img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: contain; position: absolute; top:0; left:0; background: ${bgStyle}; z-index: 1;">`;
+                                            } else {
+                                                visualContent = `<div style="width: 100%; height: 100%; position: absolute; top:0; left:0; background: #1e293b; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px; z-index: 1;">لا توجد معاينة</div>`;
+                                            }
+                                            
+                                            previewDiv.innerHTML = `
+                                                ${visualContent}
+                                                ${badgeHtml}
+                                                ${typeBadgeHtml}
+                                            `;
+                                        }
+                                        
+                                        // auto-save the thumbnail link onto the card immediately
+                                        if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                            window.saveSocialDraft(true);
+                                        }
+                                        
+                                        input.value = '';
+                                    }).catch(e => {
+                                        console.error('Frame.io preview load failed', e);
+                                        input.value = '';
+                                    });
+                            };
+                            
+                            window.toggleMediaType = function(badgeEl, placeholderId, e) {
+                                if (e) e.stopPropagation();
+                                const card = badgeEl.closest('.frame-io-media');
+                                let currentType = card.getAttribute('data-media-type') || 'video';
+                                let newType = currentType === 'video' ? 'image' : 'video';
+                                
+                                card.setAttribute('data-media-type', newType);
+                                
+                                // Update badge visually
+                                const iconSpan = badgeEl.querySelector('.type-icon');
+                                if (iconSpan) {
+                                    iconSpan.innerHTML = newType === 'image' ? '🖼️ صورة' : '▶️ فيديو';
+                                }
+                                
+                                // Update button visually
+                                const btnElement = document.getElementById(`${placeholderId}-btn`);
+                                if (btnElement) {
+                                    if (newType === 'video') {
+                                        const dur = card.getAttribute('data-duration');
+                                        btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> عرض الفيديو ${dur ? '('+dur+')' : ''}`;
+                                    } else {
+                                        btnElement.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> عرض الصورة`;
+                                    }
+                                }
+                                
+                                if (typeof window.saveSocialDraft === 'function' && window.currentEditingSocialPostId) {
+                                    window.saveSocialDraft(true);
+                                }
+                            };
+                        </script>
+                    </div>
+
+                    <div class="sm-textarea-wrap">
+                        <div class="sm-textarea-header">
+                            <h4>المحتوى</h4>
+                        </div>
+                        <textarea placeholder="ماذا يدور في بالك..." class="sm-textarea"></textarea>
+                        <div class="sm-char-count">0 حرف</div>
+                    </div>
+                </div>
+
+                <!-- Settings Column -->
+                <div class="sm-modal-left-col">
+                    <!-- Dynamic Area for Existing Posts on this Day -->
+                    <div id="smModalExistingPostsArea" style="display: none; margin-bottom: 24px;"></div>
+
+                    <div class="sm-modal-section">
+                        <h4>المنصات</h4>
+                        <div class="sm-platform-empty" style="display:flex; align-items:center; justify-content:center; padding: 24px 12px;">
+                            <div style="display:flex; justify-content:center; gap:10px; align-items:center;">
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#e6f2ff; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#1877f2', null)">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877f2"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#fce4ec; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#e1306c', 'igFormatSelector')">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#0f1419', null)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#0f1419"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#e4f0fd; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#0a66c2', null)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#0a66c2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                                </div>
+                                <div style="flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="selectSocialPlatform(this, '#000000', 'tiktokFormatSelector')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#000000" stroke="none"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.17-3.8-5.46-.4-2.51.69-5.17 2.73-6.69 1.51-1.12 3.35-1.57 5.11-1.33v4.22c-1.14-.15-2.31.22-3.11 1.01-.89.87-1.1 2.27-.47 3.35.48.98 1.63 1.56 2.73 1.5 1.78-.15 2.91-1.74 2.87-3.53.01-4.14.01-8.29.01-12.43 0-.52-.01-1.04-.01-1.56Z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            function resetSocialPlatforms() {
+                                const icons = document.querySelectorAll('.sm-platform-empty > div > div');
+                                icons.forEach(icon => {
+                                    icon.style.boxShadow = 'none';
+                                    icon.removeAttribute('data-active');
+                                });
+                                
+                                const wrapper = document.getElementById('formatSelectorsWrapper');
+                                if(wrapper) wrapper.style.marginBottom = '0px';
+
+                                const selectors = ['igFormatSelector', 'tiktokFormatSelector'];
+                                selectors.forEach(id => {
+                                    const el = document.getElementById(id);
+                                    if(el) {
+                                        el.style.maxHeight = '0';
+                                        el.style.opacity = '0';
+                                        el.style.pointerEvents = 'none';
+                                    }
+                                });
+                            }
+
+                            function selectSocialPlatform(element, color, targetSelectorId) {
+                                const isActive = element.getAttribute('data-active') === 'true';
+                                
+                                const parent = element.parentElement;
+                                for(let i=0; i<parent.children.length; i++) {
+                                    parent.children[i].style.boxShadow = 'none';
+                                    parent.children[i].removeAttribute('data-active');
+                                }
+                                
+                                const wrapper = document.getElementById('formatSelectorsWrapper');
+                                
+                                const selectors = ['igFormatSelector', 'tiktokFormatSelector'];
+                                selectors.forEach(id => {
+                                    const el = document.getElementById(id);
+                                    if(el) {
+                                        el.style.maxHeight = '0';
+                                        el.style.opacity = '0';
+                                        el.style.pointerEvents = 'none';
+                                    }
+                                });
+                                
+                                if(isActive) {
+                                    if(wrapper) wrapper.style.marginBottom = '0px';
+                                    return; // It's now toggled off, so we stop here
+                                }
+                                
+                                element.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px ' + color;
+                                element.setAttribute('data-active', 'true');
+                                
+                                if(targetSelectorId) {
+                                    if(wrapper) wrapper.style.marginBottom = '24px';
+                                    const target = document.getElementById(targetSelectorId);
+                                    target.style.maxHeight = '500px';
+                                    target.style.opacity = '1';
+                                    target.style.pointerEvents = 'auto';
+                                } else {
+                                    if(wrapper) wrapper.style.marginBottom = '0px';
+                                }
+                            }
+                        </script>
+                    </div>
+                    
+                    <div class="sm-modal-section">
+                        <h4>النشر</h4>
+                        <div class="sm-publish-toggle">
+                            <button class="sm-toggle-btn active">مسودة</button>
+                            <button class="sm-toggle-btn">فوري</button>
+                            <button class="sm-toggle-btn">جدولة</button>
+                        </div>
+                    </div>
+                    
+                    <div class="sm-collapsible-wrapper" id="sm-optional-fields-wrapper">
+                        <div class="sm-modal-section" id="sm-datetime-section">
+                            <h4>التاريخ والوقت</h4>
+                            <div class="sm-datetime-inputs">
+                                <div class="sm-date-input-wrap">
+                                    <input type="text" placeholder="dd/mm/yyyy" class="sm-date-input" readonly>
+                                    <span class="sm-icon-right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>
+                                </div>
+                                <div class="sm-time-input-wrap">
+                                    <input type="text" placeholder="--:--" class="sm-time-input" readonly>
+                                    <span class="sm-icon-right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="sm-modal-section" id="sm-timezone-section" style="display: none;">
+                            <h4>المنطقة الزمنية</h4>
+                            <select class="sm-timezone-select">
+                                <option>GMT+3 (الرياض) (حالي)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sm-modal-footer">
+                <button class="sm-btn-cancel">إلغاء</button>
+                <button class="sm-primary-btn" id="sm-primary-action-btn" onclick="window.saveSocialDraft()" style="padding: 10px 24px;">جدولة المنشور</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">Action successful</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="app.js"></script>
+    <!-- Global Confirmation Modal -->
+    <div class="modal-overlay" id="globalConfirmModal" style="z-index: 9999;">
+        <div class="modal-content" style="max-width: 350px; text-align: center; border-radius: 16px; padding: 32px 24px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </div>
+            <h3 style="margin: 0 0 8px; font-size: 18px; color: #1e293b; font-weight: 700;">هل أنت متأكد؟</h3>
+            <p style="margin: 0 0 24px; font-size: 14px; color: #64748b;">هل تريد إزالة هذا الوسيط؟</p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="globalConfirmCancelBtn" style="flex:1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: #475569; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">إلغاء</button>
+                <button id="globalConfirmYesBtn" style="flex:1; padding: 10px; border-radius: 8px; border: none; background: #ef4444; color: white; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">نعم، إحذف</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

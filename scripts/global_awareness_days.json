@@ -1,0 +1,4442 @@
+[
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Christian feast day:",
+    "name": "يوم العيد المسيحي:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Aldebrandus",
+    "name": "الديبراندوس",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Amator",
+    "name": "هواة",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Andeolus",
+    "name": "أنديولوس",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Aredius of Gap",
+    "name": "أريديوس الفجوة",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Asaph",
+    "name": "آساف",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Augustin Schoeffler, Jean-Louis Bonnard",
+    "name": "أوغسطين شوفلر، جان لويس بونارد",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Benedict of Szkalka",
+    "name": "بنديكت شكلكا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Bertha of Val d'Or",
+    "name": "بيرثا فال دور",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Brioc",
+    "name": "بريوك",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "James the Less",
+    "name": "جيمس الأقل",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Jeremiah",
+    "name": "إرميا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Joseph the Worker",
+    "name": "يوسف العامل",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Julian of Bale",
+    "name": "جوليان بيل",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Blessed Klymentiy Sheptytsky",
+    "name": "المبارك كليمنتي شيبتتسكي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Mafalda of Portugal",
+    "name": "مافالدا من البرتغال",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Marcouf",
+    "name": "ماركوف",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Orientius",
+    "name": "شرق",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Peregrine Laziosi",
+    "name": "الشاهين لازيوسي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Philip the Apostle",
+    "name": "فيلبس الرسول",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Richard Pampuri",
+    "name": "ريتشارد بامبوري",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Seven Apostolic Men",
+    "name": "سبعة رجال رسوليين",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Caecilius of Elvira",
+    "name": "كايسيليوس إلفيرا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Ctesiphon of Vergium",
+    "name": "قطسيفون من فيرجيوم",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Euphrasius of Illiturgis",
+    "name": "يوفراسيوس من إليتورجيس",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Hesychius of Cazorla",
+    "name": "هيسيخيوس كازورلا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Indaletius",
+    "name": "إنداليتيوس",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Secundus of Abula",
+    "name": "الثاني من ابولا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Torquatus of Acci",
+    "name": "توركواتوس من Acci",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Sigismund of Burgundy",
+    "name": "سيغيسموند من بورغوندي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Theodard",
+    "name": "ثيودار",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Ultan",
+    "name": "أولتان",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "May 1",
+    "name": "1 مايو",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Armed Forces Day",
+    "name": "يوم القوات المسلحة",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Constitution Day",
+    "name": "يوم الدستور",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Maharashtra Day",
+    "name": "يوم ماهاراشترا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "International Sunflower Guerrilla Gardening Day",
+    "name": "اليوم العالمي لزراعة عباد الشمس",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Lei Day",
+    "name": "هي يوم",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "International Workers' Day or Labour Day , and its related observances:",
+    "name": "يوم العمال العالمي أو عيد العمال والاحتفالات المرتبطة به:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Law Day",
+    "name": "يوم القانون",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Loyalty Day, formerly intended to counterbalance the celebration of Labour Day.",
+    "name": "يوم الولاء، كان يهدف في السابق إلى موازنة الاحتفال بعيد العمال.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "May Day :",
+    "name": "مايو يوم :",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Calan Mai",
+    "name": "كالان ماي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 1,
+    "en_name": "Beltane",
+    "name": "بلتان",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Christian feast day:",
+    "name": "يوم العيد المسيحي:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Ahudemmeh .",
+    "name": "احودة .",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Athanasius of Alexandria",
+    "name": "أثناسيوس الإسكندري",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Bolesław Strzelecki",
+    "name": "بوليسلاف سترزيليكي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Boris I of Bulgaria",
+    "name": "بوريس الأول من بلغاريا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Germanus of Normandy",
+    "name": "جرمانوس نورماندي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Joseph Luu Van Nguyen",
+    "name": "جوزيف لو فان نجوين",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Wiborada",
+    "name": "الأفاعي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "William Tirry",
+    "name": "ويليام تيري",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "May 2",
+    "name": "2 مايو",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "The last day of the Festival of Ridván",
+    "name": "اليوم الأخير من مهرجان الرضوان",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Anniversary of the Dos de Mayo Uprising",
+    "name": "الذكرى السنوية لانتفاضة دوس مايو",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Birth Anniversary of Third Druk Gyalpo",
+    "name": "ذكرى ميلاد دروك جيالبو الثالث",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Flag Day",
+    "name": "يوم العلم",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Indonesia National Education Day",
+    "name": "يوم التعليم الوطني في إندونيسيا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "Teachers' Day",
+    "name": "يوم المعلم",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "International Harry Potter Day",
+    "name": "يوم هاري بوتر العالمي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 2,
+    "en_name": "World Tuna Day",
+    "name": "يوم التونة العالمي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Christian feast day:",
+    "name": "يوم العيد المسيحي:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Abhai",
+    "name": "أبهاي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Antonia and Alexander",
+    "name": "أنطونيا والكسندر",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Juvenal of Narni",
+    "name": "جوفينال نارني",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Moura",
+    "name": "مورا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Philip and James the Lesser",
+    "name": "فيليب وجيمس الأصغر",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Pope Alexander I",
+    "name": "البابا ألكسندر الأول",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Sarah the Martyr",
+    "name": "سارة الشهيدة",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "The Most Holy Virgin Mary, Queen of Poland",
+    "name": "مريم العذراء القديسة ملكة بولندا",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Theodosius of Kiev",
+    "name": "ثيودوسيوس كييف",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "May 3",
+    "name": "3 مايو",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Constitution Memorial Day",
+    "name": "يوم ذكرى الدستور",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Constitution Day",
+    "name": "يوم الدستور",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Finding of the Holy Cross-related observances:",
+    "name": "العثور على الاحتفالات المتعلقة بالصليب المقدس:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "Fiesta de las Cruces",
+    "name": "مهرجان الصلبان",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "International Sun Day",
+    "name": "يوم الشمس العالمي",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 3,
+    "en_name": "World Press Freedom Day",
+    "name": "اليوم العالمي لحرية الصحافة",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Anti-Bullying Day",
+    "name": "Anti-Bullying Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Bird Day",
+    "name": "Bird Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Cassinga Day",
+    "name": "Cassinga Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Blessed Ceferino Giménez Malla",
+    "name": "Blessed Ceferino Giménez Malla",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Blessed Michał Giedroyć",
+    "name": "Blessed Michał Giedroyć",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "English Saints and Martyrs of the Reformation Era",
+    "name": "English Saints and Martyrs of the Reformation Era",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "F. C. D. Wyneken",
+    "name": "F. C. D. Wyneken",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Florian",
+    "name": "Florian",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "José María Rubio",
+    "name": "José María Rubio",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Judas Cyriacus",
+    "name": "Judas Cyriacus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Monica of Hippo",
+    "name": "Monica of Hippo",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Sacerdos of Limoges",
+    "name": "Sacerdos of Limoges",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Venerius of Milan",
+    "name": "Venerius of Milan",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "May 4",
+    "name": "May 4",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Coal Miners Day",
+    "name": "Coal Miners Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Dave Brubeck Day",
+    "name": "Dave Brubeck Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Death of Milan Rastislav Štefánik Day",
+    "name": "Death of Milan Rastislav Štefánik Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Greenery Day",
+    "name": "Greenery Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "International Firefighters' Day",
+    "name": "International Firefighters' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "May Fourth Movement commemorations:",
+    "name": "May Fourth Movement commemorations:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Literary Day",
+    "name": "Literary Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Youth Day",
+    "name": "Youth Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Remembrance Day for Martyrs and Disabled",
+    "name": "Remembrance Day for Martyrs and Disabled",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Remembrance of the Dead",
+    "name": "Remembrance of the Dead",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Restoration of Independence Day",
+    "name": "Restoration of Independence Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Star Wars Day",
+    "name": "Star Wars Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "World Give Day",
+    "name": "World Give Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 4,
+    "en_name": "Youth Day",
+    "name": "Youth Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Children's Day",
+    "name": "Children's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Angelus of Jerusalem",
+    "name": "Angelus of Jerusalem",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Aventinus of Tours",
+    "name": "Aventinus of Tours",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Blessed Edmund Ignatius Rice",
+    "name": "Blessed Edmund Ignatius Rice",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Frederick the Wise",
+    "name": "Frederick the Wise",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Gotthard of Hildesheim",
+    "name": "Gotthard of Hildesheim",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Hilary of Arles",
+    "name": "Hilary of Arles",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Jutta of Kulmsee",
+    "name": "Jutta of Kulmsee",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Stanisław Kazimierczyk",
+    "name": "Stanisław Kazimierczyk",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "May 5",
+    "name": "May 5",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Cinco de Mayo",
+    "name": "Cinco de Mayo",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Constitution Day",
+    "name": "Constitution Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Europe Day",
+    "name": "Europe Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Feast of al-Khadr or Saint George",
+    "name": "Feast of al-Khadr or Saint George",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Indian Arrival Day",
+    "name": "Indian Arrival Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "International Midwives' Day",
+    "name": "International Midwives' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Liberation Day",
+    "name": "Liberation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Lusophone Culture Day",
+    "name": "Lusophone Culture Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "World Portuguese Language Day",
+    "name": "World Portuguese Language Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Martyrs' Day",
+    "name": "Martyrs' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Missing and Murdered Indigenous Women Awareness Day",
+    "name": "Missing and Murdered Indigenous Women Awareness Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "National Cartoonist Day",
+    "name": "National Cartoonist Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Patriots' Victory Day",
+    "name": "Patriots' Victory Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Revenge of the Fifth",
+    "name": "Revenge of the Fifth",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Senior Citizens Day",
+    "name": "Senior Citizens Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Soviet Press Day",
+    "name": "Soviet Press Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Tango no sekku",
+    "name": "Tango no sekku",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 5,
+    "en_name": "Uyghur Doppa Cultural Festival : 1–2",
+    "name": "Uyghur Doppa Cultural Festival : 1–2",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Dominic Savio",
+    "name": "Dominic Savio",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Evodius of Antioch",
+    "name": "Evodius of Antioch",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "François de Laval",
+    "name": "François de Laval",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Gerard of Lunel",
+    "name": "Gerard of Lunel",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Jacinto Vera",
+    "name": "Jacinto Vera",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Lucius of Cyrene",
+    "name": "Lucius of Cyrene",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Petronax of Monte Cassino",
+    "name": "Petronax of Monte Cassino",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "St George's Day related observances :",
+    "name": "St George's Day related observances :",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Day of Bravery, also known as Gergyovden",
+    "name": "Day of Bravery, also known as Gergyovden",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Đurđevdan",
+    "name": "Đurđevdan",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Yuri's Day in the Spring",
+    "name": "Yuri's Day in the Spring",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "St John before the Latin Gate",
+    "name": "St John before the Latin Gate",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "May 6",
+    "name": "May 6",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "International No Diet Day",
+    "name": "International No Diet Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "Martyrs' Day",
+    "name": "Martyrs' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "National Azulejo Day",
+    "name": "National Azulejo Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 6,
+    "en_name": "The first day of Hıdırellez",
+    "name": "The first day of Hıdırellez",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Agathius of Byzantium",
+    "name": "Agathius of Byzantium",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Agostino Roscelli",
+    "name": "Agostino Roscelli",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Pope Benedict II",
+    "name": "Pope Benedict II",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Flavia Domitilla",
+    "name": "Flavia Domitilla",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Gisela of Hungary",
+    "name": "Gisela of Hungary",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Harriet Starr Cannon",
+    "name": "Harriet Starr Cannon",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "John of Beverley",
+    "name": "John of Beverley",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Rose Venerini",
+    "name": "Rose Venerini",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Stanislaus",
+    "name": "Stanislaus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "May 7",
+    "name": "May 7",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Defender of the Fatherland Day",
+    "name": "Defender of the Fatherland Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Dien Bien Phu Victory Day",
+    "name": "Dien Bien Phu Victory Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 7,
+    "en_name": "Radio Day, commemorating the work of Alexander Popov",
+    "name": "Radio Day, commemorating the work of Alexander Popov",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Amato Ronconi",
+    "name": "Amato Ronconi",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Apparition of Saint Michael",
+    "name": "Apparition of Saint Michael",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Arsenius the Great",
+    "name": "Arsenius the Great",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Desideratus",
+    "name": "Desideratus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Blessed Catherine of St. Augustine",
+    "name": "Blessed Catherine of St. Augustine",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Julian of Norwich",
+    "name": "Julian of Norwich",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Magdalene of Canossa",
+    "name": "Magdalene of Canossa",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Our Lady of Luján",
+    "name": "Our Lady of Luján",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Peter II of Tarentaise",
+    "name": "Peter II of Tarentaise",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Blessed Teresa Demjanovich",
+    "name": "Blessed Teresa Demjanovich",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "19 Martyrs of Algeria",
+    "name": "19 Martyrs of Algeria",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "May 8",
+    "name": "May 8",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Emancipation Day",
+    "name": "Emancipation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Furry Dance",
+    "name": "Furry Dance",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Liberation Day",
+    "name": "Liberation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Miguel Hidalgo's birthday",
+    "name": "Miguel Hidalgo's birthday",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Parents' Day",
+    "name": "Parents' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Truman Day",
+    "name": "Truman Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Veterans Day",
+    "name": "Veterans Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Victory in Europe Day, and its related observances :",
+    "name": "Victory in Europe Day, and its related observances :",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "Day of Remembrance and Victory over Nazism in World War II 1939 – 1945",
+    "name": "Day of Remembrance and Victory over Nazism in World War II 1939 – 1945",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "White Lotus Day",
+    "name": "White Lotus Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 8,
+    "en_name": "World Red Cross and Red Crescent Day",
+    "name": "World Red Cross and Red Crescent Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Beatus of Lungern",
+    "name": "Beatus of Lungern",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Beatus of Vendome",
+    "name": "Beatus of Vendome",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Christopher",
+    "name": "Christopher",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "George Preca",
+    "name": "George Preca",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Gerontius of Cervia",
+    "name": "Gerontius of Cervia",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Gregory of Nazianzen",
+    "name": "Gregory of Nazianzen",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Nicolaus Zinzendorf",
+    "name": "Nicolaus Zinzendorf",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Pachomius the Great",
+    "name": "Pachomius the Great",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Tudy of Landevennec",
+    "name": "Tudy of Landevennec",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "May 9",
+    "name": "May 9",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "National Day",
+    "name": "National Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Europe Day, commemorating the Schuman Declaration.",
+    "name": "Europe Day, commemorating the Schuman Declaration.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Victory and Peace Day, marks the capture of Shusha",
+    "name": "Victory and Peace Day, marks the capture of Shusha",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Home Front Heroes Day in the United States",
+    "name": "Home Front Heroes Day in the United States",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 9,
+    "en_name": "Goku Day , commemorating the fictional character Goku.",
+    "name": "Goku Day , commemorating the fictional character Goku.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Children's Day",
+    "name": "Children's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Alphius, Philadelphus and Cyrinus",
+    "name": "Alphius, Philadelphus and Cyrinus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Calepodius",
+    "name": "Calepodius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Catald",
+    "name": "Catald",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Comgall",
+    "name": "Comgall",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Damien of Molokai",
+    "name": "Damien of Molokai",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Gordianus and Epimachus",
+    "name": "Gordianus and Epimachus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Job",
+    "name": "Job",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "John of Ávila",
+    "name": "John of Ávila",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "May 10",
+    "name": "May 10",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Confederate Memorial Day",
+    "name": "Confederate Memorial Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Constitution Day",
+    "name": "Constitution Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Golden Spike Day",
+    "name": "Golden Spike Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 10,
+    "en_name": "Mother's Day",
+    "name": "Mother's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 11,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 11,
+    "en_name": "Anthimus of Rome",
+    "name": "Anthimus of Rome",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 11,
+    "en_name": "Gangulphus of Burgundy",
+    "name": "Gangulphus of Burgundy",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 11,
+    "en_name": "Majolus of Cluny",
+    "name": "Majolus of Cluny",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 11,
+    "en_name": "Mamertus, the first of the Ice Saints",
+    "name": "Mamertus, the first of the Ice Saints",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Blessed Joan of Portugal",
+    "name": "Blessed Joan of Portugal",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Crispoldus",
+    "name": "Crispoldus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Dominic de la Calzada",
+    "name": "Dominic de la Calzada",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Epiphanius of Salamis",
+    "name": "Epiphanius of Salamis",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Gregory Dix",
+    "name": "Gregory Dix",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Modoald",
+    "name": "Modoald",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Nereus, Achilleus, Domitilla, and Pancras",
+    "name": "Nereus, Achilleus, Domitilla, and Pancras",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Patriarch Germanus I of Constantinople",
+    "name": "Patriarch Germanus I of Constantinople",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "Philip of Agira",
+    "name": "Philip of Agira",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "International ME/CFS and Fibromyalgia Awareness Day",
+    "name": "International ME/CFS and Fibromyalgia Awareness Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "International Nurses Day",
+    "name": "International Nurses Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 12,
+    "en_name": "J. V. Snellman Day or the Finnish Heritage Day",
+    "name": "J. V. Snellman Day or the Finnish Heritage Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Abbotsbury Garland Day",
+    "name": "Abbotsbury Garland Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Our Lady of Fátima",
+    "name": "Our Lady of Fátima",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Conchita Barrecheguren",
+    "name": "Conchita Barrecheguren",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Gerard of Villamagna",
+    "name": "Gerard of Villamagna",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Glyceria",
+    "name": "Glyceria",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "John the Silent",
+    "name": "John the Silent",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Julian of Norwich",
+    "name": "Julian of Norwich",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Frances Perkins",
+    "name": "Frances Perkins",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Servatius",
+    "name": "Servatius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "May 13",
+    "name": "May 13",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 13,
+    "en_name": "Rotuma Day",
+    "name": "Rotuma Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Boniface of Tarsus",
+    "name": "Boniface of Tarsus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Engelmund of Velsen",
+    "name": "Engelmund of Velsen",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Matthias the Apostle",
+    "name": "Matthias the Apostle",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Michael Garicoïts",
+    "name": "Michael Garicoïts",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Mo Chutu of Lismore",
+    "name": "Mo Chutu of Lismore",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Victor and Corona",
+    "name": "Victor and Corona",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "May 14",
+    "name": "May 14",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Independence Day",
+    "name": "Independence Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "Hastings Banda's Birthday",
+    "name": "Hastings Banda's Birthday",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "National Unification Day",
+    "name": "National Unification Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 14,
+    "en_name": "The first day of Izumo-taisha Shrine Grand Festival.",
+    "name": "The first day of Izumo-taisha Shrine Grand Festival.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Aoi Matsuri",
+    "name": "Aoi Matsuri",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Army Day",
+    "name": "Army Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Achillius of Larissa",
+    "name": "Achillius of Larissa",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Athanasius of Alexandria",
+    "name": "Athanasius of Alexandria",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Dymphna",
+    "name": "Dymphna",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Hallvard Vebjørnsson",
+    "name": "Hallvard Vebjørnsson",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Hesychius of Cazorla",
+    "name": "Hesychius of Cazorla",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Hilary of Galeata",
+    "name": "Hilary of Galeata",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Jean-Baptiste de La Salle",
+    "name": "Jean-Baptiste de La Salle",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Peter, Andrew, Paul, and Denise",
+    "name": "Peter, Andrew, Paul, and Denise",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Reticius",
+    "name": "Reticius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Sophia of Rome",
+    "name": "Sophia of Rome",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "May 15",
+    "name": "May 15",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Constituent Assembly Day",
+    "name": "Constituent Assembly Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "International Conscientious Objectors Day",
+    "name": "International Conscientious Objectors Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "International Day of Families",
+    "name": "International Day of Families",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "La Corsa dei Ceri begins on the eve of the feast day of Saint Ubaldo.",
+    "name": "La Corsa dei Ceri begins on the eve of the feast day of Saint Ubaldo.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Mother's Day",
+    "name": "Mother's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Nakba Day",
+    "name": "Nakba Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Peace Officers Memorial Day",
+    "name": "Peace Officers Memorial Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Republic Day",
+    "name": "Republic Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 15,
+    "en_name": "Teachers' Day",
+    "name": "Teachers' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Aaron",
+    "name": "Aaron",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Abda and Abdjesus, and companions:",
+    "name": "Abda and Abdjesus, and companions:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Abdas of Susa",
+    "name": "Abdas of Susa",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Andrew Bobola",
+    "name": "Andrew Bobola",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Brendan the Navigator",
+    "name": "Brendan the Navigator",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Caroline Chisholm",
+    "name": "Caroline Chisholm",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Gemma Galgani",
+    "name": "Gemma Galgani",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Germerius",
+    "name": "Germerius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Honoratus of Amiens",
+    "name": "Honoratus of Amiens",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "John of Nepomuk",
+    "name": "John of Nepomuk",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Margaret of Cortona",
+    "name": "Margaret of Cortona",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Peregrine of Auxerre",
+    "name": "Peregrine of Auxerre",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Simon Stock",
+    "name": "Simon Stock",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Ubald",
+    "name": "Ubald",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "May 16",
+    "name": "May 16",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Martyrs of Sudan",
+    "name": "Martyrs of Sudan",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Mass Graves Day",
+    "name": "Mass Graves Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "National Day, declared by Salva Kiir Mayardit",
+    "name": "National Day, declared by Salva Kiir Mayardit",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 16,
+    "en_name": "Teachers' Day",
+    "name": "Teachers' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Birthday of the Raja",
+    "name": "Birthday of the Raja",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Giulia Salzano",
+    "name": "Giulia Salzano",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Paschal Baylon",
+    "name": "Paschal Baylon",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "William Hobart Hare",
+    "name": "William Hobart Hare",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Restituta",
+    "name": "Restituta",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "May 17",
+    "name": "May 17",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Children's Day",
+    "name": "Children's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Constitution Day",
+    "name": "Constitution Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Constitution Day",
+    "name": "Constitution Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Feast of ‘Aẓamat",
+    "name": "Feast of ‘Aẓamat",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Galician Literature Day or Día das Letras Galegas",
+    "name": "Galician Literature Day or Día das Letras Galegas",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "International Day Against Homophobia, Biphobia and Transphobia",
+    "name": "International Day Against Homophobia, Biphobia and Transphobia",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Liberation Day",
+    "name": "Liberation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "Navy Day",
+    "name": "Navy Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "World Hypertension Day",
+    "name": "World Hypertension Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 17,
+    "en_name": "World Telecommunication and Information Society Day",
+    "name": "World Telecommunication and Information Society Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Ælfgifu of Shaftesbury",
+    "name": "Ælfgifu of Shaftesbury",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Eric IX of Sweden",
+    "name": "Eric IX of Sweden",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Felix of Cantalice",
+    "name": "Felix of Cantalice",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Pope John I",
+    "name": "Pope John I",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Venantius of Camerino",
+    "name": "Venantius of Camerino",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "May 18",
+    "name": "May 18",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Baltic Fleet Day",
+    "name": "Baltic Fleet Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Day of Remembrance of Crimean Tatar genocide",
+    "name": "Day of Remembrance of Crimean Tatar genocide",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Independence Day",
+    "name": "Independence Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "International Museum Day",
+    "name": "International Museum Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "National Speech Pathologist Day",
+    "name": "National Speech Pathologist Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Mullivaikkal Remembrance Day",
+    "name": "Mullivaikkal Remembrance Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Revival, Unity, and Poetry of Magtymguly Day",
+    "name": "Revival, Unity, and Poetry of Magtymguly Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 18,
+    "en_name": "Teacher's Day",
+    "name": "Teacher's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Calocerus",
+    "name": "Calocerus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Crispin of Viterbo",
+    "name": "Crispin of Viterbo",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Dunstan",
+    "name": "Dunstan",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Ivo of Kermartin",
+    "name": "Ivo of Kermartin",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Joaquina Vedruna de Mas",
+    "name": "Joaquina Vedruna de Mas",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Maria Bernarda Bütler",
+    "name": "Maria Bernarda Bütler",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Peter Celestine",
+    "name": "Peter Celestine",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Pudentiana",
+    "name": "Pudentiana",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "May 19",
+    "name": "May 19",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Pontian Greek Genocide Remembrance Day",
+    "name": "Pontian Greek Genocide Remembrance Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Commemoration of Atatürk, Youth and Sports Day",
+    "name": "Commemoration of Atatürk, Youth and Sports Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Remembrance Day",
+    "name": "Remembrance Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Hồ Chí Minh's Birthday",
+    "name": "Hồ Chí Minh's Birthday",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Malcolm X Day",
+    "name": "Malcolm X Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "National Asian & Pacific Islander HIV/AIDS Awareness Day",
+    "name": "National Asian & Pacific Islander HIV/AIDS Awareness Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Hepatitis Testing Day",
+    "name": "Hepatitis Testing Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 19,
+    "en_name": "Mother's Day",
+    "name": "Mother's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Abercius and Helena",
+    "name": "Abercius and Helena",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Alcuin of York",
+    "name": "Alcuin of York",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Aurea of Ostia",
+    "name": "Aurea of Ostia",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Austregisilus",
+    "name": "Austregisilus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Baudilus",
+    "name": "Baudilus",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Bernardino of Siena",
+    "name": "Bernardino of Siena",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Ivo of Chartres",
+    "name": "Ivo of Chartres",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Lucifer of Cagliari",
+    "name": "Lucifer of Cagliari",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Sanctan",
+    "name": "Sanctan",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "May 20",
+    "name": "May 20",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Day of Remembrance",
+    "name": "Day of Remembrance",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Emancipation Day",
+    "name": "Emancipation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "European Maritime Day",
+    "name": "European Maritime Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Josephine Baker Day",
+    "name": "Josephine Baker Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "National Awakening Day , and its related observances:",
+    "name": "National Awakening Day , and its related observances:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Indonesian Doctor Day",
+    "name": "Indonesian Doctor Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "National Day",
+    "name": "National Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "World Bee Day",
+    "name": "World Bee Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "World Metrology Day",
+    "name": "World Metrology Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 20,
+    "en_name": "Doug the Pug Day",
+    "name": "Doug the Pug Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Afro-Colombian Day",
+    "name": "Afro-Colombian Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Arcangelo Tadini",
+    "name": "Arcangelo Tadini",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Blessed Adílio Daronch and Manuel Gómez González",
+    "name": "Blessed Adílio Daronch and Manuel Gómez González",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Blessed Franz Jägerstätter",
+    "name": "Blessed Franz Jägerstätter",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Emperor Constantine I",
+    "name": "Emperor Constantine I",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Eugène de Mazenod",
+    "name": "Eugène de Mazenod",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "John Elliot",
+    "name": "John Elliot",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Saints of the Cristero War, including Christopher Magallanes",
+    "name": "Saints of the Cristero War, including Christopher Magallanes",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "May 21",
+    "name": "May 21",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Circassian Day of Mourning",
+    "name": "Circassian Day of Mourning",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Day of Patriots and Military",
+    "name": "Day of Patriots and Military",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "International Tea Day",
+    "name": "International Tea Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Navy Day",
+    "name": "Navy Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "Saint Helena Day, celebrates the discovery of Saint Helena in 1502.",
+    "name": "Saint Helena Day, celebrates the discovery of Saint Helena in 1502.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 21,
+    "en_name": "World Day for Cultural Diversity for Dialogue and Development",
+    "name": "World Day for Cultural Diversity for Dialogue and Development",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Abolition Day",
+    "name": "Abolition Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Aromanian National Day",
+    "name": "Aromanian National Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Castus and Emilius",
+    "name": "Castus and Emilius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Fulk",
+    "name": "Fulk",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Humilita",
+    "name": "Humilita",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Michael Hồ Đình Hy",
+    "name": "Michael Hồ Đình Hy",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Quiteria",
+    "name": "Quiteria",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Rita of Cascia",
+    "name": "Rita of Cascia",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Romanus of Subiaco",
+    "name": "Romanus of Subiaco",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "May 22",
+    "name": "May 22",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Harvey Milk Day",
+    "name": "Harvey Milk Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "International Day for Biological Diversity",
+    "name": "International Day for Biological Diversity",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "United States National Maritime Day",
+    "name": "United States National Maritime Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "National Sovereignty Day",
+    "name": "National Sovereignty Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Republic Day",
+    "name": "Republic Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "Translation of the Relics of Saint Nicholas from Myra to Bari",
+    "name": "Translation of the Relics of Saint Nicholas from Myra to Bari",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 22,
+    "en_name": "World Goth Day",
+    "name": "World Goth Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Aromanian National Day",
+    "name": "Aromanian National Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Aaron the Illustrious",
+    "name": "Aaron the Illustrious",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Desiderius of Vienne",
+    "name": "Desiderius of Vienne",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Giovanni Battista de' Rossi",
+    "name": "Giovanni Battista de' Rossi",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Julia of Corsica",
+    "name": "Julia of Corsica",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Nicolaus Copernicus and Johannes Kepler",
+    "name": "Nicolaus Copernicus and Johannes Kepler",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Quintian, Lucius and Julian",
+    "name": "Quintian, Lucius and Julian",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "William of Perth",
+    "name": "William of Perth",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "May 23",
+    "name": "May 23",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Constitution Day",
+    "name": "Constitution Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Labour Day",
+    "name": "Labour Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "Students' Day",
+    "name": "Students' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 23,
+    "en_name": "World Turtle Day",
+    "name": "World Turtle Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Aldersgate Day/Wesley Day",
+    "name": "Aldersgate Day/Wesley Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Battle of Pichincha Day",
+    "name": "Battle of Pichincha Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Bermuda Day , celebrated on the nearest weekday if May 24 falls on the weekend.",
+    "name": "Bermuda Day , celebrated on the nearest weekday if May 24 falls on the weekend.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Anna Pak Agi",
+    "name": "Anna Pak Agi",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Donatian and Rogatian",
+    "name": "Donatian and Rogatian",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Jackson Kemper",
+    "name": "Jackson Kemper",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Joanna",
+    "name": "Joanna",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Mary, Help of Christians",
+    "name": "Mary, Help of Christians",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Sarah",
+    "name": "Sarah",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Vincent of Lérins",
+    "name": "Vincent of Lérins",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "May 24",
+    "name": "May 24",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Commonwealth Day",
+    "name": "Commonwealth Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Independence Day , celebrates the independence of Eritrea from Ethiopia in 1993.",
+    "name": "Independence Day , celebrates the independence of Eritrea from Ethiopia in 1993.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Lubiri Memorial Day",
+    "name": "Lubiri Memorial Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Saints Cyril and Methodius Day  and its related observance:",
+    "name": "Saints Cyril and Methodius Day  and its related observance:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Bulgarian Education and Culture and Slavonic Literature Day",
+    "name": "Bulgarian Education and Culture and Slavonic Literature Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "Saints Cyril and Methodius, Slavonic Enlighteners' Day",
+    "name": "Saints Cyril and Methodius, Slavonic Enlighteners' Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 24,
+    "en_name": "National Patriots' Day or Journée nationale des patriotes",
+    "name": "National Patriots' Day or Journée nationale des patriotes",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Africa Day",
+    "name": "Africa Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "African Liberation Day",
+    "name": "African Liberation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Aldhelm",
+    "name": "Aldhelm",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Bede",
+    "name": "Bede",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Canius",
+    "name": "Canius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Dionysius of Milan",
+    "name": "Dionysius of Milan",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Dúnchad mac Cinn Fáelad",
+    "name": "Dúnchad mac Cinn Fáelad",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Gerard of Lunel",
+    "name": "Gerard of Lunel",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Madeleine Sophie Barat",
+    "name": "Madeleine Sophie Barat",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Mary Magdalene de Pazzi",
+    "name": "Mary Magdalene de Pazzi",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Maximus  of Évreux",
+    "name": "Maximus  of Évreux",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Pope Boniface IV",
+    "name": "Pope Boniface IV",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Pope Gregory VII",
+    "name": "Pope Gregory VII",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Pope Urban I",
+    "name": "Pope Urban I",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Zenobius of Florence",
+    "name": "Zenobius of Florence",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "May 25",
+    "name": "May 25",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "First National Government / National Day",
+    "name": "First National Government / National Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Geek Pride Day",
+    "name": "Geek Pride Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Last bell",
+    "name": "Last bell",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Liberation Day",
+    "name": "Liberation Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "International Missing Children's Day  and its related observances:",
+    "name": "International Missing Children's Day  and its related observances:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "National Missing Children's Day ,",
+    "name": "National Missing Children's Day ,",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "National Tap Dance Day",
+    "name": "National Tap Dance Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 25,
+    "en_name": "Towel Day in honour of the work of the writer Douglas Adams",
+    "name": "Towel Day in honour of the work of the writer Douglas Adams",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Augustine of Canterbury",
+    "name": "Augustine of Canterbury",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Lambert of Vence",
+    "name": "Lambert of Vence",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Martyrs of the Paris Commune",
+    "name": "Martyrs of the Paris Commune",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Peter Sanz",
+    "name": "Peter Sanz",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Philip Neri",
+    "name": "Philip Neri",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Pope Eleutherius",
+    "name": "Pope Eleutherius",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Quadratus of Athens",
+    "name": "Quadratus of Athens",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Zachary, Bishop of Vienne",
+    "name": "Zachary, Bishop of Vienne",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "May 26",
+    "name": "May 26",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "Mother's Day",
+    "name": "Mother's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "National Paper Airplane Day",
+    "name": "National Paper Airplane Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 26,
+    "en_name": "National Sorry Day",
+    "name": "National Sorry Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Armed Forces Day",
+    "name": "Armed Forces Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Children's Day",
+    "name": "Children's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Augustine of Canterbury",
+    "name": "Augustine of Canterbury",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Blessed Lojze Grozde",
+    "name": "Blessed Lojze Grozde",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Bruno of Würzburg",
+    "name": "Bruno of Würzburg",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Eutropius of Orange",
+    "name": "Eutropius of Orange",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Hildebert",
+    "name": "Hildebert",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Julius the Veteran",
+    "name": "Julius the Veteran",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "May 27",
+    "name": "May 27",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Mother's Day",
+    "name": "Mother's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Navy Day",
+    "name": "Navy Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Slavery Abolition Day",
+    "name": "Slavery Abolition Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 27,
+    "en_name": "Start of National Reconciliation Week",
+    "name": "Start of National Reconciliation Week",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Armed Forces Day",
+    "name": "Armed Forces Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Bernard of Menthon",
+    "name": "Bernard of Menthon",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Germain of Paris",
+    "name": "Germain of Paris",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "John Calvin",
+    "name": "John Calvin",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Blessed Lanfranc",
+    "name": "Blessed Lanfranc",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Blessed Margaret Pole",
+    "name": "Blessed Margaret Pole",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Blessed Maria Bagnesi",
+    "name": "Blessed Maria Bagnesi",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Blessed Thomas Ford",
+    "name": "Blessed Thomas Ford",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Ubaldesca Taccini",
+    "name": "Ubaldesca Taccini",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "William of Gellone",
+    "name": "William of Gellone",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "May 28",
+    "name": "May 28",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Downfall of the Derg",
+    "name": "Downfall of the Derg",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Flag Day",
+    "name": "Flag Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Menstrual Hygiene Day",
+    "name": "Menstrual Hygiene Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Republic Day",
+    "name": "Republic Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 28,
+    "en_name": "Youm-e-Takbir",
+    "name": "Youm-e-Takbir",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Army Day",
+    "name": "Army Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Ascension of Bahá'u'lláh",
+    "name": "Ascension of Bahá'u'lláh",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Bona of Pisa",
+    "name": "Bona of Pisa",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Hypomone",
+    "name": "Hypomone",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Joseph Gérard",
+    "name": "Joseph Gérard",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Maximin of Trier",
+    "name": "Maximin of Trier",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Pope Alexander of Alexandria",
+    "name": "Pope Alexander of Alexandria",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Pope Paul VI",
+    "name": "Pope Paul VI",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Richard Thirkeld",
+    "name": "Richard Thirkeld",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Theodosia of Constantinople",
+    "name": "Theodosia of Constantinople",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Ursula Ledóchowska",
+    "name": "Ursula Ledóchowska",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "May 29",
+    "name": "May 29",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "International Day of United Nations Peacekeepers",
+    "name": "International Day of United Nations Peacekeepers",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Oak Apple Day , and its related observance:",
+    "name": "Oak Apple Day , and its related observance:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Castleton Garland Day",
+    "name": "Castleton Garland Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Veterans Day",
+    "name": "Veterans Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 29,
+    "en_name": "Democracy Day",
+    "name": "Democracy Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Anguilla Day, commemorates the beginning of the Anguillian Revolution in 1967.",
+    "name": "Anguilla Day, commemorates the beginning of the Anguillian Revolution in 1967.",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Canary Islands Day",
+    "name": "Canary Islands Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Ferdinand III of Castile",
+    "name": "Ferdinand III of Castile",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Isaac of Dalmatia",
+    "name": "Isaac of Dalmatia",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Joan of Arc",
+    "name": "Joan of Arc",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Joseph Marello",
+    "name": "Joseph Marello",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "May 30",
+    "name": "May 30",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Indian Arrival Day",
+    "name": "Indian Arrival Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Lod Massacre Remembrance Day",
+    "name": "Lod Massacre Remembrance Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Mother's Day",
+    "name": "Mother's Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 30,
+    "en_name": "Statehood Day",
+    "name": "Statehood Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Anniversary of Royal Brunei Malay Regiment",
+    "name": "Anniversary of Royal Brunei Malay Regiment",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Christian feast day:",
+    "name": "Christian feast day:",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Camilla Battista da Varano",
+    "name": "Camilla Battista da Varano",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Hermias",
+    "name": "Hermias",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Petronella",
+    "name": "Petronella",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Visitation of Mary",
+    "name": "Visitation of Mary",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "May 31",
+    "name": "May 31",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "World No Tobacco Day",
+    "name": "World No Tobacco Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  },
+  {
+    "m": 4,
+    "d": 31,
+    "en_name": "Borobi Day",
+    "name": "Borobi Day",
+    "desc": "مأخوذة من التقويم العالمي",
+    "category": "علمي"
+  }
+]
