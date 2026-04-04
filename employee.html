@@ -9,20 +9,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+<style>
+.top-nav-bar { display: none !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; z-index: -999 !important; }
+</style>
 <script>
 window.IS_EMPLOYEE = true;
 document.addEventListener('DOMContentLoaded', () => {
-    const bars = document.querySelectorAll('.top-nav-bar, .main-top-nav, [class*=
-av-bar]');
-    bars.forEach(b => b.style.display = 'none');
+    const bars = document.querySelectorAll('.top-nav-bar, .main-top-nav');
+    bars.forEach(b => b.style.setProperty('display', 'none', 'important'));
     ['openSwitchBoardsBtn', 'createListBtn'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
+        if (el) el.style.setProperty('display', 'none', 'important');
     });
     const header = document.querySelector('.main-header');
-    if (header) header.style.display = 'none';
+    if (header) header.style.setProperty('display', 'none', 'important');
     const smBtns = document.querySelector('.sm-header-controls');
-    if (smBtns) smBtns.style.display = 'none';
+    if (smBtns) smBtns.style.setProperty('display', 'none', 'important');
 });
 </script>
     <!-- Top Navigation Bar -->
