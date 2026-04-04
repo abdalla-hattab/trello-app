@@ -1,7 +1,7 @@
-// Firebase Setup
 const firebaseConfig = {
   apiKey: "AIzaSyCBC6_DRCiMwoGPIM1uexpfvXQIaeF-DOc",
   authDomain: "socail-media-creation.firebaseapp.com",
+  databaseURL: "https://socail-media-creation-default-rtdb.firebaseio.com",
   projectId: "socail-media-creation",
   storageBucket: "socail-media-creation.firebasestorage.app",
   messagingSenderId: "46695151429",
