@@ -1,53 +1,88 @@
-// Migration & State initialization
-let rawListsData = localStorage.getItem('ai_accounts_lists');
-let boards = [];
+// Firebase Setup
+const firebaseConfig = {
+  apiKey: "AIzaSyCBC6_DRCiMwoGPIM1uexpfvXQIaeF-DOc",
+  authDomain: "socail-media-creation.firebaseapp.com",
+  projectId: "socail-media-creation",
+  storageBucket: "socail-media-creation.firebasestorage.app",
+  messagingSenderId: "46695151429",
+  appId: "1:46695151429:web:5a0b35f86cd68b27eef02c"
+};
 
-if (rawListsData) {
-    boards = JSON.parse(rawListsData);
-} else {
-    const oldCardsData = localStorage.getItem('ai_accounts_cards');
-    let migratedCards = [];
-    if (oldCardsData) migratedCards = JSON.parse(oldCardsData);
-    boards = [{ id: 'board-default', title: 'Account', type: 'timer', cards: migratedCards }];
-    saveState();
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
 }
+const db = firebase.database();
 
-// Ensure Kanban migration
-boards.forEach(b => {
-    if (!b.type) {
-        if (b.title.trim().toLowerCase() === 'managing') b.type = 'kanban';
-        else b.type = 'timer';
-    }
-    if (b.type === 'kanban' && !b.lists) {
-        b.lists = [
-            { id: 'list-' + Date.now(), title: b.title, cards: (b.cards || []), x: 40, y: 80 }
-        ];
-        delete b.cards;
-    }
-    if (b.type === 'kanban') {
-        b.connections = b.connections || [];
-        b.lists.forEach((l, i) => {
-            if (l.x === undefined) l.x = 40 + (i * 340);
-            if (l.y === undefined) l.y = 80;
-        });
-    }
-    
-    // Migrate old Social Scheduler names to Client 1
-    if (b.type === 'social_scheduler' && (b.title === 'Social Scheduler 📅' || b.title === 'Social Scheduler')) {
-        b.title = 'Client 1';
-    }
-});
-
+let boards = [];
 let activeBoardId = localStorage.getItem('ai_active_board');
-if (!activeBoardId && boards.length > 0) activeBoardId = boards[0].id;
 let activeCardId = null;
 let activeTargetListId = null;
 let isGlobalDragging = false;
+let isApplyingFirebaseSync = false;
+
+// Attempt to load from localStorage first for faster initial render
+let rawListsData = localStorage.getItem('ai_accounts_lists');
+if (rawListsData) {
+    boards = JSON.parse(rawListsData);
+}
+
+// Migrate Kanban structure
+function ensureBoardStructure() {
+    boards.forEach(b => {
+        if (!b.type) {
+            if (b.title.trim().toLowerCase() === 'managing') b.type = 'kanban';
+            else b.type = 'timer';
+        }
+        if (b.type === 'kanban' && !b.lists) {
+            b.lists = [
+                { id: 'list-' + Date.now(), title: b.title, cards: (b.cards || []), x: 40, y: 80 }
+            ];
+            delete b.cards;
+        }
+        if (b.type === 'kanban') {
+            b.connections = b.connections || [];
+            b.lists.forEach((l, i) => {
+                if (l.x === undefined) l.x = 40 + (i * 340);
+                if (l.y === undefined) l.y = 80;
+            });
+        }
+        if (b.type === 'social_scheduler' && (b.title === 'Social Scheduler 📅' || b.title === 'Social Scheduler')) {
+            b.title = 'Client 1';
+        }
+    });
+
+    if (!activeBoardId && boards.length > 0) activeBoardId = boards[0].id;
+}
+
+ensureBoardStructure();
+
+// Setup Firebase real-time listener
+db.ref('ai_accounts_lists').on('value', (snapshot) => {
+    isApplyingFirebaseSync = true;
+    const data = snapshot.val();
+    if (data) {
+        boards = data;
+        ensureBoardStructure();
+        if (typeof render === 'function') render();
+    } else {
+        // First ever load: push our local data to Firebase
+        if (boards.length > 0) {
+            db.ref('ai_accounts_lists').set(boards);
+        } else {
+            boards = [{ id: 'board-default', title: 'Account', type: 'timer', cards: [] }];
+            db.ref('ai_accounts_lists').set(boards);
+            ensureBoardStructure();
+        }
+    }
+    setTimeout(() => { isApplyingFirebaseSync = false; }, 500); // Give plenty of time to avoid echoing saveState on initial render
+});
 
 function saveState() {
+    if (isApplyingFirebaseSync) return; // Prevent echoing back to Firebase while processing incoming syncs
+
     boards.forEach(board => {
         if (board.lists && board.connections) {
-            // Garbage collect totally orphaned tracker lists (hidden floating lists bug)
+            // Garbage collect totally orphaned tracker lists
             const listsToRemove = [];
             board.lists.forEach(l => {
                 const isTracker = l.trelloListId || l.trelloTasksListId || l.pipedriveStageId || l.trackerType;
@@ -62,8 +97,12 @@ function saveState() {
         }
     });
     
+    // Save to local cache
     localStorage.setItem('ai_accounts_lists', JSON.stringify(boards));
     localStorage.setItem('ai_active_board', activeBoardId);
+
+    // Push to Firebase (fire and forget)
+    db.ref('ai_accounts_lists').set(boards).catch(err => console.error("Firebase Sync Error", err));
 }
 
 function ensureCardChecklist(card) {
