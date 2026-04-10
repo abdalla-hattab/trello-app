@@ -17,45 +17,6 @@ if (rawPrivate) {
     localStorage.setItem('ai_private_boards', JSON.stringify(boards));
 }
 
-// --- Firebase LIVE SYNC Integration ---
-const firebaseConfig = {
-  apiKey: "AIzaSyC7Ty_uaB7VE8ucSPS6ZlMNFAcnM-qpagk",
-  authDomain: "managing-work-live.firebaseapp.com",
-  databaseURL: "https://managing-work-live-default-rtdb.firebaseio.com",
-  projectId: "managing-work-live",
-  storageBucket: "managing-work-live.firebasestorage.app",
-  messagingSenderId: "402823749331",
-  appId: "1:402823749331:web:27b250c52a49db6091be26"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const syncRef = db.ref('agency_trello_app_data');
-
-let isDBUpdate = false;
-
-syncRef.on('value', (snapshot) => {
-    isDBUpdate = true;
-    const data = snapshot.val();
-    if (data && data.boards) {
-        boards = data.boards;
-        if (data.activeBoardId) {
-            activeBoardId = data.activeBoardId;
-            localStorage.setItem('ai_active_board_id', activeBoardId);
-        }
-        ensureBoardStructure();
-        
-        // Skip re-rendering local echoes to prevent destroying the DOM during local animations
-        if (typeof render === 'function' && !window.isLocalSaveInProgress) {
-            render();
-        }
-    } else {
-        // If DB is empty, but we have local boards, push them!
-        if (boards.length > 0) saveState();
-    }
-    isDBUpdate = false;
-});
-// --------------------------------------
-
 // Migrate Kanban structure
 function ensureBoardStructure() {
     boards.forEach(b => {
@@ -74,7 +35,6 @@ function ensureBoardStructure() {
             b.lists.forEach((l, i) => {
                 if (l.x === undefined) l.x = 40 + (i * 340);
                 if (l.y === undefined) l.y = 80;
-                if (!l.cards) l.cards = [];
             });
         }
     });
@@ -109,18 +69,6 @@ function saveState() {
     // Once migrated successfully, delete the old mixed state string to save local space
     if (localStorage.getItem('ai_accounts_lists')) {
         localStorage.removeItem('ai_accounts_lists');
-    }
-    
-    // Firebase Live Sync
-    if (!isDBUpdate && typeof syncRef !== 'undefined') {
-        window.isLocalSaveInProgress = true;
-        syncRef.set({
-            boards: boards,
-            activeBoardId: activeBoardId || null
-        }).catch(err => console.error("Firebase Sync Error", err))
-        .finally(() => {
-            setTimeout(() => { window.isLocalSaveInProgress = false; }, 200);
-        });
     }
 }
 
@@ -3928,25 +3876,6 @@ function renderKanbanApp(activeBoard) {
             tType = parts[1];
         }
         
-        let foundAnyStrictMatch = false;
-        
-        if (tType) {
-            activeBoard.connections.forEach(c => {
-                if (c.source === sourceId && (edge === null || c.sourcePort === edge)) {
-                    const tl = activeBoard.lists.find(l => l.id === c.target);
-                    if (tl) {
-                        if (tType === 'clientHappiness' && tl.isClientHappiness) foundAnyStrictMatch = true;
-                        if (tType === 'moneySmelling' && tl.isMoneySmelling) foundAnyStrictMatch = true;
-                        if (tType === 'newClients' && tl.isNewClients) foundAnyStrictMatch = true;
-                        if (tType === 'pipedrive' && tl.pipedriveStageId) foundAnyStrictMatch = true;
-                        if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') foundAnyStrictMatch = true;
-                        if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') foundAnyStrictMatch = true;
-                        if (tType === 'ads' && tl.trackerType === 'ads') foundAnyStrictMatch = true;
-                    }
-                }
-            });
-        }
-        
         activeBoard.connections.forEach(c => {
             if (c.source === sourceId && (edge === null || c.sourcePort === edge)) {
                 let matches = true;
@@ -3961,8 +3890,6 @@ function renderKanbanApp(activeBoard) {
                         if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
                         if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
                         if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
-                        
-                        if (!foundAnyStrictMatch) matches = true; 
                     }
                 }
                 
@@ -4799,7 +4726,8 @@ function renderKanbanApp(activeBoard) {
         if (list.trelloListId) {
             const tBadge = document.createElement('span');
             if (list.trackerType === 'ads') {
-                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Ads Tracker (${list.cards.length})`;
+                const cardCount = list.cards ? list.cards.length : 0;
+                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Ads Tracker (${cardCount})`;
                 tBadge.title = "Connected as an Ads Tracker";
                 tBadge.style.background = 'rgba(0, 188, 212, 0.15)';
                 tBadge.style.color = '#00838F';
@@ -5214,12 +5142,11 @@ function renderKanbanApp(activeBoard) {
                 };
                 
                 toggleBtn.innerHTML = iconsHtml;
-                toggleBtn.onclick = (e) => {
-                    // Try to avoid processing if user just finished a native drag
-                    if (e.defaultPrevented) return;
+                toggleBtn.title = 'Toggle Trackers';
+                toggleBtn.onmousedown = (e) => e.stopPropagation();
+                if(toggleBtn) toggleBtn.onclick = (e) => {
                     e.stopPropagation();
-                    let svgNode = e.target.closest('svg');
-                    if (!svgNode && e.target.tagName !== 'SVG') svgNode = e.target.querySelector('svg');
+                    const svgNode = e.target.closest('svg');
                     if (!svgNode) return;
                     
                     const tType = svgNode.getAttribute('data-tracker-type');
@@ -5242,7 +5169,7 @@ function renderKanbanApp(activeBoard) {
                             if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                             if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
                             if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
-                            if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
+                            if (tType === 'ads' && tl.trelloListId && tl.trackerType === 'ads') matches = true;
                             
                             if (matches) {
                                 specificTargets.add(c.target);
@@ -5250,17 +5177,6 @@ function renderKanbanApp(activeBoard) {
                             }
                         }
                     });
-                    
-                    // FALLBACK: If user manually cross-wired trackers (e.g. Ads icon -> Trello list)
-                    // and no strict types matched, fallback to collapsing ALL lists on this edge port.
-                    if (specificTargets.size === 0) {
-                        activeBoard.connections.forEach(c => {
-                            if(c.source === list.id && c.sourcePort === edge) {
-                                specificTargets.add(c.target);
-                                getTargs(c.target, null, specificTargets);
-                            }
-                        });
-                    }
 
                     if (willCollapse) {
                         list.collapsedEdges.push(collapseKey);
@@ -10186,7 +10102,9 @@ window.applySmartPacking = function(curBoard) {
                 if (c.source === sourceId) {
                     const targetList = curBoard.lists.find(l => l.id === c.target && (l.trelloListId || l.trackerType === 'ads'));
                     if (targetList && targetList.cards) {
-                        // Do not delete isManualLayout here. Allow user to manually position their tracker lists.
+                        if (targetList.trelloListId && targetList.trackerType !== 'ads' && targetList.trackerType !== 'trelloSpeech') {
+                            delete targetList.isManualLayout; // REVERTED: Restore background squashing mathematical algorithm
+                        }
                         const eff = curBoard.sentimentFilters;
                         let listHiddenByFilter = false;
                         
