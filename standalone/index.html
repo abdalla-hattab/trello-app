@@ -14,6 +14,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Password Protection Overlay Script -->
+    <script>
+        if (localStorage.getItem('managing_masarat_pw') !== 'Zz11997263') {
+            document.write(`
+                <div id="global-pw-overlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#091e42;z-index:99999999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter', sans-serif;">
+                    <style>body{overflow:hidden !important;}</style>
+                    <h2 style="color:white;margin-bottom:20px;">Access Restricted</h2>
+                    <input type="password" id="global-pw-input" placeholder="Enter Password" style="padding:12px;font-size:16px;border-radius:6px;border:none;margin-bottom:12px;width:250px;text-align:center;box-sizing:border-box;">
+                    <button id="global-pw-btn" style="padding:12px 24px;width:250px;font-size:16px;border-radius:6px;background:#0c66e4;color:white;border:none;cursor:pointer;font-weight:bold;box-sizing:border-box;">Enter</button>
+                    <p id="global-pw-error" style="color:#ff5252;margin-top:10px;display:none;">Incorrect password</p>
+                </div>
+            `);
+            window.addEventListener('DOMContentLoaded', () => {
+                const btn = document.getElementById('global-pw-btn');
+                const input = document.getElementById('global-pw-input');
+                const err = document.getElementById('global-pw-error');
+                const overlay = document.getElementById('global-pw-overlay');
+                
+                const check = () => {
+                    if(input.value === 'Zz11997263') {
+                        localStorage.setItem('managing_masarat_pw', 'Zz11997263');
+                        overlay.remove();
+                    } else {
+                        err.style.display = 'block';
+                    }
+                };
+                btn.onclick = check;
+                input.onkeydown = (e) => { if(e.key === 'Enter') check(); };
+            });
+        }
+    </script>
+
     <!-- Top Navigation Bar -->
     <div class="top-nav-bar">
         <button class="nav-item">
