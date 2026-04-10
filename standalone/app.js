@@ -3928,6 +3928,25 @@ function renderKanbanApp(activeBoard) {
             tType = parts[1];
         }
         
+        let foundAnyStrictMatch = false;
+        
+        if (tType) {
+            activeBoard.connections.forEach(c => {
+                if (c.source === sourceId && (edge === null || c.sourcePort === edge)) {
+                    const tl = activeBoard.lists.find(l => l.id === c.target);
+                    if (tl) {
+                        if (tType === 'clientHappiness' && tl.isClientHappiness) foundAnyStrictMatch = true;
+                        if (tType === 'moneySmelling' && tl.isMoneySmelling) foundAnyStrictMatch = true;
+                        if (tType === 'newClients' && tl.isNewClients) foundAnyStrictMatch = true;
+                        if (tType === 'pipedrive' && tl.pipedriveStageId) foundAnyStrictMatch = true;
+                        if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') foundAnyStrictMatch = true;
+                        if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') foundAnyStrictMatch = true;
+                        if (tType === 'ads' && tl.trackerType === 'ads') foundAnyStrictMatch = true;
+                    }
+                }
+            });
+        }
+        
         activeBoard.connections.forEach(c => {
             if (c.source === sourceId && (edge === null || c.sourcePort === edge)) {
                 let matches = true;
@@ -3942,6 +3961,8 @@ function renderKanbanApp(activeBoard) {
                         if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
                         if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
                         if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
+                        
+                        if (!foundAnyStrictMatch) matches = true; 
                     }
                 }
                 
@@ -5193,17 +5214,12 @@ function renderKanbanApp(activeBoard) {
                 };
                 
                 toggleBtn.innerHTML = iconsHtml;
-                let _ptrStartX = 0, _ptrStartY = 0;
-                toggleBtn.onpointerdown = (e) => {
-                    e.stopPropagation();
-                    _ptrStartX = e.clientX;
-                    _ptrStartY = e.clientY;
-                };
-                if(toggleBtn) toggleBtn.onpointerup = (e) => {
-                    if (Math.abs(e.clientX - _ptrStartX) > 20 || Math.abs(e.clientY - _ptrStartY) > 20) return;
+                toggleBtn.onclick = (e) => {
+                    // Try to avoid processing if user just finished a native drag
+                    if (e.defaultPrevented) return;
                     e.stopPropagation();
                     let svgNode = e.target.closest('svg');
-                    if (!svgNode) svgNode = e.target.querySelector('svg');
+                    if (!svgNode && e.target.tagName !== 'SVG') svgNode = e.target.querySelector('svg');
                     if (!svgNode) return;
                     
                     const tType = svgNode.getAttribute('data-tracker-type');
@@ -5234,6 +5250,17 @@ function renderKanbanApp(activeBoard) {
                             }
                         }
                     });
+                    
+                    // FALLBACK: If user manually cross-wired trackers (e.g. Ads icon -> Trello list)
+                    // and no strict types matched, fallback to collapsing ALL lists on this edge port.
+                    if (specificTargets.size === 0) {
+                        activeBoard.connections.forEach(c => {
+                            if(c.source === list.id && c.sourcePort === edge) {
+                                specificTargets.add(c.target);
+                                getTargs(c.target, null, specificTargets);
+                            }
+                        });
+                    }
 
                     if (willCollapse) {
                         list.collapsedEdges.push(collapseKey);
