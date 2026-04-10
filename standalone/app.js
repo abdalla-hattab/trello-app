@@ -5193,13 +5193,17 @@ function renderKanbanApp(activeBoard) {
                 };
                 
                 toggleBtn.innerHTML = iconsHtml;
-                toggleBtn.onmousedown = (e) => {
+                let _ptrStartX = 0, _ptrStartY = 0;
+                toggleBtn.onpointerdown = (e) => {
                     e.stopPropagation();
+                    _ptrStartX = e.clientX;
+                    _ptrStartY = e.clientY;
                 };
-                // We don't need distance checks for mouseup because native HTML5 drag swallows mouseup if a drag actually happens
-                if(toggleBtn) toggleBtn.onmouseup = (e) => {
+                if(toggleBtn) toggleBtn.onpointerup = (e) => {
+                    if (Math.abs(e.clientX - _ptrStartX) > 20 || Math.abs(e.clientY - _ptrStartY) > 20) return;
                     e.stopPropagation();
-                    const svgNode = e.target.closest('svg');
+                    let svgNode = e.target.closest('svg');
+                    if (!svgNode) svgNode = e.target.querySelector('svg');
                     if (!svgNode) return;
                     
                     const tType = svgNode.getAttribute('data-tracker-type');
