@@ -1634,7 +1634,10 @@ function openPipedriveSettingsModal() {
 
 if (fetchPipedrivePipelinesBtn) {
     if(fetchPipedrivePipelinesBtn) fetchPipedrivePipelinesBtn.onclick = async () => {
-        const domain = pipedriveDomainInput.value.trim();
+        let domain = pipedriveDomainInput.value.trim();
+        if (domain.includes('://')) domain = domain.split('://')[1];
+        domain = domain.split('.')[0];
+        pipedriveDomainInput.value = domain;
         const token = pipedriveTokenInput.value.trim();
         if(!domain || !token) {
             showToast("Enter both Domain and Token first");
@@ -1671,7 +1674,10 @@ if (fetchPipedrivePipelinesBtn) {
 
 if (savePipedriveSettingsBtn) {
     if(savePipedriveSettingsBtn) savePipedriveSettingsBtn.onclick = () => {
-        const domain = pipedriveDomainInput.value.trim();
+        let domain = pipedriveDomainInput.value.trim();
+        if (domain.includes('://')) domain = domain.split('://')[1];
+        domain = domain.split('.')[0];
+        pipedriveDomainInput.value = domain;
         const token = pipedriveTokenInput.value.trim();
         localStorage.setItem('pipedriveDomain', domain);
         localStorage.setItem('pipedriveToken', token);
