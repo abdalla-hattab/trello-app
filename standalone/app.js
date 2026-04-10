@@ -17,6 +17,41 @@ if (rawPrivate) {
     localStorage.setItem('ai_private_boards', JSON.stringify(boards));
 }
 
+// --- Firebase LIVE SYNC Integration ---
+const firebaseConfig = {
+  apiKey: "AIzaSyC7Ty_uaB7VE8ucSPS6ZlMNFAcnM-qpagk",
+  authDomain: "managing-work-live.firebaseapp.com",
+  databaseURL: "https://managing-work-live-default-rtdb.firebaseio.com",
+  projectId: "managing-work-live",
+  storageBucket: "managing-work-live.firebasestorage.app",
+  messagingSenderId: "402823749331",
+  appId: "1:402823749331:web:27b250c52a49db6091be26"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const syncRef = db.ref('agency_trello_app_data');
+
+let isDBUpdate = false;
+
+syncRef.on('value', (snapshot) => {
+    isDBUpdate = true;
+    const data = snapshot.val();
+    if (data && data.boards) {
+        boards = data.boards;
+        if (data.activeBoardId) {
+            activeBoardId = data.activeBoardId;
+            localStorage.setItem('ai_active_board_id', activeBoardId);
+        }
+        ensureBoardStructure();
+        if (typeof render === 'function') render();
+    } else {
+        // If DB is empty, but we have local boards, push them!
+        if (boards.length > 0) saveState();
+    }
+    isDBUpdate = false;
+});
+// --------------------------------------
+
 // Migrate Kanban structure
 function ensureBoardStructure() {
     boards.forEach(b => {
@@ -69,6 +104,14 @@ function saveState() {
     // Once migrated successfully, delete the old mixed state string to save local space
     if (localStorage.getItem('ai_accounts_lists')) {
         localStorage.removeItem('ai_accounts_lists');
+    }
+    
+    // Firebase Live Sync
+    if (!isDBUpdate && typeof syncRef !== 'undefined') {
+        syncRef.set({
+            boards: boards,
+            activeBoardId: activeBoardId || null
+        }).catch(err => console.error("Firebase Sync Error", err));
     }
 }
 
