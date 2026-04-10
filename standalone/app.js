@@ -43,7 +43,11 @@ syncRef.on('value', (snapshot) => {
             localStorage.setItem('ai_active_board_id', activeBoardId);
         }
         ensureBoardStructure();
-        if (typeof render === 'function') render();
+        
+        // Skip re-rendering local echoes to prevent destroying the DOM during local animations
+        if (typeof render === 'function' && !window.isLocalSaveInProgress) {
+            render();
+        }
     } else {
         // If DB is empty, but we have local boards, push them!
         if (boards.length > 0) saveState();
@@ -109,10 +113,14 @@ function saveState() {
     
     // Firebase Live Sync
     if (!isDBUpdate && typeof syncRef !== 'undefined') {
+        window.isLocalSaveInProgress = true;
         syncRef.set({
             boards: boards,
             activeBoardId: activeBoardId || null
-        }).catch(err => console.error("Firebase Sync Error", err));
+        }).catch(err => console.error("Firebase Sync Error", err))
+        .finally(() => {
+            setTimeout(() => { window.isLocalSaveInProgress = false; }, 200);
+        });
     }
 }
 
