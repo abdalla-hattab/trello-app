@@ -70,6 +70,7 @@ function ensureBoardStructure() {
             b.lists.forEach((l, i) => {
                 if (l.x === undefined) l.x = 40 + (i * 340);
                 if (l.y === undefined) l.y = 80;
+                if (!l.cards) l.cards = [];
             });
         }
     });
