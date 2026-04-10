@@ -477,6 +477,12 @@ window.handleToggleReorder = function(e, listId, edge, targetType) {
 };
 
 window.openTrelloCardDetailsModal = async function(cardId, listId) {
+    if (!trelloKey || !trelloToken) {
+        showToast("Please set up your Trello API credentials first!");
+        const trelloSettingsModal = document.getElementById('trelloSettingsModal');
+        if (trelloSettingsModal) trelloSettingsModal.classList.add('active');
+        return;
+    }
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if (!activeBoard) return;
     
