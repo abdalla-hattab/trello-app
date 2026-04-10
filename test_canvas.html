@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body>
+<input type="file" id="smMediaInput" onchange="run(this)">
+<img id="smImagePreview" style="display:none;">
+<script>
+async function run(input) {
+  const file = input.files[0];
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('smImagePreview');
+  img.src = url;
+  
+  await new Promise(res => { if (img.complete) res(); else img.onload = res; });
+  
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const MAX_THUMB_SIZE = 300;
+  
+  const scale = Math.min(MAX_THUMB_SIZE / img.naturalWidth, MAX_THUMB_SIZE / img.naturalHeight, 1);
+  canvas.width = img.naturalWidth * scale;
+  canvas.height = img.naturalHeight * scale;
+  
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const data = canvas.toDataURL('image/jpeg', 0.6);
+  console.log("SUCCESS length= " + data.length);
+  document.body.innerHTML += '<img src="'+data+'">';
+}
+</script>
+</body>
+</html>

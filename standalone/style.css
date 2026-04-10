@@ -171,12 +171,12 @@ body {
     box-shadow: 0 8px 24px rgba(0, 162, 0, 0.15) !important;
     border-top: 4px solid #00a200 !important;
 }
-.kanban-list.pipedrive-stages-only:not(.list-collapsed) {
+.kanban-list.auto-height-list:not(.list-collapsed) {
     max-height: none !important;
     height: auto !important;
     min-height: min-content !important;
 }
-.kanban-list.pipedrive-stages-only:not(.list-collapsed) .card-list {
+.kanban-list.auto-height-list:not(.list-collapsed) .card-list {
     max-height: none !important;
     overflow-y: visible !important;
     min-height: max-content !important;
@@ -850,9 +850,13 @@ input[type=number] {
     gap: 18px;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: default;
     z-index: 20;
     transition: opacity 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.port-toggle:active {
+    cursor: grabbing !important;
 }
 
 .kanban-list:hover .port-toggle {
@@ -908,13 +912,14 @@ input[type=number] {
 }
 
 .trello-task-card.collapsed {
-    opacity: 0;
-    max-height: 0;
+    opacity: 0 !important;
+    max-height: 0 !important;
     margin-bottom: 0px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
+    padding: 0px !important;
     border-width: 0px !important;
-    transform: scaleY(0.9);
+    border-color: transparent !important;
+    transform: scaleY(0.9) !important;
+    pointer-events: none !important;
 }
 
 /* Age Color Picker Menu */
@@ -989,6 +994,12 @@ input[type=number] {
     padding-bottom: 0 !important;
     border-width: 0 !important;
     pointer-events: none;
+}
+
+.kanban-list .downstream-trackers-summary {
+    padding-right: 4px;
+    padding-bottom: 2px;
+    padding-top: 2px;
 }
 
 /* ========================================================= */

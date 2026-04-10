@@ -1,53 +1,53 @@
-// Migration & State initialization
-let rawListsData = localStorage.getItem('ai_accounts_lists');
 let boards = [];
-
-if (rawListsData) {
-    boards = JSON.parse(rawListsData);
-} else {
-    const oldCardsData = localStorage.getItem('ai_accounts_cards');
-    let migratedCards = [];
-    if (oldCardsData) migratedCards = JSON.parse(oldCardsData);
-    boards = [{ id: 'board-default', title: 'Account', type: 'timer', cards: migratedCards }];
-    saveState();
-}
-
-// Ensure Kanban migration
-boards.forEach(b => {
-    if (!b.type) {
-        if (b.title.trim().toLowerCase() === 'managing') b.type = 'kanban';
-        else b.type = 'timer';
-    }
-    if (b.type === 'kanban' && !b.lists) {
-        b.lists = [
-            { id: 'list-' + Date.now(), title: b.title, cards: (b.cards || []), x: 40, y: 80 }
-        ];
-        delete b.cards;
-    }
-    if (b.type === 'kanban') {
-        b.connections = b.connections || [];
-        b.lists.forEach((l, i) => {
-            if (l.x === undefined) l.x = 40 + (i * 340);
-            if (l.y === undefined) l.y = 80;
-        });
-    }
-    
-    // Migrate old Social Scheduler names to Client 1
-    if (b.type === 'social_scheduler' && (b.title === 'Social Scheduler 📅' || b.title === 'Social Scheduler')) {
-        b.title = 'Client 1';
-    }
-});
-
-let activeBoardId = localStorage.getItem('ai_active_board');
-if (!activeBoardId && boards.length > 0) activeBoardId = boards[0].id;
+let activeBoardId = localStorage.getItem('ai_active_board_id'); // fixed legacy ai_active_board
 let activeCardId = null;
 let activeTargetListId = null;
 let isGlobalDragging = false;
 
+// Migration from the old mixed storage 'ai_accounts_lists'
+let rawOldListsData = localStorage.getItem('ai_accounts_lists');
+let rawPrivate = localStorage.getItem('ai_private_boards');
+
+if (rawPrivate) {
+    boards = JSON.parse(rawPrivate);
+} else if (rawOldListsData) {
+    // One time migration: extract private boards from old mixed storage
+    let oldBoards = JSON.parse(rawOldListsData);
+    boards = oldBoards.filter(b => b.type !== 'social_scheduler');
+    localStorage.setItem('ai_private_boards', JSON.stringify(boards));
+}
+
+// Migrate Kanban structure
+function ensureBoardStructure() {
+    boards.forEach(b => {
+        if (!b.type) {
+            if (b.title.trim().toLowerCase() === 'managing') b.type = 'kanban';
+            else b.type = 'timer';
+        }
+        if (b.type === 'kanban' && !b.lists) {
+            b.lists = [
+                { id: 'list-' + Date.now(), title: b.title, cards: (b.cards || []), x: 40, y: 80 }
+            ];
+            delete b.cards;
+        }
+        if (b.type === 'kanban') {
+            b.connections = b.connections || [];
+            b.lists.forEach((l, i) => {
+                if (l.x === undefined) l.x = 40 + (i * 340);
+                if (l.y === undefined) l.y = 80;
+            });
+        }
+    });
+
+    if (!activeBoardId && boards.length > 0) activeBoardId = boards[0].id;
+}
+
+ensureBoardStructure();
+
 function saveState() {
     boards.forEach(board => {
         if (board.lists && board.connections) {
-            // Garbage collect totally orphaned tracker lists (hidden floating lists bug)
+            // Garbage collect totally orphaned tracker lists
             const listsToRemove = [];
             board.lists.forEach(l => {
                 const isTracker = l.trelloListId || l.trelloTasksListId || l.pipedriveStageId || l.trackerType;
@@ -62,8 +62,14 @@ function saveState() {
         }
     });
     
-    localStorage.setItem('ai_accounts_lists', JSON.stringify(boards));
-    localStorage.setItem('ai_active_board', activeBoardId);
+    // Save locally
+    localStorage.setItem('ai_private_boards', JSON.stringify(boards));
+    localStorage.setItem('ai_active_board_id', activeBoardId);
+    
+    // Once migrated successfully, delete the old mixed state string to save local space
+    if (localStorage.getItem('ai_accounts_lists')) {
+        localStorage.removeItem('ai_accounts_lists');
+    }
 }
 
 function ensureCardChecklist(card) {
@@ -81,14 +87,19 @@ function ensureCardChecklist(card) {
         .map(item => {
             if (typeof item === 'string') {
                 const text = item.trim();
-                return text ? { text, checked: false } : null;
+                return text ? { text, checked: false, comment: '', showComment: false } : null;
             }
             if (!item || typeof item !== 'object') return null;
             const text = typeof item.text === 'string'
                 ? item.text.trim()
                 : (typeof item.name === 'string' ? item.name.trim() : '');
             if (!text) return null;
-            return { text, checked: !!item.checked };
+            return { 
+                text, 
+                checked: !!item.checked,
+                comment: typeof item.comment === 'string' ? item.comment : '',
+                showComment: !!item.showComment
+            };
         })
         .filter(Boolean);
     return card.serviceChecklist;
@@ -172,7 +183,7 @@ function renderCardChecklistEditor(card, options = {}) {
             deleteBtn.type = 'button';
             deleteBtn.textContent = '×';
             deleteBtn.className = 'nc-del-btn';
-            deleteBtn.onclick = () => {
+            if(deleteBtn) deleteBtn.onclick = () => {
                 checklist.splice(index, 1);
                 saveState();
                 render();
@@ -197,7 +208,7 @@ function renderCardChecklistEditor(card, options = {}) {
         servicesItemInput.focus();
     };
 
-    addServicesItemBtn.onclick = handleAddService;
+    if(addServicesItemBtn) addServicesItemBtn.onclick = handleAddService;
     addServicesItemBtn.onmousedown = (e) => {
         e.preventDefault();
         handleAddService();
@@ -247,11 +258,11 @@ window.promptSecureDelete = function(bId, bTitle) {
         document.body.appendChild(dm);
         
         const btn = document.getElementById('secureDeleteBtn');
-        btn.addEventListener('keydown', (e) => {
+        if(btn) btn.addEventListener('keydown', (e) => {
             e.preventDefault();
         });
         
-        btn.onclick = (e) => {
+        if(btn) btn.onclick = (e) => {
             if (e.detail === 0 || (e.clientX === 0 && e.clientY === 0) || !e.isTrusted) {
                 return;
             }
@@ -343,8 +354,8 @@ const inputMins = document.getElementById('inputMins');
 
 [inputDays, inputHours, inputMins, newCardDays, newCardHours, newCardMins].forEach(input => {
     if (!input) return;
-    input.addEventListener('focus', function() { if (this.value === '0') this.value = ''; });
-    input.addEventListener('blur', function() { if (this.value === '') this.value = '0'; });
+    if(input) input.addEventListener('focus', function() { if (this.value === '0') this.value = ''; });
+    if(input) input.addEventListener('blur', function() { if (this.value === '') this.value = '0'; });
     input.addEventListener('input', function() {
         if (this.value.length > 1 && this.value.startsWith('0')) {
             this.value = parseInt(this.value, 10);
@@ -361,7 +372,7 @@ const closeTrelloCardDetailsModalBtn = document.getElementById('closeTrelloCardD
 const trelloHistoryDisplayArea = document.getElementById('trelloHistoryDisplayArea');
 
 if (closeTrelloCardDetailsModalBtn) {
-    closeTrelloCardDetailsModalBtn.onclick = () => trelloCardDetailsModal.classList.remove('active');
+    if(closeTrelloCardDetailsModalBtn) closeTrelloCardDetailsModalBtn.onclick = () => trelloCardDetailsModal.classList.remove('active');
 }
 
 // Trello Globals
@@ -379,7 +390,7 @@ const trelloBoardSelect = document.getElementById('trelloBoardSelect');
 const saveTrelloSettingsBtn = document.getElementById('saveTrelloSettingsBtn');
 
 if (closeTrelloSettingsModal) {
-    closeTrelloSettingsModal.onclick = () => trelloSettingsModal.classList.remove('active');
+    if(closeTrelloSettingsModal) closeTrelloSettingsModal.onclick = () => trelloSettingsModal.classList.remove('active');
 }
 
 function openTrelloSettingsModal() {
@@ -393,7 +404,7 @@ function openTrelloSettingsModal() {
 }
 
 if (fetchTrelloBoardsBtn) {
-    fetchTrelloBoardsBtn.onclick = async () => {
+    if(fetchTrelloBoardsBtn) fetchTrelloBoardsBtn.onclick = async () => {
         const key = trelloApiKeyInput.value.trim();
         const token = trelloTokenInput.value.trim();
         if(!key || !token) {
@@ -436,7 +447,7 @@ window.handleToggleReorder = function(e, listId, edge, targetType) {
     e.stopPropagation();
     
     let sourceTrackerRaw = transferTypeObj.replace('application/x-transfer-', '');
-    const map = { 'ch': 'clientHappiness', 'ms': 'moneySmelling', 'nc': 'newClients', 'pd': 'pipedrive', 'trello': 'trello', 'ads': 'ads' };
+    const map = { 'ch': 'clientHappiness', 'ms': 'moneySmelling', 'nc': 'newClients', 'pd': 'pipedrive', 'trello': 'trello', 'trello-speech': 'trelloSpeech', 'ads': 'ads' };
     const sourceTracker = map[sourceTrackerRaw];
     
     if (!sourceTracker || sourceTracker === targetType) return;
@@ -448,7 +459,7 @@ window.handleToggleReorder = function(e, listId, edge, targetType) {
     if (!list) return;
     
     list.edgeOrder = list.edgeOrder || {};
-    let curOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'ads'];
+    let curOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
     
     const oldIdx = curOrder.indexOf(sourceTracker);
     const newIdx = curOrder.indexOf(targetType);
@@ -552,31 +563,31 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
     const btnClear = document.getElementById('trelloActionColorClearBtn');
     
     if (btnRed) {
-        btnRed.onclick = () => { 
+        if(btnRed) btnRed.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'red'; saveState(); render(); showToast("Card marked as Hot"); }
         };
     }
     if (btnGreen) {
-        btnGreen.onclick = () => { 
+        if(btnGreen) btnGreen.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'green'; saveState(); render(); showToast("Card marked as Ready"); }
         };
     }
     if (btnYellow) {
-        btnYellow.onclick = () => { 
+        if(btnYellow) btnYellow.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'yellow'; saveState(); render(); showToast("Card marked as Neutral"); }
         };
     }
     if (btnOrange) {
-        btnOrange.onclick = () => { 
+        if(btnOrange) btnOrange.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { liveCard.color = 'orange'; saveState(); render(); showToast("Card marked as Sad"); }
         };
     }
     if (btnClear) {
-        btnClear.onclick = () => { 
+        if(btnClear) btnClear.onclick = () => { 
             const liveCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
             if(liveCard) { delete liveCard.color; saveState(); render(); showToast("Card color cleared"); }
         };
@@ -813,7 +824,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
             }
         };
         
-        saveBtn.onclick = async () => {
+        if(saveBtn) saveBtn.onclick = async () => {
             saveBtn.textContent = 'Saving...';
             saveBtn.disabled = true;
             statusMsg.style.opacity = '0';
@@ -857,7 +868,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
         const deleteBtn = document.getElementById('trelloCardDeleteBtn');
         if (deleteBtn) {
             deleteBtn.style.display = targetLocalCard.isTrelloTask ? 'block' : 'none';
-            deleteBtn.onclick = async () => {
+            if(deleteBtn) deleteBtn.onclick = async () => {
                 if (!confirm("Are you sure you want to permanently delete this task from Trello?")) return;
                 
                 const originalText = deleteBtn.textContent;
@@ -898,7 +909,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
 };
 
 if (saveTrelloSettingsBtn) {
-    saveTrelloSettingsBtn.onclick = () => {
+    if(saveTrelloSettingsBtn) saveTrelloSettingsBtn.onclick = () => {
         const key = trelloApiKeyInput.value.trim();
         const token = trelloTokenInput.value.trim();
         localStorage.setItem('trelloKey', key);
@@ -938,7 +949,7 @@ const closePipedriveSettingsModal = document.getElementById('closePipedriveSetti
 // On Mac trackpads, pinch-zoom triggers wheel events with ctrlKey.
 // Natively zooming a heavy grid causes paint freezing.
 // ==============================================================
-document.addEventListener('wheel', (e) => {
+if(document) document.addEventListener('wheel', (e) => {
     if ((e.ctrlKey || e.metaKey) && document.querySelector('.social-scheduler-view')) {
         e.preventDefault();
     }
@@ -1019,7 +1030,7 @@ window.showCustomConfirm = function(title, message, confirmText, cancelText, onC
     };
 
     modal.querySelector('#sm-cancel-btn').onclick = close;
-    overlay.onclick = (e) => {
+    if(overlay) overlay.onclick = (e) => {
         if (e.target === overlay) close();
     };
 };
@@ -1521,7 +1532,7 @@ const pipedrivePipelineSelect = document.getElementById('pipedrivePipelineSelect
 const savePipedriveSettingsBtn = document.getElementById('savePipedriveSettingsBtn');
 
 if (closePipedriveSettingsModal) {
-    closePipedriveSettingsModal.onclick = () => pipedriveSettingsModal.classList.remove('active');
+    if(closePipedriveSettingsModal) closePipedriveSettingsModal.onclick = () => pipedriveSettingsModal.classList.remove('active');
 }
 
 if (closeCreatePostModal && createPostModal) {
@@ -1555,10 +1566,10 @@ if (closeCreatePostModal && createPostModal) {
         if (window.clearMediaUpload) window.clearMediaUpload();
     };
 
-    closeCreatePostModal.onclick = handleModalDismiss;
+    if(closeCreatePostModal) closeCreatePostModal.onclick = handleModalDismiss;
     
     // Close modal if clicking outside the content box
-    createPostModal.addEventListener('click', (e) => {
+    if(createPostModal) createPostModal.addEventListener('click', (e) => {
         if (e.target === createPostModal) {
             handleModalDismiss();
         }
@@ -1566,19 +1577,19 @@ if (closeCreatePostModal && createPostModal) {
 
     // Also bind Cancel button inside modal body
     const cancelBtn = createPostModal.querySelector('.sm-btn-cancel');
-    if (cancelBtn) cancelBtn.onclick = handleModalDismiss;
+    if (cancelBtn) if(cancelBtn) cancelBtn.onclick = handleModalDismiss;
 
     // Bind Publish Mode toggles
     const publishToggles = createPostModal.querySelectorAll('.sm-toggle-btn');
     const optionalWrapper = document.getElementById('sm-optional-fields-wrapper');
     const primaryActionBtn = document.getElementById('sm-primary-action-btn');
     if (primaryActionBtn) {
-        primaryActionBtn.onclick = () => window.saveSocialDraft();
+        if(primaryActionBtn) primaryActionBtn.onclick = () => window.saveSocialDraft();
     }
 
     if (publishToggles.length > 0) {
         publishToggles.forEach(btn => {
-            btn.onclick = () => {
+            if(btn) btn.onclick = () => {
                 publishToggles.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
@@ -1616,7 +1627,7 @@ function openPipedriveSettingsModal() {
 }
 
 if (fetchPipedrivePipelinesBtn) {
-    fetchPipedrivePipelinesBtn.onclick = async () => {
+    if(fetchPipedrivePipelinesBtn) fetchPipedrivePipelinesBtn.onclick = async () => {
         const domain = pipedriveDomainInput.value.trim();
         const token = pipedriveTokenInput.value.trim();
         if(!domain || !token) {
@@ -1653,7 +1664,7 @@ if (fetchPipedrivePipelinesBtn) {
 }
 
 if (savePipedriveSettingsBtn) {
-    savePipedriveSettingsBtn.onclick = () => {
+    if(savePipedriveSettingsBtn) savePipedriveSettingsBtn.onclick = () => {
         const domain = pipedriveDomainInput.value.trim();
         const token = pipedriveTokenInput.value.trim();
         localStorage.setItem('pipedriveDomain', domain);
@@ -1690,7 +1701,7 @@ const trelloSelectAllBtn = document.getElementById('trelloSelectAllBtn');
 let pendingSourceList = null;
 
 if (trelloSelectAllBtn) {
-    trelloSelectAllBtn.onclick = () => {
+    if(trelloSelectAllBtn) trelloSelectAllBtn.onclick = () => {
         const checkboxes = document.querySelectorAll('.trello-tracker-cb');
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);
         checkboxes.forEach(cb => cb.checked = !allChecked);
@@ -1699,7 +1710,7 @@ if (trelloSelectAllBtn) {
 }
 
 if (closeTrelloMappingModal) {
-    closeTrelloMappingModal.onclick = () => trelloMappingModal.classList.remove('active');
+    if(closeTrelloMappingModal) closeTrelloMappingModal.onclick = () => trelloMappingModal.classList.remove('active');
 }
 
 let pendingLayoutList = null;
@@ -1908,14 +1919,14 @@ const closeTrelloTasksMappingModal = document.getElementById('closeTrelloTasksMa
 const generateTrelloTasksBtn = document.getElementById('generateTrelloTasksBtn');
 
 if (closeTrelloTasksMappingModal) {
-    closeTrelloTasksMappingModal.onclick = () => trelloTasksMappingModal.classList.remove('active');
+    if(closeTrelloTasksMappingModal) closeTrelloTasksMappingModal.onclick = () => trelloTasksMappingModal.classList.remove('active');
 }
 
 const serviceCardsModal = document.getElementById('serviceCardsModal');
 const closeServiceCardsModal = document.getElementById('closeServiceCardsModal');
 
 if (closeServiceCardsModal) {
-    closeServiceCardsModal.onclick = () => serviceCardsModal.classList.remove('active');
+    if(closeServiceCardsModal) closeServiceCardsModal.onclick = () => serviceCardsModal.classList.remove('active');
 }
 
 function openServiceCardsModal(title, icon, cards) {
@@ -2017,7 +2028,7 @@ function openServiceCardsModal(title, icon, cards) {
                 cardEl.appendChild(nameContainer);
                 cardEl.appendChild(viewBtn);
                 
-                cardEl.onclick = () => {
+                if(cardEl) cardEl.onclick = () => {
                     serviceCardsModal.classList.remove('active');
                     const activeBoard = boards.find(b => b.id === activeBoardId);
                     if (activeBoard) {
@@ -2048,7 +2059,7 @@ const trelloTasksViewModal = document.getElementById('trelloTasksViewModal');
 const closeTrelloTasksViewModal = document.getElementById('closeTrelloTasksViewModal');
 
 if (closeTrelloTasksViewModal) {
-    closeTrelloTasksViewModal.onclick = () => trelloTasksViewModal.classList.remove('active');
+    if(closeTrelloTasksViewModal) closeTrelloTasksViewModal.onclick = () => trelloTasksViewModal.classList.remove('active');
 }
 
 function openTrelloTasksViewModal(list) {
@@ -2069,7 +2080,7 @@ function openTrelloTasksViewModal(list) {
                 cardEl.style.borderLeft = '3px solid #5e6c84';
                 cardEl.style.cursor = 'pointer';
                 cardEl.style.marginBottom = '0';
-                cardEl.onclick = () => openTrelloCardDetailsModal(task.id, list.id);
+                if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(task.id, list.id);
                 
                 const titleEl = document.createElement('div');
                 titleEl.className = 'card-title';
@@ -2090,13 +2101,39 @@ const closeClientHappinessMappingModal = document.getElementById('closeClientHap
 const clientHappinessSpawnDirection = document.getElementById('clientHappinessSpawnDirection');
 const clientHappinessTargetPort = document.getElementById('clientHappinessTargetPort');
 const generateClientHappinessTrackerBtn = document.getElementById('generateClientHappinessTrackerBtn');
+const unlinkClientHappinessTrackerBtn = document.getElementById('unlinkClientHappinessTrackerBtn');
+
+if (unlinkClientHappinessTrackerBtn) {
+    unlinkClientHappinessTrackerBtn.onclick = () => {
+        if (!pendingSourceList) return;
+        const curBoard = boards.find(b => b.id === activeBoardId);
+        if (!curBoard || !curBoard.connections) return;
+        
+        const existingConnIndex = curBoard.connections.findIndex(c => 
+            c.source === pendingSourceList.id && curBoard.lists.find(l => l.id === c.target && l.isClientHappiness)
+        );
+        
+        if (existingConnIndex !== -1) {
+            const targetId = curBoard.connections[existingConnIndex].target;
+            // Remove connection
+            curBoard.connections.splice(existingConnIndex, 1);
+            // Remove the tracker list itself
+            curBoard.lists = curBoard.lists.filter(l => l.id !== targetId);
+            
+            saveState();
+            clientHappinessMappingModal.classList.remove('active');
+            render();
+            showToast("Unlinked Client Happiness tracker");
+        }
+    };
+}
 
 if (closeClientHappinessMappingModal) {
-    closeClientHappinessMappingModal.onclick = () => clientHappinessMappingModal.classList.remove('active');
+    if(closeClientHappinessMappingModal) closeClientHappinessMappingModal.onclick = () => clientHappinessMappingModal.classList.remove('active');
 }
 
 if (generateClientHappinessTrackerBtn) {
-    generateClientHappinessTrackerBtn.onclick = () => {
+    if(generateClientHappinessTrackerBtn) generateClientHappinessTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
         
         const spawnDir = clientHappinessSpawnDirection.value;
@@ -2172,7 +2209,7 @@ const moneySmellingTargetPort = document.getElementById('moneySmellingTargetPort
 const generateMoneySmellingTrackerBtn = document.getElementById('generateMoneySmellingTrackerBtn');
 
 if (closeMoneySmellingMappingModal) {
-    closeMoneySmellingMappingModal.onclick = () => moneySmellingMappingModal.classList.remove('active');
+    if(closeMoneySmellingMappingModal) closeMoneySmellingMappingModal.onclick = () => moneySmellingMappingModal.classList.remove('active');
 }
 
 const newClientsMappingModal = document.getElementById('newClientsMappingModal');
@@ -2182,11 +2219,11 @@ const newClientsTargetPort = document.getElementById('newClientsTargetPort');
 const generateNewClientsTrackerBtn = document.getElementById('generateNewClientsTrackerBtn');
 
 if (closeNewClientsMappingModal) {
-    closeNewClientsMappingModal.onclick = () => newClientsMappingModal.classList.remove('active');
+    if(closeNewClientsMappingModal) closeNewClientsMappingModal.onclick = () => newClientsMappingModal.classList.remove('active');
 }
 
 if (generateMoneySmellingTrackerBtn) {
-    generateMoneySmellingTrackerBtn.onclick = () => {
+    if(generateMoneySmellingTrackerBtn) generateMoneySmellingTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
         
         const spawnDir = moneySmellingSpawnDirection.value;
@@ -2255,7 +2292,7 @@ if (generateMoneySmellingTrackerBtn) {
 }
 
 if (generateNewClientsTrackerBtn) {
-    generateNewClientsTrackerBtn.onclick = () => {
+    if(generateNewClientsTrackerBtn) generateNewClientsTrackerBtn.onclick = () => {
         if (!pendingSourceList) return;
         
         const spawnDir = newClientsSpawnDirection.value;
@@ -2387,7 +2424,7 @@ async function openTrelloTasksMappingModal(sourceList) {
 }
 
 if (generateTrelloTasksBtn) {
-    generateTrelloTasksBtn.onclick = () => {
+    if(generateTrelloTasksBtn) generateTrelloTasksBtn.onclick = () => {
         const activeBoard = boards.find(b => b.id === activeBoardId);
         const listSelect = document.getElementById('trelloTasksMappingListSelect');
         const boardSelect = document.getElementById('trelloTasksMappingBoardSelect');
@@ -2416,11 +2453,11 @@ const generatePipedriveTrackersBtn = document.getElementById('generatePipedriveT
 const pipedriveSelectAllBtn = document.getElementById('pipedriveSelectAllBtn');
 
 if (closePipedriveMappingModal) {
-    closePipedriveMappingModal.onclick = () => pipedriveMappingModal.classList.remove('active');
+    if(closePipedriveMappingModal) closePipedriveMappingModal.onclick = () => pipedriveMappingModal.classList.remove('active');
 }
 
 if (pipedriveSelectAllBtn) {
-    pipedriveSelectAllBtn.onclick = () => {
+    if(pipedriveSelectAllBtn) pipedriveSelectAllBtn.onclick = () => {
         const cbs = document.querySelectorAll('.pipedrive-tracker-cb');
         const allChecked = Array.from(cbs).every(cb => cb.checked);
         cbs.forEach(cb => cb.checked = !allChecked);
@@ -2611,7 +2648,7 @@ async function openPipedriveMappingGenerator(sourceList) {
 }
 
 if(generateTrelloTrackersBtn) {
-    generateTrelloTrackersBtn.onclick = () => {
+    if(generateTrelloTrackersBtn) generateTrelloTrackersBtn.onclick = () => {
         try {
             const activeBoard = boards.find(b => b.id === activeBoardId);
             const checkedList = Array.from(document.querySelectorAll('.trello-tracker-cb')).filter(cb => cb.checked);
@@ -2730,7 +2767,7 @@ if(generateTrelloTrackersBtn) {
 }
 
 if(generatePipedriveTrackersBtn) {
-    generatePipedriveTrackersBtn.onclick = () => {
+    if(generatePipedriveTrackersBtn) generatePipedriveTrackersBtn.onclick = () => {
         try {
             const activeBoard = boards.find(b => b.id === activeBoardId);
             const checkedList = Array.from(document.querySelectorAll('.pipedrive-tracker-cb')).filter(cb => cb.checked);
@@ -2849,7 +2886,7 @@ if(generatePipedriveTrackersBtn) {
 }
 
 if (localStorage.getItem('nav_position') === 'right') topNavBar.classList.add('pos-right');
-toggleNavPosBtn.onclick = () => {
+if(toggleNavPosBtn) toggleNavPosBtn.onclick = () => {
     topNavBar.classList.toggle('pos-right');
     localStorage.setItem('nav_position', topNavBar.classList.contains('pos-right') ? 'right' : 'center');
 };
@@ -2911,7 +2948,7 @@ window.switchBoard = function(boardId) {
 };
 
 // Switch Boards Flow
-openSwitchBoardsBtn.onclick = () => {
+if(openSwitchBoardsBtn) openSwitchBoardsBtn.onclick = () => {
     boardListMenu.innerHTML = '';
     boards.filter(b => b.type !== 'social_scheduler').forEach(b => {
         const item = document.createElement('div');
@@ -2932,7 +2969,7 @@ openSwitchBoardsBtn.onclick = () => {
         titleSpan.style.cursor = 'text';
         titleSpan.title = 'Click to rename';
         
-        titleSpan.onclick = (e) => {
+        if(titleSpan) titleSpan.onclick = (e) => {
             e.stopPropagation();
             titleSpan.contentEditable = 'true';
             titleSpan.classList.add('editing');
@@ -2988,7 +3025,7 @@ openSwitchBoardsBtn.onclick = () => {
         dupBtn.title = 'Duplicate Workspace';
         dupBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
         
-        dupBtn.onclick = (e) => {
+        if(dupBtn) dupBtn.onclick = (e) => {
             e.stopPropagation();
             
             if (!confirm("Are you sure you want to duplicate this workspace?")) return;
@@ -3024,7 +3061,7 @@ openSwitchBoardsBtn.onclick = () => {
         deleteBtn.title = 'Delete Workspace';
         deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
         
-        deleteBtn.onclick = (e) => {
+        if(deleteBtn) deleteBtn.onclick = (e) => {
             e.stopPropagation();
             if (typeof window.promptSecureDelete === 'function') {
                 window.promptSecureDelete(b.id, b.title || 'هذه المساحة');
@@ -3040,7 +3077,7 @@ openSwitchBoardsBtn.onclick = () => {
         item.appendChild(leftWrap);
         item.appendChild(rightWrap);
 
-        item.onclick = () => switchBoard(b.id);
+        if(item) item.onclick = () => switchBoard(b.id);
         boardListMenu.appendChild(item);
     });
     
@@ -3061,7 +3098,7 @@ openSwitchBoardsBtn.onclick = () => {
             </div>
         `;
         
-        item.onclick = () => switchBoard(socialBoards[0].id);
+        if(item) item.onclick = () => switchBoard(socialBoards[0].id);
         item.style.borderTop = '1px dashed #e2e8f0';
         item.style.marginTop = '4px';
         
@@ -3070,11 +3107,11 @@ openSwitchBoardsBtn.onclick = () => {
 
     switchBoardModal.classList.add('active');
 };
-closeSwitchBoardModal.onclick = () => switchBoardModal.classList.remove('active');
+if(closeSwitchBoardModal) closeSwitchBoardModal.onclick = () => switchBoardModal.classList.remove('active');
 
 const exportBackupBtn = document.getElementById('exportBackupBtn');
 if (exportBackupBtn) {
-    exportBackupBtn.onclick = () => {
+    if(exportBackupBtn) exportBackupBtn.onclick = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(boards, null, 2));
         const dlAnchor = document.createElement('a');
         dlAnchor.setAttribute("href", dataStr);
@@ -3121,7 +3158,7 @@ if (importBackupFile) {
 }
 
 if (openAddTimerBoardBtn) {
-    openAddTimerBoardBtn.onclick = () => {
+    if(openAddTimerBoardBtn) openAddTimerBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
         newBoardTitle.value = '';
         pendingNewBoardType = 'timer';
@@ -3131,7 +3168,7 @@ if (openAddTimerBoardBtn) {
     };
 }
 if (openAddKanbanBoardBtn) {
-    openAddKanbanBoardBtn.onclick = () => {
+    if(openAddKanbanBoardBtn) openAddKanbanBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
         newBoardTitle.value = '';
         pendingNewBoardType = 'kanban';
@@ -3141,7 +3178,7 @@ if (openAddKanbanBoardBtn) {
     };
 }
 if (openAddSocialBoardBtn) {
-    openAddSocialBoardBtn.onclick = () => {
+    if(openAddSocialBoardBtn) openAddSocialBoardBtn.onclick = () => {
         switchBoardModal.classList.remove('active');
         const smCount = boards.filter(b => b.type === 'social_scheduler').length;
         newBoardTitle.value = 'Client ' + (smCount + 1);
@@ -3151,8 +3188,8 @@ if (openAddSocialBoardBtn) {
         setTimeout(() => newBoardTitle.focus(), 50);
     };
 }
-closeAddBoardModal.onclick = () => addBoardModal.classList.remove('active');
-confirmAddBoardBtn.onclick = () => {
+if(closeAddBoardModal) closeAddBoardModal.onclick = () => addBoardModal.classList.remove('active');
+if(confirmAddBoardBtn) confirmAddBoardBtn.onclick = () => {
     const title = newBoardTitle.value.trim();
     if (title) {
         newBoardTitle.blur();
@@ -3231,10 +3268,6 @@ function render() {
                 }
             }
         });
-    } else if (activeBoard.type === 'social_scheduler') {
-        appContainer.classList.remove('managing-view');
-        appContainer.classList.add('social-scheduler-view');
-        renderSocialSchedulerApp(activeBoard);
     } else {
         appContainer.classList.remove('managing-view');
         appContainer.classList.remove('social-scheduler-view');
@@ -3297,10 +3330,9 @@ function updateAllTrackersSummaries(activeBoard) {
             };
             getSubs(list.id);
 
-            // Always tracking its own cards if it's explicitly designated as a tracker
-            if (isAdsTracker || isTrelloTracker) {
-                allDescendants.add(list.id);
-            }
+            // Removed: Do not track its own cards in the tracker summary hub, 
+            // as this confuses users when the hub also contains tasks that aren't part of the core tracker logic.
+            // allDescendants.add(list.id);
 
             if (allDescendants.size > 0) {
                 const summaryEl = document.querySelector(`.kanban-list[data-id="${list.id}"] .downstream-trackers-summary`);
@@ -3336,14 +3368,16 @@ function updateAllTrackersSummaries(activeBoard) {
                     if (!htmlStr) htmlStr = `<div style="display:flex; align-items:center; background:rgba(9,30,66,0.06); color:#5E6C84; padding:4px 8px; border-radius:6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap:4px;">⚪ 0</div>`;
                     const pdLogo = `<div draggable="true" ondragstart="event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="display:inline-flex; align-items:center; justify-content:center; background:#2a2f35; color:#fff; width:24px; height:24px; border-radius:6px; font-weight:800; font-size:14px; font-family:system-ui,-apple-system,sans-serif; margin-bottom:4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor:grab;" title="Drag to transfer Pipedrive Integration">P</div>`;
                     summaryEl.innerHTML = `<div style="display:flex; flex-direction:column; gap:4px; font-size: 12px; font-weight: 600;">${pdLogo}<div style="display:flex; align-items:center; gap: 8px;">${htmlStr}</div></div>`;
-                } else if (list.trackerType === 'ads' || list.trelloListId || list.trelloTasksListId) {
+                } else if (list.trackerType === 'ads' || list.trackerType === 'trelloSpeech' || list.trelloListId || list.trelloTasksListId) {
                     let hasTrello = false;
                     let hasAds = false;
+                    let hasTs = false;
                     let hasCH = false;
                     let hasMS = false;
                     let hasNC = false;
                     let tCards = 0; let tCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let aCards = 0; let aCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+                    let tsCards = 0; let tsCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let chCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let msCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
                     let ncCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
@@ -3352,11 +3386,13 @@ function updateAllTrackersSummaries(activeBoard) {
                         const tList = activeBoard.lists.find(l => l.id === tid);
                         if (tList && tList.cards) {
                             const isAds = tList.trackerType === 'ads';
+                            const isTs = tList.trackerType === 'trelloSpeech';
                             const isCH = tList.isClientHappiness;
                             const isMS = tList.isMoneySmelling;
                             const isNC = tList.isNewClients;
                             
                             if (isAds) hasAds = true;
+                            else if (isTs) hasTs = true;
                             else if (isCH) hasCH = true;
                             else if (isMS) hasMS = true;
                             else if (isNC) hasNC = true;
@@ -3364,15 +3400,19 @@ function updateAllTrackersSummaries(activeBoard) {
                             
                             tList.cards.forEach(c => {
                                 if (c.id && (c.id.length === 24 || String(c.id).startsWith('pd_'))) {
-                                    const col = (activeBoard.cardColors && activeBoard.cardColors[c.id]) ? activeBoard.cardColors[c.id] : 'default';
+                                    const msColValue = (activeBoard.cardColors && activeBoard.cardColors[c.id]) ? activeBoard.cardColors[c.id] : 'default';
+                                    const chColValue = (activeBoard.clientHappinessData && activeBoard.clientHappinessData[c.id]) ? activeBoard.clientHappinessData[c.id] : 'default';
+                                    
                                     if (isAds) {
-                                        aCards++; aCol[col]++;
+                                        aCards++; aCol[msColValue]++;
+                                    } else if (isTs) {
+                                        tsCards++; tsCol[msColValue]++;
                                     } else {
                                         tCards++;
-                                        if (isCH) chCol[col]++;
-                                        else if (isMS) msCol[col]++;
-                                        else if (isNC) ncCol[col]++;
-                                        else tCol[col]++;
+                                        if (isCH) chCol[chColValue]++;
+                                        else if (isMS) msCol[msColValue]++;
+                                        else if (isNC) ncCol[msColValue]++;
+                                        else tCol[msColValue]++;
                                     }
                                 }
                             });
@@ -3423,6 +3463,20 @@ function updateAllTrackersSummaries(activeBoard) {
                         `;
                     }
                     
+                    
+                    if (hasTs) {
+                        const tsText = tsCards === 1 ? '1 Task' : `${tsCards} Tasks`;
+                        finalHtml += `
+                            <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
+                                <div data-clicker="true" data-pid="${list.id}" data-ptype="trelloSpeech" data-pcolor="null" style="display:flex; align-items:center; gap: 4px; background: rgba(156, 39, 176, 0.15); color: #7B1FA2; padding: 4px 10px; border-radius: 6px; cursor:pointer;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="6" x2="12" y2="18"></line><line x1="6" y1="6" x2="18" y2="6"></line></svg>
+                                    <span>${tsText}</span>
+                                </div>
+                                ${buildTally(tsCol, list.id, 'trelloSpeech') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(tsCol, list.id, 'trelloSpeech')}</div>` : ''}
+                            </div>
+                        `;
+                    }
+                    
                     if (hasAds) {
                         const aText = aCards === 1 ? '1 Ad' : `${aCards} Ads`;
                         finalHtml += `
@@ -3443,7 +3497,7 @@ function updateAllTrackersSummaries(activeBoard) {
                         summaryEl.innerHTML = finalHtml;
                         
                         summaryEl.querySelectorAll('[data-clicker="true"]').forEach(el => {
-                            el.onclick = () => {
+                            if(el) el.onclick = () => {
                                 if (typeof window.toggleSentimentFilter === 'function') {
                                     window.toggleSentimentFilter(el.dataset.pid, el.dataset.ptype, el.dataset.pcolor === 'null' ? null : el.dataset.pcolor);
                                 }
@@ -3570,7 +3624,7 @@ function renderKanbanApp(activeBoard) {
             let offsetPx = 0;
             const toggleEl = sourceEl.querySelector(`.port-toggle-${sourceEdge}`);
             if (toggleEl) {
-                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasAds = false;
+                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasTrelloSpeech = false, hasAds = false;
                 activeBoard.connections.forEach(c => {
                     if (c.source === conn.source && c.sourcePort === sourceEdge) {
                         const targList = activeBoard.lists.find(l => l.id === c.target);
@@ -3579,7 +3633,8 @@ function renderKanbanApp(activeBoard) {
                             if (targList.isMoneySmelling) hasMoneySmelling = true;
                             if (targList.isNewClients) hasNewClients = true;
                             if (targList.pipedriveStageId) hasPipedrive = true;
-                            if ((targList.trelloTasksListId || targList.trelloBoardId || targList.trelloListId) && targList.trackerType !== 'ads') hasTrello = true;
+                            if (targList.trackerType === 'trelloSpeech') hasTrelloSpeech = true;
+                            if ((targList.trelloTasksListId || targList.trelloBoardId || targList.trelloListId) && targList.trackerType !== 'ads' && targList.trackerType !== 'trelloSpeech') hasTrello = true;
                             if (targList.trackerType === 'ads') hasAds = true;
                         }
                     }
@@ -3593,6 +3648,7 @@ function renderKanbanApp(activeBoard) {
                     else if (targetList.isNewClients) myType = 'newClients';
                     else if (targetList.pipedriveStageId) myType = 'pipedrive';
                     else if (targetList.trackerType === 'ads') myType = 'ads';
+                    else if (targetList.trackerType === 'trelloSpeech') myType = 'trelloSpeech';
                 }
                 
                 const activeTypes = [];
@@ -3602,10 +3658,11 @@ function renderKanbanApp(activeBoard) {
                 if (hasNewClients) activeTypes.push('newClients');
                 if (hasPipedrive) activeTypes.push('pipedrive');
                 if (hasTrello) activeTypes.push('trello');
+                if (hasTrelloSpeech) activeTypes.push('trelloSpeech');
                 if (hasAds) activeTypes.push('ads');
                 
                 const sList = activeBoard.lists.find(l => l.id === conn.source);
-                const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'ads'];
+                const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
                 activeTypes.sort((a, b) => {
                     let iA = curOrder.indexOf(a);
                     let iB = curOrder.indexOf(b);
@@ -3649,7 +3706,7 @@ function renderKanbanApp(activeBoard) {
                 path.setAttribute('stroke-width', '2');
                 path.setAttribute('marker-end', 'url(#arrowhead)');
             };
-            path.onclick = (e) => {
+            if(path) path.onclick = (e) => {
                 e.stopPropagation();
                 if(confirm("Disconnect these lists?")) {
                     activeBoard.connections = activeBoard.connections.filter(c => c !== conn);
@@ -3753,7 +3810,7 @@ function renderKanbanApp(activeBoard) {
         canvas.style.backgroundPosition = `${activeBoard.camera.x}px ${activeBoard.camera.y}px`;
     };
 
-    canvas.addEventListener('wheel', (e) => {
+    if(canvas) canvas.addEventListener('wheel', (e) => {
         const isPinch = e.ctrlKey || e.metaKey;
         const scrollableList = e.target.closest('.card-list, .pinned-list');
         
@@ -3781,7 +3838,7 @@ function renderKanbanApp(activeBoard) {
         saveState();
     }, { passive: false });
 
-    canvas.addEventListener('mousedown', (e) => {
+    if(canvas) canvas.addEventListener('mousedown', (e) => {
         if (e.target === canvas || e.target === svgLayer || e.target === canvasContent) {
             isGlobalDragging = true;
             let startPanX = e.clientX - activeBoard.camera.x;
@@ -3830,7 +3887,8 @@ function renderKanbanApp(activeBoard) {
                         if (tType === 'moneySmelling' && tl.isMoneySmelling) matches = true;
                         if (tType === 'newClients' && tl.isNewClients) matches = true;
                         if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
-                        if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads') matches = true;
+                        if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
+                        if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
                         if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
                     }
                 }
@@ -3874,15 +3932,15 @@ function renderKanbanApp(activeBoard) {
                 const cl = activeBoard.lists.find(l => l.id === childId);
                 if (cl && cl.id !== pId) {
                     if (pType === 'trello' && (cl.trelloTasksListId || cl.trelloBoardId || cl.trelloListId) && cl.trackerType !== 'ads') {
-                        effectiveFilters[childId] = color;
+                        effectiveFilters[childId] = { value: color, type: pType };
                     } else if (pType === 'ads' && cl.trackerType === 'ads') {
-                        effectiveFilters[childId] = color;
+                        effectiveFilters[childId] = { value: color, type: pType };
                     } else if (pType === 'clientHappiness' && cl.isClientHappiness) {
-                        effectiveFilters[childId] = color;
+                        effectiveFilters[childId] = { value: color, type: pType };
                     } else if (pType === 'moneySmelling' && cl.isMoneySmelling) {
-                        effectiveFilters[childId] = color;
+                        effectiveFilters[childId] = { value: color, type: pType };
                     } else if (pType === 'newClients' && cl.isNewClients) {
-                        effectiveFilters[childId] = color;
+                        effectiveFilters[childId] = { value: color, type: pType };
                     }
                 }
             });
@@ -3899,8 +3957,14 @@ function renderKanbanApp(activeBoard) {
         let isFilteredOut = false;
         if (effectiveFilters[list.id]) {
             const hasMatch = list.cards.some(c => {
-                const col = (activeBoard.cardColors && activeBoard.cardColors[c.id]) ? activeBoard.cardColors[c.id] : 'default';
-                return col === effectiveFilters[list.id];
+                const isCHContext = effectiveFilters[list.id].type === 'clientHappiness';
+                let col = 'default';
+                if (isCHContext) {
+                    col = (activeBoard.clientHappinessData && activeBoard.clientHappinessData[c.id]) ? activeBoard.clientHappinessData[c.id] : 'default';
+                } else {
+                    col = (activeBoard.cardColors && activeBoard.cardColors[c.id]) ? activeBoard.cardColors[c.id] : 'default';
+                }
+                return col === effectiveFilters[list.id].value;
             });
             if (!hasMatch) isFilteredOut = true;
         }
@@ -3917,13 +3981,14 @@ function renderKanbanApp(activeBoard) {
             return;
         }
 
-        const listContainer = document.createElement('div');
+        let listCheckBtn, footerRow;
+    const listContainer = document.createElement('div');
         listContainer.className = 'kanban-list list-container managing-board';
         if (list.collapsed) listContainer.classList.add('list-collapsed');
         if (list.theme === 'pipedrive' || (!list.theme && list.pipedriveStageId)) {
             listContainer.classList.add('pipedrive-box');
         }
-        if (list.pipedriveStageId) listContainer.classList.add('pipedrive-stages-only');
+        if (list.pipedriveStageId || list.trackerType === 'ads') listContainer.classList.add('auto-height-list');
         
         const isHiddenOrAnimating = hiddenListIds.has(list.id) || (typeof animatingOutIds !== 'undefined' && animatingOutIds.has(list.id)) || isFilteredOut;
         if (isHiddenOrAnimating) {
@@ -3933,7 +3998,7 @@ function renderKanbanApp(activeBoard) {
         listContainer.dataset.id = list.id;
         
         // Universal Canvas Z-Index Engine: The most recently touched container unconditionally jumps to the top relative layer
-        listContainer.addEventListener('mousedown', () => {
+        if(listContainer) listContainer.addEventListener('mousedown', () => {
             window.highestZIndex = (window.highestZIndex || 1000) + 1;
             // Native styling bypasses WebKit transition locks entirely
             listContainer.style.zIndex = window.highestZIndex;
@@ -3961,8 +4026,8 @@ function renderKanbanApp(activeBoard) {
                 const sourceId = e.dataTransfer.getData(transferTypeObj);
                 
                 if (sourceId && sourceId !== list.id) {
-                    const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : (trackerType === 'nc' ? 'newClients' : trackerType)));
-                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads' };
+                    const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : (trackerType === 'nc' ? 'newClients' : (trackerType === 'trello-speech' ? 'trelloSpeech' : trackerType))));
+                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads', 'trelloSpeech': 'Speech Lists' };
                     const formatName = formatNameMap[mappedType];
                     
                     const checkMatch = (t) => {
@@ -3972,7 +4037,8 @@ function renderKanbanApp(activeBoard) {
                         if (mappedType === 'moneySmelling') return t.isMoneySmelling;
                         if (mappedType === 'newClients') return t.isNewClients;
                         if (mappedType === 'ads') return t.trackerType === 'ads';
-                        if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && !t.isClientHappiness && !t.isMoneySmelling && !t.isNewClients;
+                        if (mappedType === 'trelloSpeech') return t.trackerType === 'trelloSpeech';
+                        if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && t.trackerType !== 'trelloSpeech' && !t.isClientHappiness && !t.isMoneySmelling && !t.isNewClients;
                         return false;
                     };
 
@@ -4095,17 +4161,18 @@ function renderKanbanApp(activeBoard) {
             header.style.cursor = 'grabbing';
             
             let siblingsToMove = [];
+            const getGroupType = (l) => {
+                if (l.trackerType === 'trelloSpeech') return 'trelloSpeech';
+                if (l.trackerType === 'ads') return 'ads';
+                if (l.trelloTasksListId) return null; // Explicitly decouple Trello Tasks from cluster grouping
+                if ((l.trelloListId || l.trelloBoardId) && !l.isClientHappiness && !l.isMoneySmelling) return 'trello';
+                if (l.isClientHappiness) return 'ch';
+                if (l.isMoneySmelling) return 'ms';
+                if (l.pipedriveStageId) return 'pd';
+                return null;
+            };
+            
             if (activeBoard.connections) {
-                const getGroupType = (l) => {
-                    if (l.trackerType === 'ads') return 'ads';
-                    if (l.trelloTasksListId) return null; // Explicitly decouple Trello Tasks from cluster grouping
-                    if ((l.trelloListId || l.trelloBoardId) && !l.isClientHappiness && !l.isMoneySmelling) return 'trello';
-                    if (l.isClientHappiness) return 'ch';
-                    if (l.isMoneySmelling) return 'ms';
-                    if (l.pipedriveStageId) return 'pd';
-                    return null;
-                };
-                
                 const groupType = getGroupType(list);
                 if (groupType) {
                     const parentConns = activeBoard.connections.filter(c => c.target === list.id);
@@ -4159,18 +4226,25 @@ function renderKanbanApp(activeBoard) {
                 listContainer.classList.remove('dragging');
                 header.style.cursor = 'grab';
                 
-                if (getGroupType(list) === 'trello' && !shiftUsedDuringDrag) {
+                const groupType = getGroupType(list);
+                if ((groupType === 'trello' || groupType === 'trelloSpeech') && !shiftUsedDuringDrag) {
                     const pConn = activeBoard.connections.find(c => c.target === list.id);
                     const motherList = pConn ? activeBoard.lists.find(l => l.id === pConn.source) : null;
                     if (motherList) {
                         let totalDx = list.x - initialGrabX;
                         let totalDy = list.y - initialGrabY;
                         
-                        if (motherList.trelloOffsetX === undefined) motherList.trelloOffsetX = 0;
-                        if (motherList.trelloSpacingY === undefined) motherList.trelloSpacingY = 60;
-                        
-                        motherList.trelloOffsetX += totalDx;
-                        motherList.trelloSpacingY -= totalDy;
+                        if (groupType === 'trelloSpeech') {
+                            if (motherList.trelloSpeechOffsetX === undefined) motherList.trelloSpeechOffsetX = 800;
+                            if (motherList.trelloSpeechSpacingY === undefined) motherList.trelloSpeechSpacingY = 60;
+                            motherList.trelloSpeechOffsetX += totalDx;
+                            motherList.trelloSpeechSpacingY -= totalDy;
+                        } else {
+                            if (motherList.trelloOffsetX === undefined) motherList.trelloOffsetX = 0;
+                            if (motherList.trelloSpacingY === undefined) motherList.trelloSpacingY = 60;
+                            motherList.trelloOffsetX += totalDx;
+                            motherList.trelloSpacingY -= totalDy;
+                        }
                         
                         delete list.isManualLayout;
                         siblingsToMove.forEach(s => delete s.isManualLayout);
@@ -4192,7 +4266,7 @@ function renderKanbanApp(activeBoard) {
         titleH2.className = 'editable-board-title';
         titleH2.title = 'Click to rename';
         
-        titleH2.onclick = (e) => {
+        if(titleH2) titleH2.onclick = (e) => {
             if (list.trelloListId) {
                 navigator.clipboard.writeText(list.title || titleH2.textContent).then(() => {
                     showToast("Title copied to clipboard!");
@@ -4261,15 +4335,15 @@ function renderKanbanApp(activeBoard) {
         };
 
         // GROUP 1: INTEGRATIONS
-        if (activeBoard.trelloBoardId && (list.trackerType !== 'ads' || !list.trelloListId)) {
-            const isUnlink = list.trelloListId && list.trackerType !== 'ads';
+        if (activeBoard.trelloBoardId && (list.trackerType !== 'ads' && list.trackerType !== 'trelloSpeech' || !list.trelloListId)) {
+            const isUnlink = list.trelloListId && list.trackerType !== 'ads' && list.trackerType !== 'trelloSpeech';
             const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<polyline points="20 6 9 17 4 12"></polyline>`;
             const text = isUnlink ? 'Unlink Trello Tracker' : 'Trello Tracker';
             
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
-            opt.onclick = (e) => {
+            if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
                 if (list.trelloListId) {
                     if(confirm("Unlink this Trello tracker layout?")) {
@@ -4292,7 +4366,7 @@ function renderKanbanApp(activeBoard) {
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
-            opt.onclick = (e) => {
+            if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
                 if (list.trelloListId && list.trackerType === 'ads') {
                     if(confirm("Unlink this Ads tracker layout?")) {
@@ -4308,6 +4382,30 @@ function renderKanbanApp(activeBoard) {
             optionsMenu.appendChild(opt);
         }
 
+        if (activeBoard.trelloBoardId && (list.trackerType === 'trelloSpeech' || !list.trelloListId)) {
+            const isUnlink = list.trelloListId && list.trackerType === 'trelloSpeech';
+            const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line>`;
+            const text = isUnlink ? 'Unlink Trello Tracker 2' : 'Trello Tracker 2';
+            
+            const opt = document.createElement('div');
+            opt.className = 'list-option-item';
+            opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
+            if(opt) opt.onclick = (e) => {
+                e.stopPropagation();
+                if (list.trelloListId && list.trackerType === 'trelloSpeech') {
+                    if(confirm("Unlink this Trello Tracker 2 layout?")) {
+                        list.trelloListId = null;
+                        list.trackerType = null;
+                        list.cards = list.cards.filter(c => !c.isTrello);
+                        saveState();
+                        render();
+                    }
+                } else openTrelloMappingGenerator(list, 'trelloSpeech');
+                optionsMenu.style.display = 'none';
+            };
+            optionsMenu.appendChild(opt);
+        }
+
         if (activeBoard.pipedrivePipelineId) {
             const isUnlink = !!list.pipedriveStageId;
             const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<polyline points="20 6 9 17 4 12"></polyline>`;
@@ -4316,7 +4414,7 @@ function renderKanbanApp(activeBoard) {
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
-            opt.onclick = (e) => {
+            if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
                 if (list.pipedriveStageId) {
                     if(confirm("Unlink this Pipedrive tracker layout?")) {
@@ -4340,7 +4438,7 @@ function renderKanbanApp(activeBoard) {
         const clientHappinessOption = document.createElement('div');
         clientHappinessOption.className = 'list-option-item';
         clientHappinessOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curHappinessIcon}</svg><span>${curHappinessText}</span>`;
-        clientHappinessOption.onclick = (e) => {
+        if(clientHappinessOption) clientHappinessOption.onclick = (e) => {
             e.stopPropagation();
             optionsMenu.style.display = 'none';
             pendingSourceList = list;
@@ -4366,6 +4464,10 @@ function renderKanbanApp(activeBoard) {
             
             if (clientHappinessMappingModal) {
                 document.getElementById('generateClientHappinessTrackerBtn').textContent = existingClientHappinessConn ? "Update Tracker Position" : "Create Tracker";
+                const unlinkBtn = document.getElementById('unlinkClientHappinessTrackerBtn');
+                if (unlinkBtn) {
+                    unlinkBtn.style.display = existingClientHappinessConn ? 'block' : 'none';
+                }
                 clientHappinessMappingModal.classList.add('active');
             }
         };
@@ -4380,7 +4482,7 @@ function renderKanbanApp(activeBoard) {
         const moneySmellingOption = document.createElement('div');
         moneySmellingOption.className = 'list-option-item';
         moneySmellingOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curMoneySmellingIcon}</svg><span>${curMoneySmellingText}</span>`;
-        moneySmellingOption.onclick = (e) => {
+        if(moneySmellingOption) moneySmellingOption.onclick = (e) => {
             e.stopPropagation();
             optionsMenu.style.display = 'none';
             pendingSourceList = list;
@@ -4420,7 +4522,7 @@ function renderKanbanApp(activeBoard) {
         const newClientsOption = document.createElement('div');
         newClientsOption.className = 'list-option-item';
         newClientsOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${curNewClientsIcon}</svg><span>${curNewClientsText}</span>`;
-        newClientsOption.onclick = (e) => {
+        if(newClientsOption) newClientsOption.onclick = (e) => {
             e.stopPropagation();
             optionsMenu.style.display = 'none';
             pendingSourceList = list;
@@ -4457,7 +4559,7 @@ function renderKanbanApp(activeBoard) {
             const layoutOption = document.createElement('div');
             layoutOption.className = 'list-option-item';
             layoutOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg><span>Set Trello Layout</span>`;
-            layoutOption.onclick = (e) => {
+            if(layoutOption) layoutOption.onclick = (e) => {
                 e.stopPropagation();
                 optionsMenu.style.display = 'none';
                 openTrelloLayoutModal(list);
@@ -4467,7 +4569,7 @@ function renderKanbanApp(activeBoard) {
             const adsLayoutOption = document.createElement('div');
             adsLayoutOption.className = 'list-option-item';
             adsLayoutOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg><span>Set Ads Layout</span>`;
-            adsLayoutOption.onclick = (e) => {
+            if(adsLayoutOption) adsLayoutOption.onclick = (e) => {
                 e.stopPropagation();
                 optionsMenu.style.display = 'none';
                 openAdsLayoutModal(list);
@@ -4481,7 +4583,7 @@ function renderKanbanApp(activeBoard) {
             const tasksOption = document.createElement('div');
             tasksOption.className = 'list-option-item';
             tasksOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tasksIcon}</svg><span>${tasksText}</span>`;
-            tasksOption.onclick = (e) => {
+            if(tasksOption) tasksOption.onclick = (e) => {
                 e.stopPropagation();
                 if (list.trelloTasksListId) {
                     if(confirm("Unlink this Trello tasks list?")) {
@@ -4497,6 +4599,40 @@ function renderKanbanApp(activeBoard) {
             optionsMenu.appendChild(tasksOption);
         }
 
+        const isShowCheck = activeBoard.showListCheck && activeBoard.showListCheck[list.id];
+        const checkOptionText = isShowCheck ? 'Hide List Check' : 'Show List Check';
+        const checkOptionIcon = isShowCheck 
+            ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"></path>`
+            : `<circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path>`;
+
+        const checkOption = document.createElement('div');
+        checkOption.className = 'list-option-item';
+        checkOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${checkOptionIcon}</svg><span>${checkOptionText}</span>`;
+        if (checkOption) checkOption.onclick = (e) => {
+            e.stopPropagation();
+            if (!activeBoard.showListCheck) activeBoard.showListCheck = {};
+            const newVal = !activeBoard.showListCheck[list.id];
+            activeBoard.showListCheck[list.id] = newVal;
+            saveState();
+            
+            if (newVal) {
+                if (footerRow && listCheckBtn) {
+                    footerRow.insertBefore(listCheckBtn, footerRow.firstChild);
+                }
+            } else {
+                if (listCheckBtn && listCheckBtn.parentElement) listCheckBtn.parentElement.removeChild(listCheckBtn);
+            }
+
+            checkOption.querySelector('span').textContent = newVal ? 'Hide List Check' : 'Show List Check';
+            const iconHTML = newVal 
+                ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"></path>`
+                : `<circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path>`;
+            checkOption.querySelector('svg').innerHTML = iconHTML;
+
+            optionsMenu.style.display = 'none';
+        };
+        optionsMenu.appendChild(checkOption);
+
         addDiv();
         const themeOption = document.createElement('div');
         themeOption.className = 'list-option-item';
@@ -4506,7 +4642,7 @@ function renderKanbanApp(activeBoard) {
         let themeIcon = nextTheme === 'pipedrive' ? `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>` : `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
         
         themeOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${themeIcon}</svg><span>Switch to ${themeName}</span>`;
-        themeOption.onclick = (e) => {
+        if(themeOption) themeOption.onclick = (e) => {
             e.stopPropagation();
             list.theme = nextTheme;
             saveState();
@@ -4520,7 +4656,7 @@ function renderKanbanApp(activeBoard) {
         const deleteOption = document.createElement('div');
         deleteOption.className = 'list-option-item text-danger';
         deleteOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg><span>Delete List</span>`;
-        deleteOption.onclick = (e) => {
+        if(deleteOption) deleteOption.onclick = (e) => {
             e.stopPropagation();
             if(confirm("Delete this entire list?")) {
                 const actualIndex = activeBoard.lists.findIndex(l => l.id === list.id);
@@ -4539,7 +4675,7 @@ function renderKanbanApp(activeBoard) {
         };
         optionsMenu.appendChild(deleteOption);
 
-        optionsBtn.onclick = (e) => {
+        if(optionsBtn) optionsBtn.onclick = (e) => {
             e.stopPropagation();
             document.querySelectorAll('.list-options-menu').forEach(m => {
                 if(m !== optionsMenu) m.style.display = 'none';
@@ -4547,7 +4683,7 @@ function renderKanbanApp(activeBoard) {
             optionsMenu.style.display = optionsMenu.style.display === 'none' ? 'block' : 'none';
         };
 
-        document.addEventListener('click', (e) => {
+        if(document) document.addEventListener('click', (e) => {
             if (!optionsWrap.contains(e.target)) {
                 optionsMenu.style.display = 'none';
             }
@@ -4556,7 +4692,7 @@ function renderKanbanApp(activeBoard) {
         const buttonsSet = document.createElement('div');
         buttonsSet.style.display = 'flex';
         buttonsSet.style.alignItems = 'center';
-        buttonsSet.style.gap = '4px';
+        buttonsSet.style.gap = '2px';
 
         buttonsSet.appendChild(optionsBtn);
         optionsWrap.appendChild(buttonsSet);
@@ -4569,8 +4705,19 @@ function renderKanbanApp(activeBoard) {
         titleRow.style.width = '100%';
         titleRow.style.gap = '8px';
         
+        titleH2.style.flexGrow = '1';
+        titleH2.style.marginRight = '8px'; // Give title breathing room to the right
+        
+        const rightControls = document.createElement('div');
+        rightControls.style.display = 'flex';
+        rightControls.style.alignItems = 'center';
+        rightControls.style.gap = '4px';
+        rightControls.style.flexShrink = '0';
+        
+        rightControls.appendChild(optionsWrap);
+        
         titleRow.appendChild(titleH2);
-        titleRow.appendChild(optionsWrap);
+        titleRow.appendChild(rightControls);
         
         header.style.flexDirection = 'column';
         header.style.alignItems = 'stretch';
@@ -4579,11 +4726,17 @@ function renderKanbanApp(activeBoard) {
         if (list.trelloListId) {
             const tBadge = document.createElement('span');
             if (list.trackerType === 'ads') {
-                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Ads Tracker`;
+                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Ads Tracker (${list.cards.length})`;
                 tBadge.title = "Connected as an Ads Tracker";
                 tBadge.style.background = 'rgba(0, 188, 212, 0.15)';
                 tBadge.style.color = '#00838F';
                 tBadge.style.border = '1px solid rgba(0, 188, 212, 0.3)';
+            } else if (list.trackerType === 'trelloSpeech') {
+                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line></svg>Speech Lists`;
+                tBadge.title = "Connected to track Speech Lists (Trello Tracker 2)";
+                tBadge.style.background = 'rgba(156, 39, 176, 0.15)';
+                tBadge.style.color = '#7B1FA2';
+                tBadge.style.border = '1px solid rgba(156, 39, 176, 0.3)';
             } else {
                 tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-right:4px; margin-bottom:-1px;"><path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3ZM10 17C10 17.5523 9.55228 18 9 18H7C6.44772 18 6 17.5523 6 17V7C6 6.44772 6.44772 6 7 6H9C9.55228 6 10 6.44772 10 7V17ZM18 13C18 13.5523 17.5523 14 17 14H15C14.4477 14 14 13.5523 14 13V7C14 6.44772 14.4477 6 15 6H17C17.5523 6 18 6.44772 18 7V13Z"/></svg>Trello Tracker`;
                 tBadge.title = "Connected natively to Trello";
@@ -4601,8 +4754,8 @@ function renderKanbanApp(activeBoard) {
             tBadge.style.marginTop = '2px';
             tBadge.style.display = 'inline-flex';
             tBadge.style.alignItems = 'center';
-            tBadge.style.alignSelf = 'flex-start';
-            titleRow.appendChild(tBadge);
+            tBadge.style.alignSelf = 'center';
+            rightControls.appendChild(tBadge);
         }
         
         if (list.trelloTasksListId) {
@@ -4621,8 +4774,8 @@ function renderKanbanApp(activeBoard) {
             tBadge.style.marginTop = '2px';
             tBadge.style.display = 'inline-flex';
             tBadge.style.alignItems = 'center';
-            tBadge.style.alignSelf = 'flex-start';
-            titleRow.appendChild(tBadge);
+            tBadge.style.alignSelf = 'center';
+            rightControls.appendChild(tBadge);
         }
         listContainer.appendChild(header);
         
@@ -4738,7 +4891,10 @@ function renderKanbanApp(activeBoard) {
             listContainer.appendChild(port);
 
             const hasTrelloTrackers = activeBoard.connections && activeBoard.connections.some(c => 
-                c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType !== 'ads')
+                c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType !== 'ads' && l.trackerType !== 'trelloSpeech')
+            );
+            const hasTrelloSpeechTrackers = activeBoard.connections && activeBoard.connections.some(c => 
+                c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType === 'trelloSpeech')
             );
             const hasAdsTrackers = activeBoard.connections && activeBoard.connections.some(c => 
                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType === 'ads')
@@ -4756,7 +4912,7 @@ function renderKanbanApp(activeBoard) {
                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.isNewClients)
             );
             
-            const hasTrackersOnEdge = hasTrelloTrackers || hasAdsTrackers || hasPipedriveTrackers || hasClientHappinessTrackers || hasMoneySmellingTrackers || hasNewClientsTrackers;
+            const hasTrackersOnEdge = hasTrelloTrackers || hasTrelloSpeechTrackers || hasAdsTrackers || hasPipedriveTrackers || hasClientHappinessTrackers || hasMoneySmellingTrackers || hasNewClientsTrackers;
             
             if (hasTrackersOnEdge) {
                 const toggleBtn = document.createElement('div');
@@ -4776,17 +4932,18 @@ function renderKanbanApp(activeBoard) {
                     if (hasNewClientsTrackers) list.collapsedEdges.push(`${edge}:newClients`);
                     if (hasPipedriveTrackers) list.collapsedEdges.push(`${edge}:pipedrive`);
                     if (hasTrelloTrackers) list.collapsedEdges.push(`${edge}:trello`);
+                    if (hasTrelloSpeechTrackers) list.collapsedEdges.push(`${edge}:trelloSpeech`);
                 }
                 
                 list.edgeOrder = list.edgeOrder || {};
-                const userOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'ads'];
+                const userOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
                 const edgeDict = {};
                 
                 if (hasClientHappinessTrackers) {
                     const isChCollapsed = list.collapsedEdges.includes(`${edge}:clientHappiness`);
                     const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'clientHappiness');"`;
                     if (isChCollapsed) {
-                        edgeDict['clientHappiness'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ch', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['clientHappiness'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ch', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="clientHappiness" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform: scale(1.1); margin-top:2px;">
                                 <circle cx="12" cy="12" r="10" fill="#FFCA28" stroke="#F57F17" stroke-width="1.5"/>
                                 <circle cx="8.5" cy="9" r="1.5" fill="#4E342E"/>
@@ -4795,7 +4952,7 @@ function renderKanbanApp(activeBoard) {
                             </svg>
                         </div>`;
                     } else {
-                        edgeDict['clientHappiness'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ch', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['clientHappiness'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ch', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="clientHappiness" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 0px 12px rgba(255, 202, 40, 0.9)); transform: scale(1.1); margin-top:-2px;">
                                 <circle cx="12" cy="12" r="10" fill="#FFE082" stroke="#FF8F00" stroke-width="1.5"/>
                                 <circle cx="8.5" cy="9" r="1.5" fill="#4E342E"/>
@@ -4812,7 +4969,7 @@ function renderKanbanApp(activeBoard) {
                     const isMsCollapsed = list.collapsedEdges.includes(`${edge}:moneySmelling`);
                     const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'moneySmelling');"`;
                     if (isMsCollapsed) {
-                        edgeDict['moneySmelling'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ms', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['moneySmelling'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ms', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="moneySmelling" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform: scale(1.1); margin-top:2px;">
                                 <circle cx="12" cy="12" r="10" fill="#2E7D32" stroke="#1B5E20" stroke-width="1.5"/>
                                 <g transform="translate(2.4, 2.4) scale(0.8)">
@@ -4821,7 +4978,7 @@ function renderKanbanApp(activeBoard) {
                             </svg>
                         </div>`;
                     } else {
-                        edgeDict['moneySmelling'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ms', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['moneySmelling'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ms', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="moneySmelling" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 0px 12px rgba(76, 175, 80, 0.9)); transform: scale(1.1); margin-top:-2px;">
                                 <circle cx="12" cy="12" r="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="1.5"/>
                                 <g transform="translate(2.4, 2.4) scale(0.8)">
@@ -4836,14 +4993,14 @@ function renderKanbanApp(activeBoard) {
                     const isNcCollapsed = list.collapsedEdges.includes(`${edge}:newClients`);
                     const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'newClients');"`;
                     if (isNcCollapsed) {
-                        edgeDict['newClients'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-nc', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['newClients'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-nc', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="newClients" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform: scale(1.1); margin-top:2px;">
                                 <circle cx="12" cy="12" r="10" fill="#1b8859" stroke="#126340" stroke-width="1.5"/>
                                 <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 7a5 5 0 0 1 10 0" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </div>`;
                     } else {
-                        edgeDict['newClients'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-nc', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['newClients'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-nc', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="newClients" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 0px 12px rgba(34, 160, 107, 0.9)); transform: scale(1.1); margin-top:-2px;">
                                 <circle cx="12" cy="12" r="10" fill="#22a06b" stroke="#1b8859" stroke-width="1.5"/>
                                 <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 7a5 5 0 0 1 10 0" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -4856,13 +5013,13 @@ function renderKanbanApp(activeBoard) {
                     const isPdCollapsed = list.collapsedEdges.includes(`${edge}:pipedrive`);
                     const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'pipedrive');"`;
                     if (isPdCollapsed) {
-                        edgeDict['pipedrive'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['pipedrive'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="pipedrive" width="32" height="32" viewBox="0 0 100 100" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform: scale(1.2); margin-top:2px;">
                                 <text x="50" y="80" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="90" fill="#ffffff" stroke="#26292c" stroke-width="4" text-anchor="middle" letter-spacing="-2">p</text>
                             </svg>
                         </div>`;
                     } else {
-                        edgeDict['pipedrive'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['pipedrive'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="pipedrive" width="32" height="32" viewBox="0 0 100 100" style="filter: drop-shadow(0 0px 12px rgba(34, 197, 94, 0.9)); transform: scale(1.2); margin-top:-2px;">
                                 <text x="50" y="80" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="90" fill="#ffffff" stroke="#26292c" stroke-width="4" text-anchor="middle" letter-spacing="-2">p</text>
                             </svg>
@@ -4876,7 +5033,7 @@ function renderKanbanApp(activeBoard) {
                     const chestId = `clip-${list.id}-${edge}`;
                     
                     if (isTlCollapsed) {
-                        edgeDict['trello'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['trello'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="trello" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform: scale(1.1);">
                                 <defs><clipPath id="${chestId}"><path d="M3 10 C3 3 21 3 21 10 Z"/></clipPath></defs>
                                 <path d="M3 10 L21 10 L21 20 C21 21.1 20.1 22 19 22 L5 22 C3.9 22 3 21.1 3 20 Z" fill="#6D4C41" stroke="#3E2723" stroke-width="1.5" stroke-linejoin="round"/>
@@ -4893,7 +5050,7 @@ function renderKanbanApp(activeBoard) {
                             </svg>
                         </div>`;
                     } else {
-                        edgeDict['trello'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['trello'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="trello" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 8px rgba(255,215,0,0.7)); transform: scale(1.1);">
                                 <path d="M3 12 L21 12 L21 20 C21 21.1 20.1 22 19 22 L5 22 C3.9 22 3 21.1 3 20 Z" fill="#6D4C41" stroke="#3E2723" stroke-width="1.5" stroke-linejoin="round"/>
                                 <rect x="5.5" y="12" width="3.5" height="10" fill="#FFC107" stroke="#FF8F00" stroke-width="1"/>
@@ -4912,11 +5069,34 @@ function renderKanbanApp(activeBoard) {
                     }
                 }
                 
+                if (hasTrelloSpeechTrackers) {
+                    const isTsCollapsed = list.collapsedEdges.includes(`${edge}:trelloSpeech`);
+                    const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'trelloSpeech');"`;
+                    
+                    if (isTsCollapsed) {
+                        edgeDict['trelloSpeech'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello-speech', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
+                            <svg data-tracker-type="trelloSpeech" width="28" height="28" viewBox="0 0 24 24" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); background: rgba(156, 39, 176, 0.8); border-radius: 6px; border: 2px solid #7B1FA2; margin-top: 3px;">
+                                <circle cx="12" cy="12" r="10" fill="transparent"/>
+                                <line x1="12" y1="6" x2="12" y2="18" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+                                <line x1="6" y1="6" x2="18" y2="6" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+                            </svg>
+                        </div>`;
+                    } else {
+                        edgeDict['trelloSpeech'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello-speech', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
+                            <svg data-tracker-type="trelloSpeech" width="28" height="28" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 8px rgba(156, 39, 176, 0.7)); background: #9C27B0; border-radius: 6px; border: 2px solid #7B1FA2; margin-top: 3px;">
+                                <circle cx="12" cy="12" r="10" fill="transparent"/>
+                                <line x1="12" y1="6" x2="12" y2="18" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+                                <line x1="6" y1="6" x2="18" y2="6" stroke="#fff" stroke-width="3" stroke-linecap="round"></line>
+                            </svg>
+                        </div>`;
+                    }
+                }
+                
                 if (hasAdsTrackers) {
                     const isAdsCollapsed = list.collapsedEdges.includes(`${edge}:ads`);
                     const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'ads');"`;
                     if (isAdsCollapsed) {
-                        edgeDict['ads'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['ads'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="ads" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform: scale(1.1);">
                                 <circle cx="12" cy="12" r="10" fill="#00838F" stroke="#004D40" stroke-width="1.5"/>
                                 <path d="M7 15 L11 11 L14 14 L18 10" fill="none" stroke="#18FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -4928,7 +5108,7 @@ function renderKanbanApp(activeBoard) {
                             </svg>
                         </div>`;
                     } else {
-                        edgeDict['ads'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:grab; display:inline-flex; align-items:center; justify-content:center;">
+                        edgeDict['ads'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
                             <svg data-tracker-type="ads" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 8px rgba(0, 229, 255, 0.7)); transform: scale(1.1);">
                                 <circle cx="12" cy="12" r="11" fill="none" stroke="#00E5FF" stroke-width="1" stroke-dasharray="2 2" opacity="0.8"/>
                                 <circle cx="12" cy="12" r="9" fill="#006064" stroke="#00251A" stroke-width="1.5"/>
@@ -4963,7 +5143,7 @@ function renderKanbanApp(activeBoard) {
                 toggleBtn.innerHTML = iconsHtml;
                 toggleBtn.title = 'Toggle Trackers';
                 toggleBtn.onmousedown = (e) => e.stopPropagation();
-                toggleBtn.onclick = (e) => {
+                if(toggleBtn) toggleBtn.onclick = (e) => {
                     e.stopPropagation();
                     const svgNode = e.target.closest('svg');
                     if (!svgNode) return;
@@ -4986,7 +5166,8 @@ function renderKanbanApp(activeBoard) {
                             if (tType === 'moneySmelling' && tl.isMoneySmelling) matches = true;
                             if (tType === 'newClients' && tl.isNewClients) matches = true;
                             if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
-                            if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads') matches = true;
+                            if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
+                            if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
                             if (tType === 'ads' && tl.trelloListId && tl.trackerType === 'ads') matches = true;
                             
                             if (matches) {
@@ -5097,7 +5278,7 @@ function renderKanbanApp(activeBoard) {
                 showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M6 9l6 6 6-6"></path></svg> Show Tasks (${taskCount})`;
             }
             
-            showBtn.onclick = (e) => {
+            if(showBtn) showBtn.onclick = (e) => {
                 e.stopPropagation();
                 isExpanded = !isExpanded;
                 
@@ -5153,7 +5334,7 @@ function renderKanbanApp(activeBoard) {
                 cardsToRender = list.cards.filter(card => {
                     let match = true;
                     if (activeH) {
-                        const color = (activeBoard.cardColors && activeBoard.cardColors[card.id]) ? activeBoard.cardColors[card.id] : 'default';
+                        const color = (activeBoard.clientHappinessData && activeBoard.clientHappinessData[card.id]) ? activeBoard.clientHappinessData[card.id] : 'default';
                         match = match && color === activeH;
                     }
                     if (activeS) {
@@ -5164,8 +5345,14 @@ function renderKanbanApp(activeBoard) {
             }
         } else if (effectiveFilters[list.id]) {
             cardsToRender = list.cards.filter(card => {
-                const color = (activeBoard.cardColors && activeBoard.cardColors[card.id]) ? activeBoard.cardColors[card.id] : 'default';
-                return color === effectiveFilters[list.id];
+                const isCHContext = effectiveFilters[list.id].type === 'clientHappiness';
+                let color = 'default';
+                if (isCHContext) {
+                    color = (activeBoard.clientHappinessData && activeBoard.clientHappinessData[card.id]) ? activeBoard.clientHappinessData[card.id] : 'default';
+                } else {
+                    color = (activeBoard.cardColors && activeBoard.cardColors[card.id]) ? activeBoard.cardColors[card.id] : 'default';
+                }
+                return color === effectiveFilters[list.id].value;
             });
         }
         
@@ -5201,24 +5388,24 @@ function renderKanbanApp(activeBoard) {
             }
             
             if (card.isPipedrive) {
-                cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
+                if(cardEl) cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
             } else if (card.isTrelloTask) {
-                cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
+                if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #5e6c84';
             } else if (!card.isTrello) {
                 if (list.isMoneySmelling) {
-                    cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
+                    if(cardEl) cardEl.onclick = () => openPipedriveActionModal(card.id, list.id);
                     cardEl.style.cursor = 'pointer';
                     // Since it opens PipedriveActionModal, maybe blue border like others:
                     if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #00875A'; // Smell nice green!
                 } else {
-                    cardEl.onclick = () => openTimerModal(card.id, list.id);
+                    if(cardEl) cardEl.onclick = () => openTimerModal(card.id, list.id);
                 }
             } else if (list.trackerType === 'ads') {
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
                 cardEl.style.cursor = 'default';
             } else {
-                cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
+                if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
                 cardEl.style.cursor = 'pointer';
             }
@@ -5246,7 +5433,7 @@ function renderKanbanApp(activeBoard) {
             
             if (!card.isTrello) {
                 titleTextWrap.contentEditable = 'false';
-                titleTextWrap.onclick = (e) => {
+                if(titleTextWrap) titleTextWrap.onclick = (e) => {
                     e.stopPropagation();
                     if (titleTextWrap.contentEditable !== 'true') {
                         titleTextWrap.contentEditable = 'true';
@@ -5306,6 +5493,77 @@ function renderKanbanApp(activeBoard) {
             }
             
             leftCol.appendChild(titleTextWrap);
+            
+            let subtitleTextWrap = null;
+            if (list.trackerType === 'ads') {
+                if (!activeBoard.cardSubtitles) activeBoard.cardSubtitles = {};
+                subtitleTextWrap = document.createElement('span');
+            subtitleTextWrap.textContent = activeBoard.cardSubtitles[card.id] || 'Add subtitle...';
+            if (!activeBoard.cardSubtitles[card.id]) {
+                subtitleTextWrap.style.display = 'none';
+            }
+            
+            subtitleTextWrap.style.lineHeight = "1.3";
+            subtitleTextWrap.style.cursor = 'text';
+            subtitleTextWrap.style.padding = '2px';
+            subtitleTextWrap.style.margin = '2px -2px -2px -2px';
+            subtitleTextWrap.style.borderRadius = '4px';
+            subtitleTextWrap.style.transition = 'background 0.2s';
+            subtitleTextWrap.style.outline = 'none';
+            subtitleTextWrap.style.fontSize = '12px';
+            subtitleTextWrap.style.color = '#5e6c84';
+            subtitleTextWrap.dir = 'auto';
+            
+            subtitleTextWrap.contentEditable = 'false';
+            if(subtitleTextWrap) subtitleTextWrap.onclick = (e) => {
+                e.stopPropagation();
+                if (subtitleTextWrap.contentEditable !== 'true') {
+                    subtitleTextWrap.contentEditable = 'true';
+                    setTimeout(() => {
+                        subtitleTextWrap.focus();
+                        if (subtitleTextWrap.textContent === 'Add subtitle...') {
+                            subtitleTextWrap.textContent = '';
+                        }
+                    }, 10);
+                }
+            };
+            subtitleTextWrap.onfocus = () => {
+                subtitleTextWrap.style.background = 'rgba(9, 30, 66, 0.08)';
+                subtitleTextWrap.style.cursor = 'text';
+            };
+            subtitleTextWrap.onblur = async () => {
+                subtitleTextWrap.contentEditable = 'false';
+                subtitleTextWrap.style.background = '';
+                subtitleTextWrap.style.cursor = 'pointer';
+                const newSubtitle = subtitleTextWrap.textContent.trim();
+                
+                if (newSubtitle && newSubtitle !== 'Add subtitle...') {
+                    if (newSubtitle !== activeBoard.cardSubtitles[card.id]) {
+                        activeBoard.cardSubtitles[card.id] = newSubtitle;
+                        saveState();
+                        render();
+                    }
+                } else {
+                    if (activeBoard.cardSubtitles[card.id]) {
+                        activeBoard.cardSubtitles[card.id] = '';
+                        saveState();
+                    }
+                    subtitleTextWrap.textContent = 'Add subtitle...';
+                    subtitleTextWrap.style.display = 'none';
+                    if (subtitleTextWrap._footerBtn) {
+                        subtitleTextWrap._footerBtn.style.display = 'flex';
+                    }
+                }
+            };
+                subtitleTextWrap.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        subtitleTextWrap.blur();
+                    }
+                };
+                
+                leftCol.appendChild(subtitleTextWrap);
+            }
             
             if (card.isTrelloDeleted && card.isTrelloTask) {
                 const deletedBadge = document.createElement('div');
@@ -5409,7 +5667,7 @@ function renderKanbanApp(activeBoard) {
                         const waLink = document.createElement('a');
                         waLink.href = `https://wa.me/${waNum.startsWith('+') ? waNum.substring(1) : waNum}`;
                         waLink.target = '_blank';
-                        waLink.onclick = (e) => e.stopPropagation();
+                        if(waLink) waLink.onclick = (e) => e.stopPropagation();
                         waLink.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.878-.788-1.47-1.761-1.643-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
                         
                         waLink.style.display = 'flex';
@@ -5455,7 +5713,7 @@ function renderKanbanApp(activeBoard) {
                 e.stopPropagation();
             };
             
-            pinBtn.onclick = (e) => {
+            if(pinBtn) pinBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 card.isPinned = !card.isPinned;
@@ -5480,94 +5738,223 @@ function renderKanbanApp(activeBoard) {
                     checklistWrap.className = 'nc-checklist-wrap';
 
                     const doneCount = checklist.filter(i => i.checked).length;
-                    const progressBar = document.createElement('div');
-                    progressBar.className = 'nc-progress-bar';
-                    const progressFill = document.createElement('div');
-                    progressFill.className = 'nc-progress-fill';
-                    progressFill.style.width = `${Math.round((doneCount / checklist.length) * 100)}%`;
-                    progressBar.appendChild(progressFill);
-                    checklistWrap.appendChild(progressBar);
-
-                    checklist.forEach((item, index) => {
-                        const row = document.createElement('div');
-                        row.className = 'nc-card-row';
-                        row.onmousedown = (e) => e.stopPropagation();
-                        row.onclick = (e) => e.stopPropagation();
-
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.checked = !!item.checked;
-                        checkbox.onchange = (e) => {
-                            const isChecked = e.target.checked;
-                            text.classList.toggle('nc-done', isChecked);
-                            setTimeout(() => {
-                                const liveChecklist = ensureCardChecklist(card);
-                                liveChecklist[index].checked = isChecked;
-                                saveState();
-                                render();
-                            }, 0);
-                        };
-
-                        const text = document.createElement('input');
-                        text.type = 'text';
-                        text.value = item.text;
-                        text.className = 'nc-card-text' + (item.checked ? ' nc-done' : '');
-                        text.spellcheck = false;
-                        text.onclick = (e) => e.stopPropagation();
-                        text.oninput = (e) => {
-                            const liveChecklist = ensureCardChecklist(card);
-                            liveChecklist[index].text = e.target.value;
-                        };
-                        text.onblur = (e) => {
-                            const val = e.target.value.trim();
-                            const liveChecklist = ensureCardChecklist(card);
-                            if (!val) {
-                                liveChecklist.splice(index, 1);
-                                saveState();
-                                setTimeout(() => render(), 0);
-                            } else {
-                                if (liveChecklist[index].text !== val) {
-                                    liveChecklist[index].text = val;
-                                    saveState();
-                                }
-                            }
-                        };
-                        text.onkeydown = (e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                text.blur();
-                            }
-                        };
-
-                        row.appendChild(checkbox);
-                        row.appendChild(text);
-                        checklistWrap.appendChild(row);
-                    });
-
-                    const addBtnWrap = document.createElement('div');
-                    addBtnWrap.style.display = 'flex';
-                    addBtnWrap.style.alignItems = 'center';
-                    addBtnWrap.style.paddingLeft = '4px';
-                    addBtnWrap.style.marginTop = '2px';
+                    const checklistHeader = document.createElement('div');
+                    checklistHeader.style.display = 'flex';
+                    checklistHeader.style.alignItems = 'center';
+                    checklistHeader.style.justifyContent = 'space-between';
+                    checklistHeader.style.cursor = 'pointer';
+                    checklistHeader.style.marginBottom = card.isChecklistCollapsed ? '0px' : '6px';
+                    checklistHeader.style.paddingTop = '4px';
+                    checklistHeader.style.color = '#5e6c84';
+                    checklistHeader.style.fontSize = '12px';
+                    checklistHeader.style.fontWeight = '600';
                     
-                    const addIcon = document.createElement('div');
-                    addIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
-                    addIcon.style.cursor = 'pointer';
-                    addIcon.style.display = 'flex';
-                    addIcon.style.transition = 'stroke 0.2s';
-                    addIcon.onmouseover = () => addIcon.querySelector('svg').style.stroke = '#22a06b';
-                    addIcon.onmouseout = () => addIcon.querySelector('svg').style.stroke = '#94a3b8';
-                    addIcon.onmousedown = (e) => {
+                    const titleWrap = document.createElement('div');
+                    titleWrap.style.display = 'flex';
+                    titleWrap.style.alignItems = 'center';
+                    titleWrap.style.gap = '6px';
+                    titleWrap.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                           <span>Checklist</span> <span style="opacity:0.7; font-weight:500;">(${doneCount}/${checklist.length})</span>`;
+
+                    const toggleIcon = document.createElement('div');
+                    toggleIcon.style.display = 'flex';
+                    toggleIcon.innerHTML = card.isChecklistCollapsed ? 
+                        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>` : 
+                        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+
+                    checklistHeader.appendChild(titleWrap);
+                    checklistHeader.appendChild(toggleIcon);
+
+                    checklistHeader.onclick = (e) => {
                         e.stopPropagation();
-                        e.preventDefault(); // Prevents input focus from being stolen before render
-                        const liveChecklist = ensureCardChecklist(card);
-                        liveChecklist.push({ text: 'New task...', checked: false });
+                        card.isChecklistCollapsed = !card.isChecklistCollapsed;
                         saveState();
                         render();
                     };
 
-                    addBtnWrap.appendChild(addIcon);
-                    checklistWrap.appendChild(addBtnWrap);
+                    checklistWrap.appendChild(checklistHeader);
+
+                    if (!card.isChecklistCollapsed) {
+                        const itemsWrap = document.createElement('div');
+                        itemsWrap.className = 'nc-checklist-items-wrap';
+
+                        checklist.forEach((item, index) => {
+                            const itemContainer = document.createElement('div');
+                            itemContainer.style.display = 'flex';
+                            itemContainer.style.flexDirection = 'column';
+                            itemContainer.style.marginBottom = '2px';
+                            itemContainer.dataset.index = index;
+
+                            const row = document.createElement('div');
+                            row.className = 'nc-card-row';
+                            row.onmousedown = (e) => e.stopPropagation();
+                            if(row) row.onclick = (e) => e.stopPropagation();
+
+                            const dragHandle = document.createElement('div');
+                            dragHandle.className = 'nc-drag-handle';
+                            dragHandle.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>';
+                            dragHandle.style.cursor = 'grab';
+                            dragHandle.style.padding = '0 2px';
+                            dragHandle.style.display = 'flex';
+                            dragHandle.style.marginRight = '2px';
+                            dragHandle.title = "Drag to reorder";
+                            
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.checked = !!item.checked;
+                            checkbox.onchange = (e) => {
+                                const isChecked = e.target.checked;
+                                text.classList.toggle('nc-done', isChecked);
+                                setTimeout(() => {
+                                    const liveChecklist = ensureCardChecklist(card);
+                                    liveChecklist[index].checked = isChecked;
+                                    saveState();
+                                    render();
+                                }, 0);
+                            };
+
+                            const text = document.createElement('input');
+                            text.type = 'text';
+                            text.value = item.text;
+                            text.className = 'nc-card-text' + (item.checked ? ' nc-done' : '');
+                            text.spellcheck = false;
+                            text.style.flex = '1';
+                            if(text) text.onclick = (e) => e.stopPropagation();
+                            text.oninput = (e) => {
+                                const liveChecklist = ensureCardChecklist(card);
+                                liveChecklist[index].text = e.target.value;
+                            };
+                            text.onblur = (e) => {
+                                const val = e.target.value.trim();
+                                const liveChecklist = ensureCardChecklist(card);
+                                if (!val && !liveChecklist[index].comment) {
+                                    liveChecklist.splice(index, 1);
+                                    saveState();
+                                    setTimeout(() => render(), 0);
+                                } else {
+                                    if (liveChecklist[index] && liveChecklist[index].text !== val) {
+                                        liveChecklist[index].text = val;
+                                        saveState();
+                                    }
+                                }
+                            };
+                            text.onkeydown = (e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    text.blur();
+                                }
+                            };
+
+                            const commentBtn = document.createElement('div');
+                            commentBtn.innerHTML = `<svg style="pointer-events: none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${item.comment ? '#0c66e4' : '#94a3b8'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+                            commentBtn.style.cursor = 'pointer';
+                            commentBtn.style.display = 'flex';
+                            commentBtn.style.padding = '0 4px';
+                            commentBtn.title = "Add a comment";
+                            commentBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                if (document.activeElement) document.activeElement.blur();
+                                const liveChecklist = ensureCardChecklist(card);
+                                liveChecklist[index].showComment = !liveChecklist[index].showComment;
+                                saveState();
+                                setTimeout(() => render(), 0);
+                            };
+
+                            row.appendChild(dragHandle);
+                            row.appendChild(checkbox);
+                            row.appendChild(text);
+                            row.appendChild(commentBtn);
+                            itemContainer.appendChild(row);
+
+                            if (item.showComment) {
+                                const commentWrap = document.createElement('div');
+                                commentWrap.style.paddingLeft = '36px'; // adjusted for drag handle
+                                commentWrap.style.paddingRight = '20px';
+                                commentWrap.style.marginTop = '-2px';
+                                commentWrap.style.marginBottom = '6px';
+                                
+                                const commentInput = document.createElement('textarea');
+                                commentInput.value = item.comment || '';
+                                commentInput.placeholder = 'Add details or a comment...';
+                                commentInput.style.width = '100%';
+                                commentInput.style.fontSize = '12px';
+                                commentInput.style.color = '#475569';
+                                commentInput.style.padding = '4px 8px';
+                                commentInput.style.border = '1px solid #e2e8f0';
+                                commentInput.style.borderRadius = '4px';
+                                commentInput.style.resize = 'vertical';
+                                commentInput.style.minHeight = '32px';
+                                commentInput.style.backgroundColor = '#f8fafc';
+                                commentInput.style.outline = 'none';
+                                commentInput.style.fontFamily = 'inherit';
+                                commentInput.onmousedown = (e) => e.stopPropagation();
+                                commentInput.onclick = (e) => e.stopPropagation();
+                                
+                                commentInput.oninput = (e) => {
+                                    const liveChecklist = ensureCardChecklist(card);
+                                    liveChecklist[index].comment = e.target.value;
+                                };
+                                commentInput.onblur = () => {
+                                    saveState();
+                                };
+                                
+                                commentWrap.appendChild(commentInput);
+                                itemContainer.appendChild(commentWrap);
+                                
+                                if (!item.comment) {
+                                    setTimeout(() => commentInput.focus(), 0);
+                                }
+                            }
+
+                            itemsWrap.appendChild(itemContainer);
+                        });
+
+                        checklistWrap.appendChild(itemsWrap);
+                        
+                        // Try to initialize Sortable on the checklist items
+                        if (typeof Sortable !== 'undefined') {
+                            new Sortable(itemsWrap, {
+                                animation: 150,
+                                handle: '.nc-drag-handle',
+                                onEnd: function (evt) {
+                                    const oldIndex = evt.oldIndex;
+                                    const newIndex = evt.newIndex;
+                                    if (oldIndex !== newIndex && oldIndex !== undefined && newIndex !== undefined) {
+                                        const liveChecklist = ensureCardChecklist(card);
+                                        const [movedItem] = liveChecklist.splice(oldIndex, 1);
+                                        liveChecklist.splice(newIndex, 0, movedItem);
+                                        saveState();
+                                        render();
+                                    }
+                                }
+                            });
+                        }
+
+                        const addBtnWrap = document.createElement('div');
+                        addBtnWrap.style.display = 'flex';
+                        addBtnWrap.style.alignItems = 'center';
+                        addBtnWrap.style.paddingLeft = '4px';
+                        addBtnWrap.style.marginTop = '4px';
+                        
+                        const addIcon = document.createElement('div');
+                        addIcon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+                        addIcon.style.cursor = 'pointer';
+                        addIcon.style.display = 'flex';
+                        addIcon.style.transition = 'stroke 0.2s';
+                        addIcon.onmouseover = () => addIcon.querySelector('svg').style.stroke = '#22a06b';
+                        addIcon.onmouseout = () => addIcon.querySelector('svg').style.stroke = '#94a3b8';
+                        addIcon.onmousedown = (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const liveChecklist = ensureCardChecklist(card);
+                            liveChecklist.push({ text: 'New task...', checked: false });
+                            saveState();
+                            render();
+                        };
+
+                        addBtnWrap.appendChild(addIcon);
+                        checklistWrap.appendChild(addBtnWrap);
+                    }
 
                     cardEl.appendChild(checklistWrap);
                 }
@@ -5691,7 +6078,7 @@ function renderKanbanApp(activeBoard) {
                     };
                     updateDrawerUI();
 
-                    addPlatformBtn.onclick = (e) => {
+                    if(addPlatformBtn) addPlatformBtn.onclick = (e) => {
                         e.stopPropagation();
                         drawerExpanded = !drawerExpanded;
                         const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
@@ -5701,6 +6088,45 @@ function renderKanbanApp(activeBoard) {
                     };
 
                     inactivePlatWrap.appendChild(addPlatformBtn);
+                    
+                    const addSubtitleFooterBtn = document.createElement('div');
+                    addSubtitleFooterBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+                    addSubtitleFooterBtn.style.cursor = 'pointer';
+                    addSubtitleFooterBtn.style.color = '#7A869A';
+                    addSubtitleFooterBtn.style.background = '#f4f5f7';
+                    addSubtitleFooterBtn.style.padding = '4px';
+                    addSubtitleFooterBtn.style.borderRadius = '50%';
+                    addSubtitleFooterBtn.style.display = 'flex';
+                    addSubtitleFooterBtn.style.alignItems = 'center';
+                    addSubtitleFooterBtn.style.justifyContent = 'center';
+                    addSubtitleFooterBtn.title = 'Add Subtitle';
+                    addSubtitleFooterBtn.style.transition = 'all 0.2s ease';
+                    
+                    if (!activeBoard.cardSubtitles || !activeBoard.cardSubtitles[card.id]) {
+                        addSubtitleFooterBtn.style.display = 'flex';
+                    } else {
+                        addSubtitleFooterBtn.style.display = 'none';
+                    }
+
+                    addSubtitleFooterBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (subtitleTextWrap) {
+                            subtitleTextWrap.style.display = 'block';
+                            addSubtitleFooterBtn.style.display = 'none';
+                            subtitleTextWrap.contentEditable = 'true';
+                            setTimeout(() => subtitleTextWrap.focus(), 10);
+                            if (subtitleTextWrap.textContent === 'Add subtitle...') {
+                                subtitleTextWrap.textContent = '';
+                            }
+                        }
+                    };
+
+                    inactivePlatWrap.appendChild(addSubtitleFooterBtn);
+                    
+                    if (subtitleTextWrap) {
+                        subtitleTextWrap._footerBtn = addSubtitleFooterBtn;
+                    }
+
                     inactivePlatWrap.appendChild(inactiveIconsDrawer);
                     
                     const platforms = [
@@ -5775,7 +6201,7 @@ function renderKanbanApp(activeBoard) {
                             }
                         };
                         
-                        iconEl.onclick = (e) => {
+                        if(iconEl) iconEl.onclick = (e) => {
                             e.stopPropagation();
                             const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
                             if (liveCard) {
@@ -5944,7 +6370,7 @@ function renderKanbanApp(activeBoard) {
                                     }
                                 };
                                 
-                                childIcon.onclick = (e) => {
+                                if(childIcon) childIcon.onclick = (e) => {
                                     e.stopPropagation();
                                     const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
                                     if (liveCard && liveCard.adsMetrics) {
@@ -6020,7 +6446,7 @@ function renderKanbanApp(activeBoard) {
                             spendInput.style.margin = '0';
                             spendInput.style.textAlign = 'right';
                             
-                            spendInput.onclick = (e) => e.stopPropagation();
+                            if(spendInput) spendInput.onclick = (e) => e.stopPropagation();
                             spendInput.ondragover = (e) => e.preventDefault();
                             spendInput.ondrop = (e) => e.preventDefault();
                             
@@ -6155,7 +6581,7 @@ function renderKanbanApp(activeBoard) {
 
                     const attachTooltip = (element, text) => {
                         if (!text) return;
-                        element.addEventListener('mouseenter', () => {
+                        if(element) element.addEventListener('mouseenter', () => {
                             const tt = document.getElementById('ads-hud-tooltip');
                             if (!tt) return;
                             tt.innerHTML = text;
@@ -6164,11 +6590,11 @@ function renderKanbanApp(activeBoard) {
                             tt.style.top = rect.top + 'px';
                             tt.classList.add('active');
                         });
-                        element.addEventListener('mouseleave', () => {
+                        if(element) element.addEventListener('mouseleave', () => {
                             const tt = document.getElementById('ads-hud-tooltip');
                             if (tt) tt.classList.remove('active');
                         });
-                        element.addEventListener('click', () => {
+                        if(element) element.addEventListener('click', () => {
                             const tt = document.getElementById('ads-hud-tooltip');
                             if (tt) tt.classList.remove('active');
                         });
@@ -6195,7 +6621,7 @@ function renderKanbanApp(activeBoard) {
                             span.style.cursor = 'pointer';
                             span.style.userSelect = 'none';
                             span.title = 'Click to toggle mode';
-                            span.onclick = (e) => {
+                            if(span) span.onclick = (e) => {
                                 e.stopPropagation();
                                 onIconClick(span, inp);
                             };
@@ -6216,7 +6642,7 @@ function renderKanbanApp(activeBoard) {
                         const adjustW = () => { inp.style.width = Math.max(30, (inp.value.length * 7.5) + 5) + 'px'; };
                         adjustW();
 
-                        inp.onclick = (e) => e.stopPropagation();
+                        if(inp) inp.onclick = (e) => e.stopPropagation();
                         inp.onfocus = () => { inp.value = initVal !== undefined && initVal !== 0 ? initVal : ''; adjustW(); };
                         inp.onblur = () => { inp.value = formatNum(initVal); adjustW(); };
 
@@ -6274,7 +6700,7 @@ function renderKanbanApp(activeBoard) {
                     calculatorBadge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="14.01"></line><line x1="16" x2="16" y1="18" y2="18.01"></line><line x1="12" x2="12" y1="14" y2="14.01"></line><line x1="12" x2="12" y1="18" y2="18.01"></line><line x1="8" x2="8" y1="14" y2="14.01"></line><line x1="8" x2="8" y1="18" y2="18.01"></line></svg><span style="font-weight:600; font-size:11px; letter-spacing:0.5px;">KPI</span>`;
                     calculatorBadge.onmouseenter = () => calculatorBadge.style.background = 'rgba(9, 30, 66, 0.08)';
                     calculatorBadge.onmouseleave = () => calculatorBadge.style.background = 'rgba(9, 30, 66, 0.04)';
-                    calculatorBadge.onclick = (e) => {
+                    if(calculatorBadge) calculatorBadge.onclick = (e) => {
                         e.stopPropagation();
                         if(window.openAdsCalculatorModal) window.openAdsCalculatorModal(card.id);
                     };
@@ -6328,7 +6754,7 @@ function renderKanbanApp(activeBoard) {
                     taxBadge.style.gap = '4px';
                     attachTooltip(taxBadge, 'Add 15% Tax to Ad Spend');
                     
-                    taxBadge.onclick = (e) => {
+                    if(taxBadge) taxBadge.onclick = (e) => {
                         e.stopPropagation();
                         m.taxEnabled = !m.taxEnabled;
                         const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
@@ -6371,7 +6797,7 @@ function renderKanbanApp(activeBoard) {
                     
                     toggleBadge.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`;
 
-                    toggleBadge.onclick = (e) => {
+                    if(toggleBadge) toggleBadge.onclick = (e) => {
                         e.stopPropagation();
                         m.metricsExpanded = !m.metricsExpanded;
                         const liveCard = activeBoard.lists.flatMap(la => la.cards).find(ca => ca.id === card.id);
@@ -6553,30 +6979,34 @@ function renderKanbanApp(activeBoard) {
                     if (list.isClientHappiness || list.isMoneySmelling) ageBadge.classList.add('hide-hours');
                     ageBadge.dataset.startTime = creationTimestamp;
                     
+                    if (!activeBoard.clientHappinessData) activeBoard.clientHappinessData = {};
                     if (!activeBoard.cardColors) activeBoard.cardColors = {};
-                    const selectedColor = activeBoard.cardColors[card.id] || 'default';
+                    
+                    const moneyColor = activeBoard.cardColors[card.id] || 'default';
+                    const happinessColor = activeBoard.clientHappinessData[card.id] || 'default';
+                    const activeColor = list.isClientHappiness ? happinessColor : moneyColor;
                     
                     let bgColor = 'rgba(9, 30, 66, 0.04)';
                     let txtColor = 'var(--text-color)';
                     let borderColor = 'rgba(9, 30, 66, 0.08)';
                     let badgeOpacity = '0.85';
                     
-                    if (selectedColor === 'green') {
+                    if (activeColor === 'green') {
                         bgColor = 'rgba(34, 160, 107, 0.15)'; 
                         txtColor = '#1f845a'; 
                         borderColor = 'rgba(34, 160, 107, 0.3)';
                         badgeOpacity = '1';
-                    } else if (selectedColor === 'yellow') {
+                    } else if (activeColor === 'yellow') {
                         bgColor = 'rgba(245, 205, 71, 0.2)'; 
                         txtColor = '#b38600'; 
                         borderColor = 'rgba(245, 205, 71, 0.4)';
                         badgeOpacity = '1';
-                    } else if (selectedColor === 'orange') {
+                    } else if (activeColor === 'orange') {
                         bgColor = 'rgba(255, 152, 0, 0.15)'; 
                         txtColor = '#e65100'; 
                         borderColor = 'rgba(255, 152, 0, 0.3)';
                         badgeOpacity = '1';
-                    } else if (selectedColor === 'red') {
+                    } else if (activeColor === 'red') {
                         bgColor = 'rgba(201, 55, 44, 0.15)'; 
                         txtColor = '#c9372c'; 
                         borderColor = 'rgba(201, 55, 44, 0.3)';
@@ -6594,19 +7024,25 @@ function renderKanbanApp(activeBoard) {
                     ageBadge.style.display = 'flex';
                     ageBadge.style.alignItems = 'center';
                     
-                    ageBadge.style.alignItems = 'center';
-                    
                     let ageEmoji = '';
-                    if (selectedColor === 'green') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
-                    if (selectedColor === 'yellow') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
-                    if (selectedColor === 'orange') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
-                    if (selectedColor === 'red') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
+                    const listIsMoney = list.isMoneySmelling || list.isNewClients;
+                    if (listIsMoney) {
+                        if (moneyColor === 'green') ageEmoji = `<span style="font-size:14px;line-height:1;margin-right:4px;">🔥</span>`;
+                        else if (moneyColor === 'yellow') ageEmoji = `<span style="font-size:14px;line-height:1;margin-right:4px;">☀️</span>`;
+                        else if (moneyColor === 'orange') ageEmoji = `<span style="font-size:14px;line-height:1;margin-right:4px;">⛅</span>`;
+                        else if (moneyColor === 'red') ageEmoji = `<span style="font-size:14px;line-height:1;margin-right:4px;">❄️</span>`;
+                    } else {
+                        if (activeColor === 'green') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
+                        else if (activeColor === 'yellow') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
+                        else if (activeColor === 'orange') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
+                        else if (activeColor === 'red') ageEmoji = `<svg width="14" height="14" viewBox="0 0 24 24" style="margin-right:6px; flex-shrink:0;"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>`;
+                    }
                     
                     const ageText = typeof formatTrelloTime === 'function' ? formatTrelloTime(creationTimestamp, true, list.isClientHappiness || list.isMoneySmelling) : '0h';
                     ageBadge.innerHTML = `<span class="age-icon-lock" style="display:flex; align-items:center;">${ageEmoji}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span> <span class="clock-text" style="font-weight:600; letter-spacing:0.5px; font-size:11px;">${ageText}</span>`;
                     ageBadge.title = "Total age of card since creation. Click to set status.";
                     
-                    ageBadge.onclick = (e) => {
+                    if(ageBadge) ageBadge.onclick = (e) => {
                         e.stopPropagation();
                         
                         const isMineOpen = ageBadge.dataset.pickerOpen === 'true';
@@ -6643,25 +7079,36 @@ function renderKanbanApp(activeBoard) {
                             transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                         `;
                         
+                        const emjsForPicker = {
+                            green: listIsMoney ? '<span style="font-size:22px;line-height:1;">🔥</span>' : '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            yellow: listIsMoney ? '<span style="font-size:22px;line-height:1;">☀️</span>' : '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            orange: listIsMoney ? '<span style="font-size:22px;line-height:1;">⛅</span>' : '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            red: listIsMoney ? '<span style="font-size:22px;line-height:1;">❄️</span>' : '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>',
+                            default: '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#e9e9e9" stroke="#cbd5e1" stroke-width="2"/></svg>'
+                        };
+
                         const colorsList = ['default', 'green', 'yellow', 'orange', 'red'];
                         colorsList.forEach(col => {
                             const dot = document.createElement('div');
                             dot.style.cssText = `
-                                width: 20px; height: 20px; border-radius: 50%;
+                                width: 24px; height: 24px; border-radius: 50%;
                                 cursor: pointer; border: 2px solid transparent;
+                                display: flex; align-items: center; justify-content: center;
+                                transition: transform 0.1s;
                             `;
-                            if (col === 'default') dot.style.background = '#e9e9e9';
-                            if (col === 'green') dot.style.background = '#22a06b';
-                            if (col === 'yellow') dot.style.background = '#f5cd47';
-                            if (col === 'orange') dot.style.background = '#e65100';
-                            if (col === 'red') dot.style.background = '#c9372c';
+                            dot.innerHTML = emjsForPicker[col];
                             
                             dot.onmouseover = () => dot.style.transform = 'scale(1.15)';
                             dot.onmouseout = () => dot.style.transform = 'scale(1)';
                             
-                            dot.onclick = (ev) => {
+                            if(dot) dot.onclick = (ev) => {
                                 ev.stopPropagation();
-                                activeBoard.cardColors[card.id] = col;
+                                if (list.isClientHappiness) {
+                                    if (!activeBoard.clientHappinessData) activeBoard.clientHappinessData = {};
+                                    activeBoard.clientHappinessData[card.id] = col;
+                                } else {
+                                    activeBoard.cardColors[card.id] = col;
+                                }
                                 saveState();
                                 
                                 picker.style.opacity = '0';
@@ -6753,7 +7200,7 @@ function renderKanbanApp(activeBoard) {
                                 }
                             };
                             
-                            manualMoInput.onclick = manualDayInput.onclick = (e) => e.stopPropagation();
+                            if(manualMoInput) manualMoInput.onclick = manualDayInput.onclick = (e) => e.stopPropagation();
                             manualMoInput.onkeydown = manualDayInput.onkeydown = handleEnter;
                             
                             picker.appendChild(manualMoInput);
@@ -6789,15 +7236,14 @@ function renderKanbanApp(activeBoard) {
                         happinessWrap.style.gap = '4px';
                         happinessWrap.style.marginLeft = '4px';
                         
-                        const isMoney = list.isMoneySmelling;
                         const states = [
-                            { val: 'green', svg: isMoney ? '<span style="font-size:16px;line-height:1;">🔥</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(34, 160, 107, 0.15)' },
-                            { val: 'yellow', svg: isMoney ? '<span style="font-size:16px;line-height:1;">☀️</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(245, 205, 71, 0.2)' },
-                            { val: 'orange', svg: isMoney ? '<span style="font-size:16px;line-height:1;">⛅</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(255, 152, 0, 0.15)' },
-                            { val: 'red', svg: isMoney ? '<span style="font-size:16px;line-height:1;">❄️</span>' : '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(201, 55, 44, 0.15)' }
+                            { val: 'green', svg: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#43A047"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 15 Q12 19 16 15" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(34, 160, 107, 0.15)' },
+                            { val: 'yellow', svg: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FDD835"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><line x1="8" y1="15" x2="16" y2="15" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(245, 205, 71, 0.2)' },
+                            { val: 'orange', svg: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF9800"/><circle cx="8" cy="10" r="1.5" fill="#212121"/><circle cx="16" cy="10" r="1.5" fill="#212121"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(255, 152, 0, 0.15)' },
+                            { val: 'red', svg: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#E53935"/><circle cx="8" cy="11" r="1.5" fill="#212121"/><circle cx="16" cy="11" r="1.5" fill="#212121"/><line x1="6" y1="8" x2="10" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="8" x2="14" y2="10" stroke="#212121" stroke-width="2" stroke-linecap="round"/><path d="M8 17 Q12 13 16 17" fill="none" stroke="#212121" stroke-width="2" stroke-linecap="round"/></svg>', bg: 'rgba(201, 55, 44, 0.15)' }
                         ];
                         
-                        const currentHappiness = activeBoard.cardColors?.[card.id] || 'default';
+                        const currentHappiness = activeBoard.clientHappinessData?.[card.id] || 'default';
                         
                         states.forEach(st => {
                             const btn = document.createElement('div');
@@ -6823,14 +7269,14 @@ function renderKanbanApp(activeBoard) {
                             btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
                             btn.onmouseleave = () => btn.style.transform = currentHappiness === st.val ? 'scale(1.1)' : 'scale(1)';
                             
-                            btn.onclick = (e) => {
+                            if(btn) btn.onclick = (e) => {
                                 e.stopPropagation();
-                                if (!activeBoard.cardColors) activeBoard.cardColors = {};
+                                if (!activeBoard.clientHappinessData) activeBoard.clientHappinessData = {};
                                 
-                                if (activeBoard.cardColors[card.id] === st.val) {
-                                    activeBoard.cardColors[card.id] = 'default';
+                                if (activeBoard.clientHappinessData[card.id] === st.val) {
+                                    activeBoard.clientHappinessData[card.id] = 'default';
                                 } else {
-                                    activeBoard.cardColors[card.id] = st.val;
+                                    activeBoard.clientHappinessData[card.id] = st.val;
                                 }
                                 saveState();
                                 render();
@@ -6911,7 +7357,10 @@ function renderKanbanApp(activeBoard) {
                 cardEl.appendChild(svcsWrap);
             }
 
-            if ((list.isClientHappiness || list.isMoneySmelling) && activeBoard.cardColors && activeBoard.cardColors[card.id] === 'red') {
+            const isRedMS = list.isMoneySmelling && activeBoard.cardColors && activeBoard.cardColors[card.id] === 'red';
+            const isRedCH = list.isClientHappiness && activeBoard.clientHappinessData && activeBoard.clientHappinessData[card.id] === 'red';
+
+            if (isRedMS || isRedCH) {
                 const reasonWrap = document.createElement('div');
                 reasonWrap.style.marginTop = '6px';
                 
@@ -6921,7 +7370,7 @@ function renderKanbanApp(activeBoard) {
                 reasonInput.dir = 'auto';
                 reasonInput.style.cssText = 'width: 100%; font-size: 11.5px; padding: 6px; border: 1px solid #ffcccc; border-radius: 4px; outline: none; background: #fff5f5; color: #c9372c; resize: none; min-height: 28px; box-sizing: border-box; font-family: inherit; line-height: 1.4; overflow: hidden;';
                 
-                reasonInput.onclick = (e) => e.stopPropagation();
+                if(reasonInput) reasonInput.onclick = (e) => e.stopPropagation();
                 
                 const autoResize = () => {
                     reasonInput.style.height = 'auto';
@@ -6962,7 +7411,7 @@ function renderKanbanApp(activeBoard) {
 
         let scrollRAF = null;
         let lastScrollY = 0;
-        listContainer.addEventListener('dragover', (e) => {
+        if(listContainer) listContainer.addEventListener('dragover', (e) => {
             const rect = listContainer.getBoundingClientRect();
             let dist = 0;
             if (e.clientY < rect.top + 100) dist = -15;
@@ -6985,8 +7434,8 @@ function renderKanbanApp(activeBoard) {
                 lastScrollY = 0;
             }
         });
-        listContainer.addEventListener('dragleave', () => lastScrollY = 0);
-        listContainer.addEventListener('drop', () => lastScrollY = 0);
+        if(listContainer) listContainer.addEventListener('dragleave', () => lastScrollY = 0);
+        if(listContainer) listContainer.addEventListener('drop', () => lastScrollY = 0);
 
         const addBtn = document.createElement('button');
         addBtn.className = 'add-card-btn managing-add-btn';
@@ -7004,7 +7453,7 @@ function renderKanbanApp(activeBoard) {
             </div>
         `;
         
-        addBtn.onclick = () => {
+        if(addBtn) addBtn.onclick = () => {
             newCardTitle.value = '';
             activeTargetListId = list.id;
             
@@ -7038,7 +7487,67 @@ function renderKanbanApp(activeBoard) {
             addCardModal.classList.add('active');
             setTimeout(() => newCardTitle.focus(), 50);
         };
-        listContainer.appendChild(addBtn);
+        footerRow = document.createElement('div');
+        footerRow.className = 'list-footer-row';
+        footerRow.style.display = 'flex';
+        footerRow.style.alignItems = 'center';
+        footerRow.style.gap = '8px';
+        footerRow.style.padding = '0 8px 8px';
+        
+        listCheckBtn = document.createElement('div');
+        listCheckBtn.style.cursor = 'pointer';
+        listCheckBtn.style.display = 'flex';
+        listCheckBtn.style.alignItems = 'center';
+        listCheckBtn.style.justifyContent = 'center';
+        listCheckBtn.style.width = '28px';
+        listCheckBtn.style.height = '28px';
+        listCheckBtn.style.marginLeft = '4px';
+        listCheckBtn.style.borderRadius = '50%';
+        listCheckBtn.style.transition = 'all 0.2s';
+        listCheckBtn.style.flexShrink = '0';
+        
+        const updateCheckBtnVisuals = () => {
+            if (activeBoard.listChecks && activeBoard.listChecks[list.id]) {
+                listCheckBtn.style.background = '#20c997'; 
+                listCheckBtn.style.boxShadow = '0 0 10px rgba(32, 201, 151, 0.4)';
+                listCheckBtn.innerHTML = `
+                    <svg width="28" height="28" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="6" fill="none" stroke="#fff" stroke-width="2"/>
+                        <path d="M9.5 12 L11.5 14 L15 9.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `;
+            } else {
+                listCheckBtn.style.background = 'transparent';
+                listCheckBtn.style.boxShadow = 'none';
+                listCheckBtn.innerHTML = `
+                    <svg width="28" height="28" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(107, 119, 140, 0.2)" stroke-width="1.5"/>
+                        <circle cx="12" cy="12" r="6" fill="none" stroke="#8c9bab" stroke-width="2"/>
+                        <path d="M9.5 12 L11.5 14 L15 9.5" fill="none" stroke="#8c9bab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `;
+            }
+        };
+
+        updateCheckBtnVisuals();
+
+        listCheckBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (!activeBoard.listChecks) activeBoard.listChecks = {};
+            activeBoard.listChecks[list.id] = !activeBoard.listChecks[list.id];
+            saveState();
+            updateCheckBtnVisuals();
+        };
+
+        if (activeBoard.showListCheck && activeBoard.showListCheck[list.id]) {
+            footerRow.appendChild(listCheckBtn);
+        }
+
+        addBtn.style.flexGrow = '1';
+        addBtn.style.margin = '0'; 
+        footerRow.appendChild(addBtn);
+
+        listContainer.appendChild(footerRow);
 
         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
 
@@ -7058,7 +7567,7 @@ function renderKanbanApp(activeBoard) {
                 if (happinessList.cards) {
                     totalCards += happinessList.cards.length;
                     happinessList.cards.forEach(c => {
-                        const col = activeBoard.cardColors && activeBoard.cardColors[c.id] ? activeBoard.cardColors[c.id] : 'default';
+                        const col = (activeBoard.clientHappinessData && activeBoard.clientHappinessData[c.id]) ? activeBoard.clientHappinessData[c.id] : 'default';
                         if (colorCounts[col] !== undefined) colorCounts[col]++;
                         
                         if (c.services && c.services.length > 0) {
@@ -7107,7 +7616,7 @@ function renderKanbanApp(activeBoard) {
                 
                 const allTrackerCards = targets.flatMap(l => l.cards || []);
                 const titleText = trackerType === 'clientHappiness' ? 'Total Clients Tracked' : 'Total Money Tracked';
-                totalPill.onclick = () => openServiceCardsModal(titleText, '👥', allTrackerCards);
+                if(totalPill) totalPill.onclick = () => openServiceCardsModal(titleText, '👥', allTrackerCards);
                 
                 totalPill.innerHTML = `<span style="font-size:14px;">👥</span> <span>${totalCards}</span>`;
                 totalSummaryEl.appendChild(totalPill);
@@ -7163,7 +7672,7 @@ function renderKanbanApp(activeBoard) {
                     pill.onmouseenter = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1.05)'; pill.style.zIndex = '5'; } pill.style.opacity = '1'; };
                     pill.onmouseleave = () => { if (currentFilter !== st.val) { pill.style.transform = 'scale(1)'; pill.style.opacity = currentFilter ? '0.4' : '1'; pill.style.zIndex = '1'; } };
                     
-                    pill.onclick = (e) => {
+                    if(pill) pill.onclick = (e) => {
                         e.stopPropagation();
                         activeBoard.happinessFilters = activeBoard.happinessFilters || {};
                         activeBoard.happinessFilters[trackerType] = activeBoard.happinessFilters[trackerType] === st.val ? null : st.val;
@@ -7206,7 +7715,7 @@ function renderKanbanApp(activeBoard) {
                 exitBtn.onmouseenter = () => { exitBtn.style.background = 'rgba(9, 30, 66, 0.15)'; exitBtn.style.color = '#172b4d'; };
                 exitBtn.onmouseleave = () => { exitBtn.style.background = 'rgba(9, 30, 66, 0.08)'; exitBtn.style.color = '#5e6c84'; };
                 
-                exitBtn.onclick = (e) => {
+                if(exitBtn) exitBtn.onclick = (e) => {
                     e.stopPropagation();
                     activeBoard.isolateCardId = null;
                     saveState();
@@ -7232,7 +7741,10 @@ function renderKanbanApp(activeBoard) {
                 labelPill.style.fontSize = '14px';
                 labelPill.title = `Drag to transfer ${trackerType} tracking`;
                 labelPill.draggable = true;
-                labelPill.style.cursor = 'grab';
+                labelPill.style.cursor = 'default';
+                labelPill.onmousedown = () => labelPill.style.cursor = 'grabbing';
+                labelPill.onmouseup = () => labelPill.style.cursor = 'default';
+                labelPill.onmouseleave = () => labelPill.style.cursor = 'default';
                 labelPill.ondragstart = (e) => {
                     e.dataTransfer.setData(xferData, list.id);
                     e.dataTransfer.effectAllowed = 'move';
@@ -7294,7 +7806,7 @@ function renderKanbanApp(activeBoard) {
                         pill.onmouseenter = () => { if (curSvcFilter !== svc) { pill.style.transform = 'scale(1.05)'; } pill.style.opacity = '1'; };
                         pill.onmouseleave = () => { if (curSvcFilter !== svc) { pill.style.transform = 'scale(1)'; pill.style.opacity = curSvcFilter ? '0.4' : '1'; } };
                         
-                        pill.onclick = (e) => {
+                        if(pill) pill.onclick = (e) => {
                             e.stopPropagation();
                             activeBoard.serviceFilters = activeBoard.serviceFilters || {};
                             activeBoard.serviceFilters[trackerType] = activeBoard.serviceFilters[trackerType] === svc ? null : svc;
@@ -7374,7 +7886,7 @@ function renderKanbanApp(activeBoard) {
             ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M6 9l6 6 6-6"></path></svg> Show Cards (${list.cards.length})` 
             : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M18 15l-6-6-6 6"></path></svg> Hide Cards (${list.cards.length})`;
 
-        hideCardsBtn.onclick = (e) => {
+        if(hideCardsBtn) hideCardsBtn.onclick = (e) => {
             e.stopPropagation();
             list.collapsed = !list.collapsed;
             saveState();
@@ -7618,7 +8130,7 @@ function renderKanbanApp(activeBoard) {
     const addListBtn = document.createElement('button');
     addListBtn.className = 'kanban-add-list-btn';
     addListBtn.innerHTML = `+ Add another list`;
-    addListBtn.onclick = () => {
+    if(addListBtn) addListBtn.onclick = () => {
         const rect = canvas.getBoundingClientRect();
         const screenCenterX = window.innerWidth / 2;
         const screenCenterY = window.innerHeight / 2;
@@ -7717,7 +8229,7 @@ function renderKanbanApp(activeBoard) {
     boardTitleEl.style.fontSize = '24px';
     boardTitleEl.title = 'Click to rename Workspace';
     
-    boardTitleEl.onclick = (e) => {
+    if(boardTitleEl) boardTitleEl.onclick = (e) => {
         boardTitleEl.contentEditable = 'true';
         boardTitleEl.classList.add('editing');
         boardTitleEl.focus();
@@ -7767,7 +8279,7 @@ function renderKanbanApp(activeBoard) {
     trelloSettingsBtn.innerHTML = activeBoard.trelloBoardId ? 
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Trello Link: On` : 
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Link Trello`;
-    trelloSettingsBtn.onclick = openTrelloSettingsModal;
+    if(trelloSettingsBtn) trelloSettingsBtn.onclick = openTrelloSettingsModal;
     
     const pipedriveSettingsBtn = document.createElement('button');
     pipedriveSettingsBtn.className = 'nav-btn-outline';
@@ -7777,7 +8289,7 @@ function renderKanbanApp(activeBoard) {
     pipedriveSettingsBtn.innerHTML = activeBoard.pipedrivePipelineId ? 
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> Pipedrive Link: On` :
         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> Link Pipedrive`;
-    pipedriveSettingsBtn.onclick = openPipedriveSettingsModal;
+    if(pipedriveSettingsBtn) pipedriveSettingsBtn.onclick = openPipedriveSettingsModal;
     
     const rootDelBtn = document.createElement('button');
     rootDelBtn.className = 'icon-btn';
@@ -7789,7 +8301,7 @@ function renderKanbanApp(activeBoard) {
     rootDelBtn.style.background = 'transparent';
     rootDelBtn.style.marginLeft = 'auto'; // push delete to right
     rootDelBtn.innerHTML = 'Delete Workspace';
-    rootDelBtn.onclick = () => deleteBoard(activeBoard.id);
+    if(rootDelBtn) rootDelBtn.onclick = () => deleteBoard(activeBoard.id);
     
     rootBoardHeader.appendChild(boardTitleEl);
     rootBoardHeader.appendChild(trelloSettingsBtn);
@@ -7810,849 +8322,7 @@ function renderKanbanApp(activeBoard) {
     });
 }
 
-function renderSocialSchedulerApp(activeBoard) {
-    document.body.style.background = '#f4f5f7';
-    appContainer.style.padding = '0';
-    appContainer.style.margin = '0';
-    appContainer.style.maxWidth = 'none';
 
-    const today = new Date();
-    
-    // Initialize global viewing month if it doesn't exist
-    if (!window.activeSocialMonthView) {
-        window.activeSocialMonthView = { year: today.getFullYear(), month: today.getMonth() };
-    }
-    
-    const currentYear = window.activeSocialMonthView.year;
-    const currentMonth = window.activeSocialMonthView.month;
-    
-    window.activeSocialDateOptions = window.activeSocialDateOptions || { year: today.getFullYear(), month: today.getMonth(), date: today.getDate() };
-    const defaultSelectedDate = new Date(window.activeSocialDateOptions.year, window.activeSocialDateOptions.month, window.activeSocialDateOptions.date);
-    
-    const monthNamesArabic = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-    const dayNamesArabic = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-    
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    let calendarHtml = '';
-    let dayCounter = 1;
-
-    for (let i = 0; i < 6; i++) {
-        let rowHtml = '<div class="sm-cal-row">';
-        for (let j = 0; j < 7; j++) {
-            if (i === 0 && j < firstDay) {
-                rowHtml += '<div class="sm-cal-cell empty"></div>';
-            } else if (dayCounter > daysInMonth) {
-                rowHtml += '<div class="sm-cal-cell empty"></div>';
-            } else {
-                const isToday = dayCounter === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-                const isSelected = window.activeSocialDateOptions 
-                    && window.activeSocialDateOptions.date === dayCounter
-                    && window.activeSocialDateOptions.month === currentMonth
-                    && window.activeSocialDateOptions.year === currentYear;
-                
-                const dayPosts = (activeBoard.cards || []).filter(c => c.dateStr === `${currentYear}-${currentMonth}-${dayCounter}`);
-                const postThumbnailsHtml = dayPosts.slice(0, 4).map((p, idx) => {
-                    const safeFullText = p.fullText ? window.smEscapeHTML(p.fullText) : '';
-                    const safeDesc = p.description ? window.smEscapeHTML(p.description) : '';
-                    const textSnippetRaw = p.fullText ? p.fullText.substring(0, 25) + '...' : (p.description ? p.description.substring(0, 25) + '...' : 'مسودة منشور...');
-                    const textSnippet = window.smEscapeHTML(textSnippetRaw);
-                    const items = p.mediaItems || (p.mediaObj ? [p.mediaObj] : []);
-                    
-                    let mediaThumb = `<div style="font-size:12px; margin-left:6px; flex-shrink:0;">📝</div>`;
-                    if (items.length > 0) {
-                        const m = items[0];
-                        if (m.dataUrl && (!m.type || m.type === 'image')) {
-                            mediaThumb = `<img src="${m.dataUrl}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
-                        } else if (m.thumbnail) {
-                            mediaThumb = `<img src="${m.thumbnail}" style="width:24px; height:24px; border-radius:4px; object-fit:cover; margin-left:6px; flex-shrink:0;">`;
-                        } else if (m.type === 'frame-io' || m.type === 'video' || (m.dataUrl && m.dataUrl.startsWith('data:video/'))) {
-                            mediaThumb = `<div style="width:24px; height:24px; border-radius:4px; background:#1e293b; color:white; display:flex; align-items:center; justify-content:center; margin-left:6px; flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div>`;
-                        }
-                    }
-                    
-                    let bg = '#ffffff';
-                    let border = '1px solid #e2e8f0';
-                    let accentColor = '#94a3b8'; // draft gray
-                    
-                    if (p.status === 'فوري') { bg = '#f0fdf4'; border = '1px solid #bbf7d0'; accentColor = '#22c55e'; }
-                    else if (p.status === 'جدولة') { bg = '#fffbeb'; border = '1px solid #fde68a'; accentColor = '#f59e0b'; }
-                    
-                    return `
-                    <div onclick="event.stopPropagation(); window.openCreatePostModal('${p.id}');" title="${safeFullText || safeDesc || ''}" style="margin-bottom: 4px; padding: 4px 6px; border-radius: 6px; background: ${bg}; border: ${border}; border-right: 3px solid ${accentColor}; font-size: 11px; color: #1e293b; cursor: pointer; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.1s, box-shadow 0.1s; direction: rtl;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 3px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)';">
-                        ${mediaThumb}
-                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; flex: 1; font-weight: 500;">${textSnippet}</div>
-                    </div>`;
-                }).join('');
-                
-                const postBoxContainer = dayPosts.length > 0 ? `<div style="display: flex; flex-direction: column; width: 100%; margin-top: 4px;">${postThumbnailsHtml}</div>` : '';
-                
-                const specialAwarenessDays = window.specialAwarenessDays;
-                let specialEventHtml = '';
-                let hiddenEvents = [];
-                try { 
-                    const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
-                    hiddenEvents = JSON.parse(localStorage.getItem(boardKey) || '[]'); 
-                } catch(e) {}
-                
-                const dayEvents = specialAwarenessDays.filter(e => e.m === currentMonth && e.d === dayCounter && !hiddenEvents.includes(`${e.m}-${e.d}`));
-                if (dayEvents.length > 0) {
-                    specialEventHtml = dayEvents.map(eventOpt => {
-                        const styleMap = window.eventCategoryMap[eventOpt.category] || { bg: '#ffdce8', text: '#880e4f', dot: '#fb2c71' };
-                        return `
-                        <div data-special-event="true" style="background: ${styleMap.bg}; color: ${styleMap.text}; display: flex; align-items: flex-start; padding: 5px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; width: fit-content; max-width: 100%; min-height: 26px; box-sizing: border-box; direction: rtl; cursor: help;" title="${eventOpt.name} - ${eventOpt.desc}">
-                            <div style="background: ${styleMap.dot}; color: white; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; margin-left: 6px; flex-shrink: 0; margin-top: 1px;">
-                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            </div>
-                            <span style="white-space: normal; flex: 1; min-width: 0; line-height: 1.35; padding-bottom: 1px;">${eventOpt.name}</span>
-                            <div onclick="window.hideSpecialEvent(event, '${eventOpt.m}-${eventOpt.d}')" style="cursor: pointer; margin-right: 6px; border-radius: 50%; opacity: 0.5; display: flex; align-items: center; justify-content: center; padding: 2px; flex-shrink: 0; margin-top: 1px;" onmouseover="this.style.opacity='1'; this.style.background='rgba(0,0,0,0.05)';" onmouseout="this.style.opacity='0.5'; this.style.background='transparent';" title="إخفاء هذه المناسبة">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </div>
-                        </div>`;
-                    }).join('');
-                }
-
-                rowHtml += `
-                    <div class="sm-cal-cell ${isSelected ? 'selected' : ''}" style="display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px; width: 100%;">
-                            <div class="sm-cal-date ${isToday ? 'today' : ''}">${dayCounter}</div>
-                            <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; padding-top: 2px;">
-                                ${specialEventHtml}
-                            </div>
-                        </div>
-                        ${postBoxContainer}
-                        ${dayPosts.length > 4 ? `<div style="font-size:10px; color:#3b82f6; font-weight: bold; text-align: center; margin-top:auto; padding-top:4px; cursor:pointer;" onclick="event.stopPropagation(); window.openCreatePostModal(null, {year:${currentYear},month:${currentMonth},date:${dayCounter}});">+${dayPosts.length-4} المزيد من المنشورات</div>` : ''}
-                    </div>
-                `;
-                dayCounter++;
-            }
-        }
-        rowHtml += '</div>';
-        calendarHtml += rowHtml;
-        if (dayCounter > daysInMonth) break;
-    }
-
-    const socialBoards = boards.filter(b => b.type === 'social_scheduler');
-    // Safe scoped setter for switching clients via UI
-    window.switchSocialClient = function(id) {
-        activeBoardId = id;
-        if (typeof saveState === 'function') saveState();
-        if (typeof render === 'function') render();
-    };
-
-    window.renameSocialClient = function(e, id) {
-        e.stopPropagation();
-        const board = boards.find(b => b.id === id);
-        if (!board) return;
-        
-        let rnModal = document.getElementById('renameClientModal');
-        if (!rnModal) {
-            rnModal = document.createElement('div');
-            rnModal.id = 'renameClientModal';
-            rnModal.className = 'modal-overlay';
-            rnModal.innerHTML = `
-                <div class="modal-content" style="max-width: 380px;">
-                    <div class="modal-header">
-                        <h3>تعديل اسم العميل</h3>
-                        <button class="icon-btn" onclick="document.getElementById('renameClientModal').classList.remove('active')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
-                    <div class="modal-body" style="padding-top: 12px;">
-                        <input type="text" id="renameClientInput" class="modal-input" placeholder="اسم العميل..." style="width: 100%; box-sizing: border-box; border: 1.5px solid #cbd5e0; border-radius: 6px; padding: 10px; font-size: 15px; outline: none; transition: border-color 0.2s;">
-                    </div>
-                    <div class="modal-footer" style="padding-top: 16px; margin-top: 16px; border-top: 1px solid #edf2f7; display: flex; justify-content: space-between; gap: 8px;">
-                        <button id="renameClientDeleteBtn" style="padding: 8px 16px; border-radius: 6px; border: none; background: #fee2e2; color: #dc2626; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">حذف العميل</button>
-                        <div style="display: flex; gap: 8px;">
-                            <button onclick="document.getElementById('renameClientModal').classList.remove('active')" style="padding: 8px 16px; border-radius: 6px; border: none; background: #edf2f7; color: #4a5568; cursor: pointer; font-weight: 600;">إلغاء</button>
-                            <button id="renameClientConfirmBtn" style="padding: 8px 16px; border-radius: 6px; border: none; background: #f97316; color: white; cursor: pointer; font-weight: 600;">حفظ</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(rnModal);
-            
-            const inputEl = document.getElementById('renameClientInput');
-            inputEl.addEventListener('focus', () => inputEl.style.borderColor = '#f97316');
-            inputEl.addEventListener('blur', () => inputEl.style.borderColor = '#cbd5e0');
-            
-            inputEl.addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    document.getElementById('renameClientConfirmBtn').click();
-                }
-            });
-        }
-        
-        const input = document.getElementById('renameClientInput');
-        input.value = board.title;
-        
-        document.getElementById('renameClientConfirmBtn').onclick = () => {
-            const newName = input.value.trim();
-            input.blur();
-            rnModal.classList.remove('active');
-            
-            if (newName && newName !== board.title) {
-                board.title = newName;
-                saveState();
-                render();
-            }
-        };
-        
-        document.getElementById('renameClientDeleteBtn').onclick = (e) => {
-            rnModal.classList.remove('active');
-            window.promptSecureDelete(board.id, board.title);
-        };
-        
-        rnModal.classList.add('active');
-        setTimeout(() => input.focus(), 50);
-    };
-
-    const clientTabsHtml = `
-        <div style="display: flex; gap: 8px; overflow-x: auto; padding: 2px 0; align-items: center; flex-wrap: nowrap;">
-            ${socialBoards.map(b => `
-                <button 
-                    onclick="window.switchSocialClient('${b.id}')" 
-                    ondblclick="window.renameSocialClient(event, '${b.id}')"
-                    title="انقر نقراً مزدوجاً لـتعديل اسم العميل"
-                    style="
-                    flex-shrink: 0;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 6px 16px; 
-                    background: ${activeBoard.id === b.id ? 'white' : 'transparent'}; 
-                    color: #1a202c; 
-                    border: 2px solid ${activeBoard.id === b.id ? '#f97316' : '#cbd5e0'}; 
-                    border-radius: 9999px; 
-                    font-weight: 700; 
-                    font-size: 14px; 
-                    white-space: nowrap; 
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    box-shadow: ${activeBoard.id === b.id ? '0 2px 4px rgba(249, 115, 22, 0.15)' : 'none'};
-                ">
-                    ${b.title || 'Client '}
-                </button>
-            `).join('')}
-            <button onclick="window.openAddClientModal();" style="
-                flex-shrink: 0;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px 16px; 
-                background: transparent; 
-                color: #718096; 
-                border: 2px dashed #cbd5e0; 
-                border-radius: 9999px; 
-                font-weight: 600; 
-                font-size: 13px; 
-                white-space: nowrap; 
-                cursor: pointer;
-                transition: all 0.2s;
-            " onmouseover="this.style.background='#f7fafc'; this.style.color='#4a5568'; this.style.border='2px dashed #a0aec0';" onmouseout="this.style.background='transparent'; this.style.color='#718096'; this.style.border='2px dashed #cbd5e0';">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                إضافة عميل
-            </button>
-        </div>
-    `;
-
-    const topRowHtml = `
-        <div class="sm-header-banner" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: flex-start; gap: 24px;">
-            <!-- Title & Icon -->
-            <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
-                <div class="sm-title-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                </div>
-                <div class="sm-title-text">
-                    <h2 style="font-size: 20px; font-weight: 800; color: #1a202c; margin: 0;">النشر على وسائل التواصل</h2>
-                </div>
-            </div>
-
-            <!-- Client Tabs injected directly to the left of the title -->
-            ${clientTabsHtml}
-        </div>
-    `;
-    window.activeSocialTab = window.activeSocialTab || 'calendar';
-
-    const tabData = [
-        { id: 'calendar', title: 'الجدولة والنشر', svg: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>' },
-        { id: 'stats', title: 'الإحصائيات', svg: '<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>' },
-        { id: 'accounts', title: 'ربط الحسابات', svg: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>' },
-        { id: 'history', title: 'سجل النشر', svg: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>' }
-    ];
-
-    let tabsHtml = '<div class="sm-tabs-container" style="max-width: fit-content;">';
-    tabData.forEach(t => {
-        tabsHtml += `
-            <div class="sm-tab ${window.activeSocialTab === t.id ? 'active' : ''}" data-tab="${t.id}" style="padding: 10px 16px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>
-                ${t.title}
-            </div>
-        `;
-    });
-    tabsHtml += '</div>';
-
-    let mainContentHtml = '';
-
-    // Inject safe window global if not already present
-    window.navigateSocialMonth = window.navigateSocialMonth || function(direction) {
-        if (!window.activeSocialMonthView) return;
-        window.activeSocialMonthView.month += direction;
-        if (window.activeSocialMonthView.month > 11) {
-            window.activeSocialMonthView.month = 0;
-            window.activeSocialMonthView.year += 1;
-        } else if (window.activeSocialMonthView.month < 0) {
-            window.activeSocialMonthView.month = 11;
-            window.activeSocialMonthView.year -= 1;
-        }
-        render(); // trigger a full re-render
-    };
-
-    window.resetSocialMonthToToday = window.resetSocialMonthToToday || function() {
-        const t = new Date();
-        window.activeSocialMonthView = { year: t.getFullYear(), month: t.getMonth() };
-        window.activeSocialDateOptions = { year: t.getFullYear(), month: t.getMonth(), date: t.getDate() };
-        render();
-    };
-
-    if (window.activeSocialTab === 'calendar') {
-        const boardKey = `hiddenSocialEvents_${activeBoardId || 'default'}`;
-        const hiddenEventsGlobal = JSON.parse(localStorage.getItem(boardKey) || '[]');
-        const currentMonthEvents = window.specialAwarenessDays.filter(e => e.m === currentMonth && !hiddenEventsGlobal.includes(`${e.m}-${e.d}`));
-        
-        let monthEventsHtml = '';
-        if (currentMonthEvents.length > 0) {
-            monthEventsHtml = currentMonthEvents.map(ev => {
-                const styleMap = window.eventCategoryMap[ev.category] || { bg: '#f1f5f9', text: '#64748b', dot: '#94a3b8' };
-                return `
-                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: right; direction: rtl;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <span style="font-size: 13px; font-weight: 700; color: #1e293b;">${ev.d} ${monthNamesArabic[currentMonth]}</span>
-                        <span style="background: ${styleMap.bg}; color: ${styleMap.text}; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">${ev.category}</span>
-                    </div>
-                    <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">${ev.name}</div>
-                    <div style="font-size: 12px; color: #64748b; line-height: 1.5;">${ev.desc}</div>
-                </div>`;
-            }).join('');
-        }
-        
-        const sidebarEventsSection = '';
-
-        const legendHtml = currentMonthEvents.length > 0 ? `
-            <div class="sm-cal-legend" style="margin-top: 24px; background: #fffcf8; border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap: 16px; direction: rtl;">
-                <div style="font-weight: 700; color: #d97706; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                    ✨ ${currentMonthEvents.length} أحداث عالمية هذا الشهر
-                </div>
-                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                    ${Object.keys(window.eventCategoryMap).map(cat => {
-                        const map = window.eventCategoryMap[cat];
-                        return `<div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #475569;">
-                            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${map.dot}; flex-shrink: 0;"></div>
-                            ${cat}
-                        </div>`;
-                    }).join('')}
-                </div>
-            </div>
-        ` : '';
-
-        const calHeaderHtml = `
-            <!-- Top Row: Title + Clients -->
-            <div style="margin-bottom: 24px;">
-                ${topRowHtml}
-            </div>
-            
-            <!-- Bottom Row: New Post Button + Tabs -->
-            <div style="display: flex; justify-content: flex-start; gap: 24px; align-items: center; margin-bottom: 24px;">
-                <button class="sm-primary-btn" style="padding: 10px 20px;" onclick="window.openCreatePostModal()">+ منشور جديد</button>
-                ${tabsHtml}
-            </div>
-        `;
-
-        mainContentHtml = `
-            <div class="sm-main-content" style="padding: 24px 32px 16px 32px;">
-                <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
-                    ${calHeaderHtml}
-                    <div class="sm-calendar-wrap" style="flex: 1; overflow: auto; margin-bottom: 0;">
-                        <div class="sm-calendar-header">
-                            <h3 class="sm-cal-month-title">${monthNamesArabic[currentMonth]} ${currentYear}</h3>
-                            <div class="sm-cal-nav">
-                                ${(currentMonth !== today.getMonth() || currentYear !== today.getFullYear()) ? `<button class="sm-icon-btn" onclick="window.resetSocialMonthToToday()" style="width:auto; padding: 0 12px; font-weight: 600; font-family: inherit; font-size: 13px;">اليوم</button>` : ''}
-                                <button class="sm-icon-btn" onclick="window.hideAllMonthEvents(${currentMonth})" title="إخفاء جميع المناسبات في هذا الشهر" style="margin-left: 4px; border: none; color:#ef4444;" onmouseover="this.style.background='#fef2f2';" onmouseout="this.style.background='transparent';">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                                </button>
-                                <button class="sm-icon-btn" onclick="window.restoreMonthEvents(${currentMonth})" title="إظهار جميع المناسبات في هذا الشهر" style="margin-left: 8px; border: none; color:#10b981;" onmouseover="this.style.background='#f0fdf4';" onmouseout="this.style.background='transparent';">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
-                                </button>
-                                <button class="sm-icon-btn" onclick="window.navigateSocialMonth(-1)" style="margin-left: 4px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                                <button class="sm-icon-btn" onclick="window.navigateSocialMonth(1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                            </div>
-                        </div>
-                        
-                        <div class="sm-cal-days-header">
-                            ${dayNamesArabic.map(d => `<span>${d}</span>`).join('')}
-                        </div>
-                        
-                        <div class="sm-cal-grid">
-                            ${calendarHtml}
-                        </div>
-                        ${legendHtml}
-                    </div>
-                </div>
-
-                <div class="sm-sidebar" style="height: 100%;">
-                    <div class="sm-sidebar-header" style="display:flex; align-items:flex-start; justify-content:space-between; border-bottom:2px solid #f1f5f9; padding-bottom:20px; margin-bottom:20px;">
-                        <div class="sm-selected-date-text" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start; text-align:right;">
-                            <h3 style="margin:0; font-size:22px; font-weight:800; color:#0f172a;">${dayNamesArabic[defaultSelectedDate.getDay()]}</h3>
-                            <p style="margin:0; font-size:15px; font-weight:600; color:#64748b;">${defaultSelectedDate.getDate()} ${monthNamesArabic[currentMonth]}</p>
-                            <div style="display:flex; gap:8px; margin-top:6px;">
-                                <div onclick="window.handleSocialIconClick('facebook', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#e0f2fe; border:2px solid ${window.activePreviewPlatform === 'facebook' ? '#0ea5e9' : 'transparent'}; border-radius:50%; color:#0ea5e9; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                </div>
-                                <div onclick="window.handleSocialIconClick('instagram', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#fce7f3; border:2px solid ${window.activePreviewPlatform === 'instagram' ? '#ec4899' : 'transparent'}; border-radius:50%; color:#ec4899; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm3.98-10.181a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z"/></svg>
-                                </div>
-                                <div onclick="window.handleSocialIconClick('twitter', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#f1f5f9; border:2px solid ${window.activePreviewPlatform === 'twitter' ? '#0f172a' : 'transparent'}; border-radius:50%; color:#0f172a; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                                </div>
-                                <div onclick="window.handleSocialIconClick('linkedin', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#dbeafe; border:2px solid ${window.activePreviewPlatform === 'linkedin' ? '#2563eb' : 'transparent'}; border-radius:50%; color:#2563eb; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                                </div>
-                                <div onclick="window.handleSocialIconClick('tiktok', this)" style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; background:#f4f4f5; border:2px solid ${window.activePreviewPlatform === 'tiktok' ? '#18181b' : 'transparent'}; border-radius:50%; color:#18181b; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    ${sidebarEventsSection}
-                    <div class="sm-sidebar-body">
-                        <div class="sm-empty-icon" style="margin-bottom:12px; opacity: 0.6;">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        </div>
-                        <p class="sm-empty-text" style="font-size:14px; color:#64748b; margin-bottom:20px; font-weight:500;">لا توجد منشورات لهذا اليوم</p>
-                        <button onclick="window.openCreatePostModal()" style="width:100%; background:#ea580c; color:white; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.2s ease; display:flex; align-items:center; justify-content:center; gap:8px;" onmouseover="this.style.background='#c2410c';" onmouseout="this.style.background='#ea580c';">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            إضافة منشور
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (window.activeSocialTab === 'stats') {
-        mainContentHtml = `
-            <div class="sm-full-view">
-                <div class="sm-stats-top-bar">
-                    <button class="sm-btn-primary-outline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.45l5.08 5.08"/></svg> تحديث</button>
-                    <div class="sm-filter-group" style="margin-right:auto;">
-                        <label class="sm-checkbox-lbl"><input type="checkbox" /> مقارنة بالفترة السابقة</label>
-                        <select class="sm-select"><option>كل المنصات</option></select>
-                        <div class="sm-date-range">
-                            <label>من <input type="date" value="2026-04-01" class="sm-date-input-inline"/></label>
-                            <label>إلى <input type="date" value="2026-03-31" class="sm-date-input-inline"/></label>
-                        </div>
-                    </div>
-                </div>
-                <div class="sm-stats-main-grid">
-                    <div class="sm-stats-right-col">
-                        <div class="sm-stat-box">
-                            <div class="sm-stat-box-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect></svg> نشاط النشر</div>
-                            <div class="sm-stat-box-empty" style="height:80px;">لا توجد بيانات نشر</div>
-                        </div>
-                        <div class="sm-stats-4grid">
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot red"></span> الإعجابات</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot blue"></span> التعليقات</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot green"></span> المشاركات</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot purple"></span> المشاهدات</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot cyan"></span> مرات الظهور</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot orange"></span> الوصول</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot pink"></span> النقرات</div><div class="sm-stat-mini-val">0</div></div>
-                            <div class="sm-stat-mini"><div class="sm-stat-mini-hdr"><span class="sm-dot teal"></span> معدل التفاعل</div><div class="sm-stat-mini-val">0.00%</div></div>
-                        </div>
-                        <div class="sm-stat-box" style="flex:1;">
-                            <div class="sm-stat-box-hdr" style="justify-content:space-between;">
-                                <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg> الرسم البياني للأداء</span>
-                                <select class="sm-select-small"><option>يومي</option></select>
-                            </div>
-                            <div class="sm-stat-box-empty" style="flex:1; min-height: 140px;"></div>
-                        </div>
-                    </div>
-                    <div class="sm-stats-left-col">
-                        <div class="sm-stat-box">
-                            <div class="sm-stat-box-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> إجمالي المتابعين</div>
-                            <div class="sm-stat-box-val">—</div>
-                            <div class="sm-stat-box-sub">لا تتوفر بيانات نمو المتابعين للفترة المحددة</div>
-                        </div>
-                        <div class="sm-stat-box" style="flex:1;">
-                            <div class="sm-stat-box-hdr"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> تحليل المنصات</div>
-                            <div class="sm-stat-box-empty" style="flex:1;">لا توجد بيانات للمنصات</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (window.activeSocialTab === 'accounts') {
-        const platforms = [
-            { id: 'twitter', name: 'تويتر', icon: '<path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>', color: '#1da1f2' },
-            { id: 'instagram', name: 'إنستغرام', icon: '<rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>', color: '#E1306C' },
-            { id: 'facebook', name: 'فيسبوك', icon: '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>', color: '#1877F2' },
-            { id: 'youtube', name: 'يوتيوب', icon: '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>', color: '#FF0000' },
-            { id: 'tiktok', name: 'تيك توك', icon: '<path d="M9 12a4 4 0 1 0 4 4V0h5v5a6 6 0 0 1-6 6v5a2 2 0 1 1-2-2z"></path>', color: '#000000' },
-            { id: 'linkedin', name: 'لينكد إن', icon: '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle>', color: '#0A66C2' }
-        ];
-
-        let accCards = platforms.map(p => `
-            <div class="sm-account-card">
-                <div class="sm-platform-info">
-                    <div class="sm-platform-logo" style="background:${p.color};">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.icon}</svg>
-                    </div>
-                    <div>
-                        <h4>${p.name}</h4>
-                        <span class="sm-status disconnected">غير متصل</span>
-                    </div>
-                </div>
-                <p class="sm-acc-desc">اربط حسابك للنشر التلقائي</p>
-                <button class="sm-btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> ربط الحساب</button>
-            </div>
-        `).join('');
-
-        mainContentHtml = `
-            <div class="sm-full-view">
-                <div class="sm-accounts-banner">
-                    <div class="sm-acc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
-                    <div class="sm-acc-text">
-                        <h3>ربط الحسابات</h3>
-                        <p>قم بربط حساباتك لتمكين النشر التلقائي، يمكنك اختيار منصات متعددة للنشر في وقت واحد.</p>
-                    </div>
-                </div>
-                <div class="sm-accounts-grid">
-                    ${accCards}
-                </div>
-            </div>
-        `;
-    } else if (window.activeSocialTab === 'history') {
-        mainContentHtml = `
-            <div class="sm-full-view">
-                <div class="sm-history-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <div class="sm-filter-group" style="display:flex; gap:12px;">
-                        <select class="sm-select"><option>كل الأحداث</option></select>
-                        <select class="sm-select"><option>كل المنصات</option></select>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <button class="sm-link-btn" style="color:#0c66e4; font-size:13px; font-weight:600; text-decoration:none;">تحديث <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.45l5.08 5.08"/></svg></button>
-                    </div>
-                </div>
-                <div class="sm-history-banner blue-banner">
-                    <div style="display:flex; gap: 16px; align-items:center;">
-                        <div class="sm-hb-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0c66e4" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
-                        <div class="sm-hb-text">
-                            <h4>سجل النشر المباشر</h4>
-                            <p>تابع حالة منشوراتك لحظة بلحظة — نُشر، فشل، مجدول، أو يحتاج لتدخل.</p>
-                        </div>
-                    </div>
-                    <button class="sm-link-btn" style="color:#0c66e4; font-size:13px; font-weight:600; text-decoration:none;">تعيين الكل كمقروء</button>
-                </div>
-                <div class="sm-history-empty" style="text-align:center; padding: 60px 20px;">
-                    <div class="sm-he-icon" style="background:#f4f5f7; width:64px; height:64px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    </div>
-                    <p style="font-size:15px; font-weight:600; color:#4a5568; margin:0 0 8px;">لا توجد أحداث نشر بعد</p>
-                    <span style="font-size:13px; color:#a0aec0;">ستظهر هنا تحديثات منشوراتك فور حدوثها</span>
-                </div>
-            </div>
-        `;
-    }
-    window.activePreviewPlatform = window.activePreviewPlatform || null;
-    window.handleSocialIconClick = function(platform, element) {
-        if (window.activePreviewPlatform === platform) {
-            window.activePreviewPlatform = null;
-            element.parentElement.querySelectorAll('div').forEach(el=>el.style.border='2px solid transparent');
-        } else {
-            window.activePreviewPlatform = platform;
-            element.parentElement.querySelectorAll('div').forEach(el=>el.style.border='2px solid transparent');
-            const colors = {facebook: '#0ea5e9', instagram: '#ec4899', twitter: '#0f172a', linkedin: '#2563eb', tiktok: '#18181b'};
-            element.style.border = '2px solid ' + colors[platform];
-        }
-        const selectedCell = document.querySelector('.sm-cal-cell.selected');
-        if (selectedCell) selectedCell.click();
-    };
-
-    const html = `
-        <div class="sm-app-wrapper" style="display:flex; flex-direction:column; width:100%; height:100%; overflow:hidden; background:#f4f5f7; direction:rtl;">
-            ${mainContentHtml}
-        </div>
-    `;
-
-    appContainer.innerHTML = html;
-
-    const tabs = appContainer.querySelectorAll('.sm-tab');
-    tabs.forEach(tab => {
-        tab.onclick = () => {
-            window.activeSocialTab = tab.dataset.tab;
-            renderSocialSchedulerApp(activeBoard);
-        };
-    });
-
-    if (window.activeSocialTab === 'calendar') {
-        const cells = appContainer.querySelectorAll('.sm-cal-cell:not(.empty)');
-        const sidebarDayName = appContainer.querySelector('.sm-selected-date-text h3');
-        const sidebarDateFull = appContainer.querySelector('.sm-selected-date-text p');
-        
-        cells.forEach(cell => {
-            cell.onclick = () => {
-                cells.forEach(c => c.classList.remove('selected'));
-                cell.classList.add('selected');
-                
-                const dateNum = parseInt(cell.querySelector('.sm-cal-date').textContent, 10);
-                const clickedDate = new Date(currentYear, currentMonth, dateNum);
-                const dayOfWeekArabic = dayNamesArabic[clickedDate.getDay()];
-                
-                window.activeSocialDateOptions = { year: currentYear, month: currentMonth, date: dateNum };
-                
-                sidebarDayName.textContent = dayOfWeekArabic;
-                sidebarDateFull.textContent = `${dateNum} ${monthNamesArabic[currentMonth]}`;
-                
-                // Render the day's posts into the sidebar
-                const todayPosts = (activeBoard.cards || []).filter(c => c.dateStr === `${currentYear}-${currentMonth}-${dateNum}`);
-                const postCountEl = appContainer.querySelector('.sm-post-count');
-                const sidebarBody = appContainer.querySelector('.sm-sidebar-body');
-                
-                if (postCountEl) postCountEl.textContent = todayPosts.length;
-                
-                if (window.activePreviewPlatform === 'instagram') {
-                    let allBoardPosts = [];
-                    if (activeBoard && activeBoard.cards) {
-                        allBoardPosts = activeBoard.cards.filter(p => {
-                            let hasMedia = (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].dataUrl && p.mediaItems[0].dataUrl !== 'undefined') || 
-                                           (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].type === 'frame-io') ||
-                                           (p.mediaObj && p.mediaObj.dataUrl && p.mediaObj.dataUrl !== 'undefined') ||
-                                           (p.cover && (p.cover.scaled || typeof p.cover === 'string'));
-                            return hasMedia || p.title;
-                        });
-                        allBoardPosts.sort((a, b) => {
-                            if (!a.dateStr) return 1;
-                            if (!b.dateStr) return -1;
-                            const d1 = new Date(a.dateStr).getTime();
-                            const d2 = new Date(b.dateStr).getTime();
-                            return d2 - d1;
-                        });
-                    }
-
-                    // Also dynamically update the grid post count
-                    const igPostsCountDisplay = document.querySelector('.ig-mockup span.posts-count');
-                    if (igPostsCountDisplay) igPostsCountDisplay.textContent = allBoardPosts.length > 0 ? allBoardPosts.length : 0;
-                    
-                    let gridItemsHtml = '';
-                    if (allBoardPosts.length === 0) {
-                        for (let i = 0; i < 9; i++) {
-                            gridItemsHtml += `<div style="aspect-ratio:1/1; position:relative; background:#f0f4f8;"></div>`;
-                        }
-                    } else {
-                        for (let i = 0; i < allBoardPosts.length; i++) {
-                            const p = allBoardPosts[i];
-                            let itemMedia = null;
-                            if (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].dataUrl && p.mediaItems[0].dataUrl !== 'undefined') {
-                                itemMedia = p.mediaItems[0].dataUrl;
-                            } else if (p.mediaItems && p.mediaItems.length > 0 && p.mediaItems[0].type === 'frame-io') {
-                                itemMedia = p.mediaItems[0].thumbnail || 'FRAME_IO';
-                            } else if (p.mediaObj && p.mediaObj.dataUrl && p.mediaObj.dataUrl !== 'undefined') {
-                                itemMedia = p.mediaObj.dataUrl;
-                            } else if (p.cover && p.cover.scaled && p.cover.scaled.length > 0) {
-                                itemMedia = p.cover.scaled[p.cover.scaled.length - 1].url;
-                            } else if (p.cover && typeof p.cover === 'string' && p.cover.startsWith('http')) {
-                                itemMedia = p.cover;
-                            }
-                            
-                            if (itemMedia === 'FRAME_IO') {
-                                gridItemsHtml += `<div style="aspect-ratio:1/1; position:relative; background:#1e293b; color:#e2e8f0; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;" onclick="window.openCreatePostModal('${p.id}')">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
-                                    <span style="font-size:10px; margin-top:8px; font-weight:bold;">Frame.io</span>
-                                </div>`;
-                            } else if (itemMedia) {
-                                gridItemsHtml += `<div style="aspect-ratio:1/1; position:relative; background:#f0f0f0; cursor:pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'" onclick="window.openCreatePostModal('${p.id}')">
-                                    <img src="${itemMedia}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'display:flex; align-items:center; justify-content:center; height:100%; padding:8px; text-align:center; font-size:10px; color:#ef4444; background:#fee2e2;\\'>تعذر تحميل الصورة</div>'">
-                                </div>`;
-
-                            } else {
-                                gridItemsHtml += `<div style="aspect-ratio:1/1; background:#f0f4f8; display:flex; align-items:center; justify-content:center; padding:8px; text-align:center; font-size:12px; color:#334155; font-weight:700; overflow:hidden; cursor:pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'" onclick="window.openCreatePostModal('${p.id}')">${p.title || 'منشور'}</div>`;
-                            }
-                        }
-                    }
-
-                    sidebarBody.innerHTML = `
-                        <div style="display:flex; justify-content:center; padding:0; transform: scale(0.92); transform-origin: top center; margin-top: -15px;">
-                            <div style="width:340px; height:700px; border:14px solid #111; border-radius:36px; overflow:hidden; position:relative; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); background:#fff; flex-shrink:0;">
-                                <!-- Front Camera -->
-                                <div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:#000; border-radius:50%; z-index:10; box-shadow: 0 0 0 1px rgba(255,255,255,0.05);"></div>
-                                
-                                <div class="ig-mockup" style="height:100%; overflow-y:auto; overflow-x:hidden; background:#fff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; direction:ltr;">
-                                    ${(() => {
-                                        const currentStorageKey = 'sm_ig_mockup_' + activeBoard.id;
-                                        window.updateIgMockup = window.updateIgMockup || function(key, value, boardId) {
-                                            const storageKey = 'sm_ig_mockup_' + boardId;
-                                            const settings = JSON.parse(localStorage.getItem(storageKey)) || {
-                                                username: 'm7.omar1', profilePic: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop',
-                                                name: 'محمد عمر | كيو 🛒', bioCategory: 'Shopping & retail', bioText: 'التطبيق متاح للجميع 🤯🚀🚀🔥🔥🔥🔥🔥', link: 'qeu.app'
-                                            };
-                                            settings[key] = value.trim();
-                                            localStorage.setItem(storageKey, JSON.stringify(settings));
-                                        };
-                                        window.changeIgProfilePic = window.changeIgProfilePic || function(el, boardId) {
-                                            const input = document.createElement('input');
-                                            input.type = 'file';
-                                            input.accept = 'image/*';
-                                            input.onchange = e => {
-                                                const file = e.target.files[0];
-                                                if (!file) return;
-                                                const reader = new FileReader();
-                                                reader.onload = event => {
-                                                    const img = new Image();
-                                                    img.onload = () => {
-                                                        const canvas = document.createElement('canvas');
-                                                        const ctx = canvas.getContext('2d');
-                                                        let width = img.width;
-                                                        let height = img.height;
-                                                        // Cap the image to smaller dimensions for local storage
-                                                        if (width > height) {
-                                                            if (width > 300) { height *= 300 / width; width = 300; }
-                                                        } else {
-                                                            if (height > 300) { width *= 300 / height; height = 300; }
-                                                        }
-                                                        canvas.width = width;
-                                                        canvas.height = height;
-                                                        ctx.drawImage(img, 0, 0, width, height);
-                                                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                                                        
-                                                        el.style.backgroundImage = "url('" + dataUrl + "')";
-                                                        window.updateIgMockup('profilePic', dataUrl, boardId);
-                                                    };
-                                                    img.src = event.target.result;
-                                                };
-                                                reader.readAsDataURL(file);
-                                            };
-                                            input.click();
-                                        };
-                                        const igSettings = JSON.parse(localStorage.getItem(currentStorageKey)) || {
-                                            username: 'm7.omar1', profilePic: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150&h=150&fit=crop',
-                                            name: 'محمد عمر | كيو 🛒', bioCategory: 'Shopping & retail', bioText: 'التطبيق متاح للجميع 🤯🚀🚀🔥🔥🔥🔥🔥', link: 'qeu.app'
-                                        };
-                                        return `
-                                            <div style="display:flex; align-items:center; padding:18px 16px 12px; border-bottom:1px solid #efefef;">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                                                <h3 style="margin:0; font-size:16px; font-weight:700; flex-grow:1; text-align:center;">
-                                                    <span contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('username', this.innerText, '${activeBoard.id}')" style="outline:none; padding:2px 4px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${igSettings.username}</span> 
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#38bdf8" stroke="none" style="vertical-align:middle; margin-left:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                                </h3>
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                                            </div>
-                                            <div style="display:flex; padding:0 16px; margin-top:16px; align-items:center;">
-                                                <div style="width:76px; height:76px; border-radius:50%; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding:2px; flex-shrink:0;">
-                                                    <div onclick="window.changeIgProfilePic(this, '${activeBoard.id}')" title="انقر لتغيير الصورة" style="cursor:pointer; width:100%; height:100%; border-radius:50%; border:2px solid #fff; background:url('${igSettings.profilePic}') center/cover;"></div>
-                                                </div>
-                                                <div style="display:flex; flex-grow:1; justify-content:space-evenly; margin-left:16px;">
-                                                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="font-weight:700; font-size:16px;">707</span><span style="font-size:13px; color:#262626;">posts</span></div>
-                                                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="font-weight:700; font-size:16px;">471K</span><span style="font-size:13px; color:#262626;">followers</span></div>
-                                                    <div style="display:flex; flex-direction:column; align-items:center;"><span style="font-weight:700; font-size:16px;">1</span><span style="font-size:13px; color:#262626;">following</span></div>
-                                                </div>
-                                            </div>
-                                            <div style="padding:12px 16px;">
-                                                <div contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('name', this.innerText, '${activeBoard.id}')" style="font-weight:700; font-size:14px; margin-bottom:2px; text-align:right; outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" dir="rtl">${igSettings.name}</div>
-                                                <div contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('bioCategory', this.innerText, '${activeBoard.id}')" style="font-size:14px; color:#737373; margin-bottom:2px; text-align:right; outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" dir="rtl">${igSettings.bioCategory}</div>
-                                                <div contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('bioText', this.innerText, '${activeBoard.id}')" style="font-size:14px; margin-bottom:4px; text-align:right; outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" dir="rtl">${igSettings.bioText}</div>
-                                                <div style="font-size:14px; font-weight:600; margin-bottom:2px; text-align:right;" dir="rtl">See translation</div>
-                                                <div style="font-size:14px; color:#00376b; font-weight:600; text-align:right;" dir="rtl"><qeu contenteditable="true" spellcheck="false" onblur="window.updateIgMockup('link', this.innerText, '${activeBoard.id}')" class="app" style="outline:none; padding:2px; border-radius:4px;" onfocus="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${igSettings.link}</qeu> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
-                                            </div>
-                                        `;
-                                    })()}
-                                    <div style="display:flex; gap:8px; padding:0 16px 12px;">
-                                        <button style="flex:1; background:#0095f6; color:#fff; border:none; border-radius:8px; padding:7px 0; font-weight:600; font-size:14px; cursor:pointer;">Follow</button>
-                                        <button style="flex:1; background:#efefef; color:#000; border:none; border-radius:8px; padding:7px 0; font-weight:600; font-size:14px; cursor:pointer;">Message</button>
-                                        <button style="width:34px; background:#efefef; border:none; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg></button>
-                                    </div>
-                                    <div style="display:flex; border-top:1px solid #efefef;">
-                                        <div style="flex:1; display:flex; justify-content:center; padding:10px 0; border-top:1px solid #000;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg></div>
-                                        <div style="flex:1; display:flex; justify-content:center; padding:10px 0; color:#a8a8a8;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg></div>
-                                        <div style="flex:1; display:flex; justify-content:center; padding:10px 0; color:#a8a8a8;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
-                                    </div>
-                                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; padding-bottom:12px;">
-                                        ${gridItemsHtml}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else if (window.activePreviewPlatform) {
-                    sidebarBody.innerHTML = `<div style="padding:40px 20px; text-align:center; color:#64748b; background:white; border-radius:12px; border:1px solid #e2e8f0; font-weight:600;">معاينة ${window.activePreviewPlatform} قيد التطوير...</div>`;
-                } else {
-                    if (todayPosts.length > 0) {
-                        sidebarBody.innerHTML = todayPosts.map(p => {
-                            const items = p.mediaItems || (p.mediaObj ? [p.mediaObj] : []);
-                            let mediaHtmlStr = '';
-                            if (items.length > 0 && items[0].dataUrl) {
-                                mediaHtmlStr = `<div style="display:flex; gap:4px; max-width:80px; flex-wrap:wrap; flex-shrink:0;">`;
-                                items.slice(0,4).forEach((it, idx) => {
-                                    mediaHtmlStr += `<div style="position:relative; width:${items.length === 1 ? '56px' : '26px'}; height:${items.length === 1 ? '56px' : '26px'}; border-radius:8px; overflow:hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
-                                        <img src="${it.dataUrl}" style="width:100%; height:100%; object-fit:cover;">
-                                        ${idx === 3 && items.length > 4 ? `<div style="position:absolute; top:0; right:0; width:100%; height:100%; background:rgba(0,0,0,0.6); color:white; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;">+${items.length-4}</div>` : ''}
-                                    </div>`;
-                                });
-                                mediaHtmlStr += `</div>`;
-                            } else {
-                                mediaHtmlStr = `<div style="width:56px; height:56px; border-radius:8px; background:#f8fafc; border: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></div>`;
-                            }
-
-                            return `
-                            <div onclick="window.openCreatePostModal('${p.id}')" style="cursor:pointer; background:white; border-radius:12px; padding:14px; margin-bottom:14px; border:1px solid #f1f5f9; box-shadow:0 3px 6px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.04); display:flex; gap:14px; align-items:center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0);" onmouseover="this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='0 3px 6px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.04)'; this.style.transform='translateY(0)';">
-                                ${mediaHtmlStr}
-                                <div style="flex-grow:1; overflow:hidden; display:flex; flex-direction:column; gap:6px;">
-                                    <p style="font-size:15px; font-weight:700; color:#0f172a; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title || 'منشور بدون نص'}</p>
-                                    <span style="font-size:12px; background:#f3e8ff; color:#7e22ce; padding:4px 10px; border-radius:6px; font-weight:600; align-self:flex-start;">${p.status || 'مسودة'}</span>
-                                </div>
-                            </div>`;
-                        }).join('') + `
-                        <button onclick="window.openCreatePostModal()" style="width:100%; background:transparent; color:#ea580c; border:2px dashed #fdba74; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px;" onmouseover="this.style.background='#fff7ed'; this.style.borderColor='#ea580c';" onmouseout="this.style.background='transparent'; this.style.borderColor='#fdba74';">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            إضافة منشور آخر
-                        </button>`;
-                    } else {
-                        sidebarBody.innerHTML = `
-                            <div class="sm-empty-icon" style="margin-bottom:12px; opacity: 0.6;">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            </div>
-                            <p class="sm-empty-text" style="font-size:14px; color:#64748b; margin-bottom:20px; font-weight:500;">لا توجد منشورات لهذا اليوم</p>
-                            <button onclick="window.openCreatePostModal()" style="width:100%; background:#ea580c; color:white; border:none; padding:12px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; transition:background 0.2s ease; display:flex; align-items:center; justify-content:center; gap:8px;" onmouseover="this.style.background='#c2410c';" onmouseout="this.style.background='#ea580c';">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                إضافة منشور
-                            </button>
-                        `;
-                    }
-                }
-            };
-            
-            cell.ondblclick = () => {
-                if (!cell.classList.contains('selected')) {
-                    cell.click();
-                }
-                if (typeof window.openCreatePostModal === 'function') {
-                    window.openCreatePostModal();
-                }
-            };
-        });
-        
-        // Trigger click on explicitly selected day to initialize sidebar!
-        const selectedCell = Array.from(cells).find(c => c.classList.contains('selected'));
-        if (selectedCell) selectedCell.click();
-    }
-
-    const createBtn = appContainer.querySelector('.sm-primary-btn');
-    const addEmptyBtn = appContainer.querySelector('.sm-link-btn');
-    
-    const openModal = () => {
-        if (typeof window.openCreatePostModal === 'function') window.openCreatePostModal();
-    };
-    
-    if (createBtn) createBtn.onclick = openModal;
-    if (addEmptyBtn) addEmptyBtn.onclick = openModal;
-}
 
 function renderTimerApp(activeBoard) {
     document.body.style.background = '';
@@ -8672,7 +8342,7 @@ function renderTimerApp(activeBoard) {
     titleH2.className = 'editable-board-title';
     titleH2.title = 'Click to rename';
     
-    titleH2.onclick = (e) => {
+    if(titleH2) titleH2.onclick = (e) => {
         titleH2.contentEditable = 'true';
         titleH2.classList.add('editing');
         titleH2.focus();
@@ -8716,7 +8386,7 @@ function renderTimerApp(activeBoard) {
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'icon-btn';
-    deleteBtn.onclick = () => deleteBoard(activeBoard.id);
+    if(deleteBtn) deleteBtn.onclick = () => deleteBoard(activeBoard.id);
     deleteBtn.title = 'Delete Board';
     deleteBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 
@@ -8731,7 +8401,7 @@ function renderTimerApp(activeBoard) {
     activeBoard.cards.forEach(card => {
         const cardEl = document.createElement('div');
         cardEl.className = 'card';
-        cardEl.onclick = () => openTimerModal(card.id, null);
+        if(cardEl) cardEl.onclick = () => openTimerModal(card.id, null);
 
         const titleEl = document.createElement('div');
         titleEl.className = 'card-title';
@@ -8786,7 +8456,7 @@ function renderTimerApp(activeBoard) {
 
     let scrollRAF = null;
     let lastScrollY = 0;
-    listContainer.addEventListener('dragover', (e) => {
+    if(listContainer) listContainer.addEventListener('dragover', (e) => {
         const rect = listContainer.getBoundingClientRect();
         let dist = 0;
         if (e.clientY < rect.top + 100) dist = -15;
@@ -8809,8 +8479,8 @@ function renderTimerApp(activeBoard) {
             lastScrollY = 0;
         }
     });
-    listContainer.addEventListener('dragleave', () => lastScrollY = 0);
-    listContainer.addEventListener('drop', () => lastScrollY = 0);
+    if(listContainer) listContainer.addEventListener('dragleave', () => lastScrollY = 0);
+    if(listContainer) listContainer.addEventListener('drop', () => lastScrollY = 0);
 
     const addBtn = document.createElement('button');
     addBtn.className = 'add-card-btn';
@@ -8821,7 +8491,7 @@ function renderTimerApp(activeBoard) {
             </span>
         `;
 
-    addBtn.onclick = () => {
+    if(addBtn) addBtn.onclick = () => {
         newCardTitle.value = '';
         if (newCardDays) newCardDays.value = 0;
         if (newCardHours) newCardHours.value = 0;
@@ -8904,7 +8574,7 @@ function renderTimerApp(activeBoard) {
         clearBtn.onmouseenter = () => clearBtn.style.background = '#0052cc';
         clearBtn.onmouseleave = () => clearBtn.style.background = '#0c66e4';
         
-        clearBtn.onclick = () => {
+        if(clearBtn) clearBtn.onclick = () => {
             activeBoard.happinessFilters = {};
             activeBoard.serviceFilters = {};
             saveState();
@@ -8915,11 +8585,11 @@ function renderTimerApp(activeBoard) {
 }
 
 // Add Card Flow
-closeAddModal.onclick = () => addCardModal.classList.remove('active');
+if(closeAddModal) closeAddModal.onclick = () => addCardModal.classList.remove('active');
 
 const modalLinkAccountsBtn = document.getElementById('modalLinkAccountsBtn');
 if (modalLinkAccountsBtn) {
-    modalLinkAccountsBtn.onclick = () => {
+    if(modalLinkAccountsBtn) modalLinkAccountsBtn.onclick = () => {
         const popup = document.getElementById('createPostModal');
         if (popup) popup.classList.remove('active');
         window.activeSocialTab = 'accounts';
@@ -8927,7 +8597,7 @@ if (modalLinkAccountsBtn) {
         if (activeBoard) renderSocialSchedulerApp(activeBoard);
     };
 }
-confirmAddBtn.onclick = async () => {
+if(confirmAddBtn) confirmAddBtn.onclick = async () => {
     const title = newCardTitle.value.trim();
     if (title) {
         const activeBoard = boards.find(b => b.id === activeBoardId);
@@ -9468,7 +9138,7 @@ function openAdsCalculatorModal(cardId) {
     document.getElementById('closeAdsCalculatorModalBtn').onclick = () => {
         modal.classList.remove('active');
     };
-    modal.onclick = (e) => {
+    if(modal) modal.onclick = (e) => {
         if (e.target === modal) modal.classList.remove('active');
     };
 }
@@ -9588,7 +9258,7 @@ function openPipedriveActionModal(cardId, listId) {
                     delBtn.style.fontWeight = 'bold';
                     delBtn.style.cursor = 'pointer';
                     delBtn.style.padding = '0 4px';
-                    delBtn.onclick = () => {
+                    if(delBtn) delBtn.onclick = () => {
                         card.services.splice(idx, 1);
                         saveState();
                         render();
@@ -9606,7 +9276,7 @@ function openPipedriveActionModal(cardId, listId) {
         renderChecklist();
         
         if (addNewServiceBtn && newServiceInput) {
-            addNewServiceBtn.onclick = () => {
+            if(addNewServiceBtn) addNewServiceBtn.onclick = () => {
                 const val = newServiceInput.value.trim();
                 if (val) {
                     card.services.push({ name: val, checked: false });
@@ -9653,17 +9323,17 @@ function setPipedriveColor(color) {
 }
 
 const pipedriveActionColorRedBtn = document.getElementById('pipedriveActionColorRedBtn');
-if (pipedriveActionColorRedBtn) pipedriveActionColorRedBtn.onclick = () => setPipedriveColor('red');
+if (pipedriveActionColorRedBtn) if(pipedriveActionColorRedBtn) pipedriveActionColorRedBtn.onclick = () => setPipedriveColor('red');
 
 const pipedriveActionColorGreenBtn = document.getElementById('pipedriveActionColorGreenBtn');
-if (pipedriveActionColorGreenBtn) pipedriveActionColorGreenBtn.onclick = () => setPipedriveColor('green');
+if (pipedriveActionColorGreenBtn) if(pipedriveActionColorGreenBtn) pipedriveActionColorGreenBtn.onclick = () => setPipedriveColor('green');
 
 const pipedriveActionColorClearBtn = document.getElementById('pipedriveActionColorClearBtn');
-if (pipedriveActionColorClearBtn) pipedriveActionColorClearBtn.onclick = () => setPipedriveColor(null);
+if (pipedriveActionColorClearBtn) if(pipedriveActionColorClearBtn) pipedriveActionColorClearBtn.onclick = () => setPipedriveColor(null);
 
 const closePipedriveActionModalBtn = document.getElementById('closePipedriveActionModalBtn');
 if (closePipedriveActionModalBtn) {
-    closePipedriveActionModalBtn.onclick = () => {
+    if(closePipedriveActionModalBtn) closePipedriveActionModalBtn.onclick = () => {
         document.getElementById('pipedriveActionModal').classList.remove('active');
     };
 }
@@ -9819,7 +9489,7 @@ if (pipedriveActionNoteInput) {
 
 const pipedriveEditDealValueSaveBtn = document.getElementById('pipedriveEditDealValueSaveBtn');
 if (pipedriveEditDealValueSaveBtn) {
-    pipedriveEditDealValueSaveBtn.onclick = async () => {
+    if(pipedriveEditDealValueSaveBtn) pipedriveEditDealValueSaveBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         const valInput = document.getElementById('pipedriveEditDealValueInput');
         if (!valInput) return;
@@ -9878,7 +9548,7 @@ if (pipedriveEditDealValueSaveBtn) {
 
 const pipedriveActionWonBtn = document.getElementById('pipedriveActionWonBtn');
 if (pipedriveActionWonBtn) {
-    pipedriveActionWonBtn.onclick = async () => {
+    if(pipedriveActionWonBtn) pipedriveActionWonBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         
         try {
@@ -9947,7 +9617,7 @@ if (pipedriveActionWonBtn) {
 
 const pipedriveActionDuplicateBtn = document.getElementById('pipedriveActionDuplicateBtn');
 if (pipedriveActionDuplicateBtn) {
-    pipedriveActionDuplicateBtn.onclick = async () => {
+    if(pipedriveActionDuplicateBtn) pipedriveActionDuplicateBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         
         try {
@@ -10006,7 +9676,7 @@ if (pipedriveActionDuplicateBtn) {
 
 const pipedriveActionDeleteBtn = document.getElementById('pipedriveActionDeleteBtn');
 if (pipedriveActionDeleteBtn) {
-    pipedriveActionDeleteBtn.onclick = () => {
+    if(pipedriveActionDeleteBtn) pipedriveActionDeleteBtn.onclick = () => {
         document.getElementById('pipedriveActionDeleteConfirmContainer').style.display = 'block';
         document.getElementById('pipedriveActionDeleteBtn').parentElement.style.display = 'none';
     };
@@ -10014,7 +9684,7 @@ if (pipedriveActionDeleteBtn) {
 
 const pipedriveActionDeleteCancelBtn = document.getElementById('pipedriveActionDeleteCancelBtn');
 if (pipedriveActionDeleteCancelBtn) {
-    pipedriveActionDeleteCancelBtn.onclick = () => {
+    if(pipedriveActionDeleteCancelBtn) pipedriveActionDeleteCancelBtn.onclick = () => {
         document.getElementById('pipedriveActionDeleteConfirmContainer').style.display = 'none';
         document.getElementById('pipedriveActionDeleteBtn').parentElement.style.display = 'flex';
     };
@@ -10022,7 +9692,7 @@ if (pipedriveActionDeleteCancelBtn) {
 
 const pipedriveActionDeleteConfirmBtn = document.getElementById('pipedriveActionDeleteConfirmBtn');
 if (pipedriveActionDeleteConfirmBtn) {
-    pipedriveActionDeleteConfirmBtn.onclick = async () => {
+    if(pipedriveActionDeleteConfirmBtn) pipedriveActionDeleteConfirmBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         
         try {
@@ -10087,7 +9757,7 @@ if (pipedriveActionDeleteConfirmBtn) {
 
 const pipedriveActionLostBtn = document.getElementById('pipedriveActionLostBtn');
 if (pipedriveActionLostBtn) {
-    pipedriveActionLostBtn.onclick = () => {
+    if(pipedriveActionLostBtn) pipedriveActionLostBtn.onclick = () => {
         document.getElementById('pipedriveActionPrimaryBtns').style.display = 'none';
         document.getElementById('pipedriveActionLostReasonContainer').style.display = 'block';
         document.getElementById('pipedriveActionLostReasonInput').focus();
@@ -10096,7 +9766,7 @@ if (pipedriveActionLostBtn) {
 
 const pipedriveActionCancelLostBtn = document.getElementById('pipedriveActionCancelLostBtn');
 if (pipedriveActionCancelLostBtn) {
-    pipedriveActionCancelLostBtn.onclick = () => {
+    if(pipedriveActionCancelLostBtn) pipedriveActionCancelLostBtn.onclick = () => {
         document.getElementById('pipedriveActionLostReasonContainer').style.display = 'none';
         document.getElementById('pipedriveActionPrimaryBtns').style.display = 'flex';
     };
@@ -10104,7 +9774,7 @@ if (pipedriveActionCancelLostBtn) {
 
 const pipedriveActionTemplateDropshippingBtn = document.getElementById('pipedriveActionTemplateDropshippingBtn');
 if (pipedriveActionTemplateDropshippingBtn) {
-    pipedriveActionTemplateDropshippingBtn.onclick = () => {
+    if(pipedriveActionTemplateDropshippingBtn) pipedriveActionTemplateDropshippingBtn.onclick = () => {
         const input = document.getElementById('pipedriveActionLostReasonInput');
         if (input) {
             input.value = "Dropshipping";
@@ -10115,7 +9785,7 @@ if (pipedriveActionTemplateDropshippingBtn) {
 
 const pipedriveActionTemplateNoResponseBtn = document.getElementById('pipedriveActionTemplateNoResponseBtn');
 if (pipedriveActionTemplateNoResponseBtn) {
-    pipedriveActionTemplateNoResponseBtn.onclick = () => {
+    if(pipedriveActionTemplateNoResponseBtn) pipedriveActionTemplateNoResponseBtn.onclick = () => {
         const input = document.getElementById('pipedriveActionLostReasonInput');
         if (input) {
             input.value = "No Response";
@@ -10126,7 +9796,7 @@ if (pipedriveActionTemplateNoResponseBtn) {
 
 const pipedriveActionSubmitLostBtn = document.getElementById('pipedriveActionSubmitLostBtn');
 if (pipedriveActionSubmitLostBtn) {
-    pipedriveActionSubmitLostBtn.onclick = async () => {
+    if(pipedriveActionSubmitLostBtn) pipedriveActionSubmitLostBtn.onclick = async () => {
         if (!activePipedriveDealId || !activeBoardId) return;
         const reason = document.getElementById('pipedriveActionLostReasonInput').value.trim();
         
@@ -10156,9 +9826,9 @@ if (pipedriveActionSubmitLostBtn) {
     };
 }
 
-closeTimerModal.onclick = () => { timerModal.classList.remove('active'); activeCardId = null; activeTargetListId = null; };
+if(closeTimerModal) closeTimerModal.onclick = () => { timerModal.classList.remove('active'); activeCardId = null; activeTargetListId = null; };
 
-saveTimerBtn.onclick = () => {
+if(saveTimerBtn) saveTimerBtn.onclick = () => {
     if (!activeCardId) return;
     const d = parseInt(inputDays.value) || 0;
     const h = parseInt(inputHours.value) || 0;
@@ -10183,7 +9853,7 @@ saveTimerBtn.onclick = () => {
     }
 };
 
-removeTimerBtn.onclick = () => {
+if(removeTimerBtn) removeTimerBtn.onclick = () => {
     if (!activeCardId) return;
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if(activeBoard.type === 'timer') {
@@ -10198,7 +9868,7 @@ removeTimerBtn.onclick = () => {
     timerModal.classList.remove('active');
 };
 
-deleteCardBtn.onclick = () => {
+if(deleteCardBtn) deleteCardBtn.onclick = () => {
     if (!activeCardId) return;
     
     if (!deleteCardBtn.classList.contains('confirm-state')) {
@@ -10431,7 +10101,7 @@ window.applySmartPacking = function(curBoard) {
                 if (c.source === sourceId) {
                     const targetList = curBoard.lists.find(l => l.id === c.target && (l.trelloListId || l.trackerType === 'ads'));
                     if (targetList && targetList.cards) {
-                        if (targetList.trelloListId && targetList.trackerType !== 'ads') {
+                        if (targetList.trelloListId && targetList.trackerType !== 'ads' && targetList.trackerType !== 'trelloSpeech') {
                             delete targetList.isManualLayout; // REVERTED: Restore background squashing mathematical algorithm
                         }
                         const eff = curBoard.sentimentFilters;
@@ -10457,7 +10127,9 @@ window.applySmartPacking = function(curBoard) {
                                         
                                         // Evaluate same rigid type exclusions as the main canvas algorithm
                                         let typeMatches = false;
-                                        if (pType === 'trello' && (targetList.trelloTasksListId || targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads') {
+                                        if (pType === 'trello' && (targetList.trelloTasksListId || targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && targetList.trackerType !== 'trelloSpeech') {
+                                            typeMatches = true;
+                                        } else if (pType === 'trelloSpeech' && targetList.trackerType === 'trelloSpeech') {
                                             typeMatches = true;
                                         } else if (pType === 'ads' && targetList.trackerType === 'ads') {
                                             typeMatches = true;
@@ -10468,7 +10140,13 @@ window.applySmartPacking = function(curBoard) {
                                         if (typeMatches) {
                                             const rqColor = eff[k];
                                             const hM = targetList.cards.some(mc => {
-                                                const cl = (curBoard.cardColors && curBoard.cardColors[mc.id]) ? curBoard.cardColors[mc.id] : 'default';
+                                                const isCHContext = pType === 'clientHappiness';
+                                                let cl = 'default';
+                                                if (isCHContext) {
+                                                    cl = (curBoard.clientHappinessData && curBoard.clientHappinessData[mc.id]) ? curBoard.clientHappinessData[mc.id] : 'default';
+                                                } else {
+                                                    cl = (curBoard.cardColors && curBoard.cardColors[mc.id]) ? curBoard.cardColors[mc.id] : 'default';
+                                                }
                                                 return cl === rqColor;
                                             });
                                             if (!hM) listHiddenByFilter = true;
@@ -10513,9 +10191,10 @@ window.applySmartPacking = function(curBoard) {
 
                     sortedLists.forEach((list, index) => {
                         const isAds = list.trackerType === 'ads';
-                        const offsetX = isAds ? (sourceList.adsOffsetX !== undefined ? sourceList.adsOffsetX : 0) : (sourceList.trelloOffsetX !== undefined ? sourceList.trelloOffsetX : 0);
-                        const spacingY = isAds ? (sourceList.adsSpacingY !== undefined ? sourceList.adsSpacingY : 60) : (sourceList.trelloSpacingY !== undefined ? sourceList.trelloSpacingY : 60);
-                        const baseTypeOffset = isAds ? (sourceList.adsOffsetY !== undefined ? sourceList.adsOffsetY : 0) : (sourceList.trelloOffsetY !== undefined ? sourceList.trelloOffsetY : 0);
+                        const isTs = list.trackerType === 'trelloSpeech';
+                        const offsetX = isAds ? (sourceList.adsOffsetX !== undefined ? sourceList.adsOffsetX : 0) : (isTs ? (sourceList.trelloSpeechOffsetX !== undefined ? sourceList.trelloSpeechOffsetX : 800) : (sourceList.trelloOffsetX !== undefined ? sourceList.trelloOffsetX : 0));
+                        const spacingY = isAds ? (sourceList.adsSpacingY !== undefined ? sourceList.adsSpacingY : 60) : (isTs ? (sourceList.trelloSpeechSpacingY !== undefined ? sourceList.trelloSpeechSpacingY : 60) : (sourceList.trelloSpacingY !== undefined ? sourceList.trelloSpacingY : 60));
+                        const baseTypeOffset = isAds ? (sourceList.adsOffsetY !== undefined ? sourceList.adsOffsetY : 0) : (isTs ? (sourceList.trelloSpeechOffsetY !== undefined ? sourceList.trelloSpeechOffsetY : 0) : (sourceList.trelloOffsetY !== undefined ? sourceList.trelloOffsetY : 0));
                         
                         let nx = sourceList.x;
                         let ny = sourceList.y;
@@ -10554,9 +10233,8 @@ window.applySmartPacking = function(curBoard) {
                                 return true;
                             });
                             if (over) {
-                                ny += 180;
-                                nx += 80;
-                                loopLimit++;
+                                // Disable diagonal stair-stepping to strictly enforce auto-alignment
+                                collision = false;
                             } else {
                                 collision = false;
                             }
@@ -10578,7 +10256,15 @@ window.applySmartPacking = function(curBoard) {
                 });
             };
             
-            if (allTargets.length > 0) packTargets(allTargets);
+            if (allTargets.length > 0) {
+                const trelloTargets = allTargets.filter(t => t.list.trackerType !== 'trelloSpeech' && t.list.trackerType !== 'ads');
+                const speechTargets = allTargets.filter(t => t.list.trackerType === 'trelloSpeech');
+                const adsTargets = allTargets.filter(t => t.list.trackerType === 'ads');
+
+                if (trelloTargets.length > 0) packTargets(trelloTargets);
+                if (speechTargets.length > 0) packTargets(speechTargets);
+                if (adsTargets.length > 0) packTargets(adsTargets);
+            }
         });
     }
     return layoutModified;
@@ -10802,7 +10488,7 @@ function restartSyncTimers() {
     syncPipedriveInterval = setInterval(syncPipedrive, currentPipedriveSyncInterval);
 }
 
-document.addEventListener("visibilitychange", () => {
+if(document) document.addEventListener("visibilitychange", () => {
     isAppVisible = document.visibilityState === "visible";
     currentTrelloSyncInterval = isAppVisible ? 5000 : 30000; // 5s visible, 30s background
     currentPipedriveSyncInterval = isAppVisible ? 60000 : 180000; // 60s visible, 3m background
@@ -10941,12 +10627,12 @@ window.showConfirmModal = function(callback, titleText, descText) {
     
     modal.classList.add('active');
     
-    newBtnYes.onclick = function() {
+    if(newBtnYes) newBtnYes.onclick = function() {
         modal.classList.remove('active');
         if(callback) callback();
     };
     
-    newBtnCancel.onclick = function() {
+    if(newBtnCancel) newBtnCancel.onclick = function() {
         modal.classList.remove('active');
     };
 };
@@ -11236,9 +10922,9 @@ window.viewMediaFull = function(src, type) {
     };
     
     // allow clicking on backdrop or X to close
-    overlay.onclick = closeOverlay;
+    if(overlay) overlay.onclick = closeOverlay;
     const closeBtn = overlay.querySelector('button');
-    if (closeBtn) closeBtn.onclick = closeOverlay;
+    if (closeBtn) if(closeBtn) closeBtn.onclick = closeOverlay;
 };
 
 window.deleteSocialPost = function(postId) {
@@ -11263,7 +10949,7 @@ window.deleteSocialPost = function(postId) {
     }, "حذف المنشور", "هل أنت متأكد من رغبتك في حذف هذا المنشور؟ لا يمكن التراجع عن هذا الإجراء.");
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+if(document) document.addEventListener('DOMContentLoaded', () => {
     const gallery = document.getElementById('smMediaGallery');
     if (gallery && typeof Sortable !== 'undefined') {
         new Sortable(gallery, {
