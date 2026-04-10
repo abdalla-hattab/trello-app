@@ -5194,8 +5194,14 @@ function renderKanbanApp(activeBoard) {
                 
                 toggleBtn.innerHTML = iconsHtml;
                 toggleBtn.title = 'Toggle Trackers';
-                toggleBtn.onmousedown = (e) => e.stopPropagation();
-                if(toggleBtn) toggleBtn.onclick = (e) => {
+                let _clickStartX = 0, _clickStartY = 0;
+                toggleBtn.onmousedown = (e) => {
+                    e.stopPropagation();
+                    _clickStartX = e.clientX;
+                    _clickStartY = e.clientY;
+                };
+                if(toggleBtn) toggleBtn.onmouseup = (e) => {
+                    if (Math.abs(e.clientX - _clickStartX) > 5 || Math.abs(e.clientY - _clickStartY) > 5) return;
                     e.stopPropagation();
                     const svgNode = e.target.closest('svg');
                     if (!svgNode) return;
@@ -5220,7 +5226,7 @@ function renderKanbanApp(activeBoard) {
                             if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                             if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
                             if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
-                            if (tType === 'ads' && tl.trelloListId && tl.trackerType === 'ads') matches = true;
+                            if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
                             
                             if (matches) {
                                 specificTargets.add(c.target);
@@ -10153,9 +10159,7 @@ window.applySmartPacking = function(curBoard) {
                 if (c.source === sourceId) {
                     const targetList = curBoard.lists.find(l => l.id === c.target && (l.trelloListId || l.trackerType === 'ads'));
                     if (targetList && targetList.cards) {
-                        if (targetList.trelloListId && targetList.trackerType !== 'ads' && targetList.trackerType !== 'trelloSpeech') {
-                            delete targetList.isManualLayout; // REVERTED: Restore background squashing mathematical algorithm
-                        }
+                        // Do not delete isManualLayout here. Allow user to manually position their tracker lists.
                         const eff = curBoard.sentimentFilters;
                         let listHiddenByFilter = false;
                         
