@@ -873,9 +873,10 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
         
         const deleteBtn = document.getElementById('trelloCardDeleteBtn');
         if (deleteBtn) {
-            deleteBtn.style.display = targetLocalCard.isTrelloTask ? 'block' : 'none';
+            deleteBtn.style.display = 'block';
+            deleteBtn.textContent = 'Delete Card from Trello';
             if(deleteBtn) deleteBtn.onclick = async () => {
-                if (!confirm("Are you sure you want to permanently delete this task from Trello?")) return;
+                if (!confirm("Are you sure you want to permanently delete this card from Trello?")) return;
                 
                 const originalText = deleteBtn.textContent;
                 deleteBtn.textContent = 'Deleting...';
