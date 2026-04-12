@@ -10310,8 +10310,10 @@ async function syncPipedrive() {
     const uniquePipelineIds = new Set();
     
     mappedLists.forEach(l => {
-        if (l.pipedrivePipelineId) uniquePipelineIds.add(l.pipedrivePipelineId);
-        else if (curBoard.pipedrivePipelineId) uniquePipelineIds.add(curBoard.pipedrivePipelineId);
+        const pId = l.pipedrivePipelineId || curBoard.pipedrivePipelineId;
+        if (pId && String(pId) !== "null" && String(pId) !== "undefined") {
+            uniquePipelineIds.add(String(pId));
+        }
     });
     
     if (uniquePipelineIds.size === 0) return;
@@ -10354,12 +10356,14 @@ async function syncPipedrive() {
         const dealPayloads = await Promise.all(dealResponses.map(res => res.json()));
         const stagePayloads = await Promise.all(stageResponses.map(res => res.json()));
         
-        let allPipedriveDeals = [];
+        let allPipedriveDealsMap = new Map();
         let allPipedriveStages = [];
         
         for (let i = 0; i < dealPayloads.length; i++) {
-            allPipedriveDeals = allPipedriveDeals.concat(dealPayloads[i].data || []);
+            const arr = dealPayloads[i].data || [];
+            arr.forEach(d => allPipedriveDealsMap.set(d.id, d));
         }
+        let allPipedriveDeals = Array.from(allPipedriveDealsMap.values());
         
         stagePayloads.forEach((payload, index) => {
             const pid = pipelineStagesToFetch[index];
