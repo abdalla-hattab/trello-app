@@ -5493,6 +5493,24 @@ function renderKanbanApp(activeBoard) {
                                 saveState();
                                 render();
                             }
+                        } else if (card.isTrelloTask) {
+                            try {
+                                const tToken = localStorage.getItem('trelloToken');
+                                const tKey = localStorage.getItem('trelloApiKey') || window.activeTrelloKey || 'a500980c5c361fa38cb2e9bd7f4eceeb';
+                                if (!tToken || !tKey) throw new Error("Missing auth");
+                                const res = await fetch(`https://api.trello.com/1/cards/${card.id}?key=${tKey}&token=${tToken}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name: newTitle })
+                                });
+                                if (!res.ok) throw new Error("Failed");
+                                if (typeof syncTrello === 'function') syncTrello();
+                            } catch (e) {
+                                showToast("Failed to rename Trello task");
+                                card.title = oldTitle;
+                                saveState();
+                                render();
+                            }
                         }
                     } else {
                         titleTextWrap.textContent = card.title;
