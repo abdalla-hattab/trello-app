@@ -5700,12 +5700,37 @@ function renderKanbanApp(activeBoard) {
                 cardCheckWrap.style.marginLeft = '8px';
                 cardCheckWrap.style.marginTop = '2px';
                 cardCheckWrap.style.flexShrink = '0';
-                cardCheckWrap.innerHTML = `
+                cardCheckWrap.style.cursor = 'pointer';
+                
+                const isChecked = activeBoard.cardChecks && 
+                                  typeof activeBoard.cardChecks[card.id] === 'number' && 
+                                  (Date.now() - activeBoard.cardChecks[card.id] < 24 * 60 * 60 * 1000);
+                                  
+                const checkedSvg = `
                     <svg width="20" height="20" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" fill="#20c997" stroke="none"/>
                         <path d="M7.5 12 L10.5 15 L16.5 9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                `;
+                    </svg>`;
+                    
+                const uncheckedSvg = `
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="#dfe1e6" stroke-width="2"/>
+                    </svg>`;
+
+                cardCheckWrap.innerHTML = isChecked ? checkedSvg : uncheckedSvg;
+                
+                cardCheckWrap.onclick = (e) => {
+                    e.stopPropagation();
+                    if (!activeBoard.cardChecks) activeBoard.cardChecks = {};
+                    if (isChecked) {
+                        delete activeBoard.cardChecks[card.id];
+                    } else {
+                        activeBoard.cardChecks[card.id] = Date.now();
+                    }
+                    saveState();
+                    render();
+                };
+                
                 titleEl.appendChild(cardCheckWrap);
             }
             
@@ -11020,3 +11045,21 @@ if(document) document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Automatically expire card checks older than 24 hours (86400000 ms)
+setInterval(() => {
+    if (typeof activeBoard !== 'undefined' && activeBoard && activeBoard.cardChecks) {
+        let changed = false;
+        const now = Date.now();
+        for (const cardId in activeBoard.cardChecks) {
+            if (now - activeBoard.cardChecks[cardId] >= 24 * 60 * 60 * 1000) {
+                delete activeBoard.cardChecks[cardId];
+                changed = true;
+            }
+        }
+        if (changed) {
+            saveState();
+            render();
+        }
+    }
+}, 60000);
