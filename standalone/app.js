@@ -7555,7 +7555,10 @@ function renderKanbanApp(activeBoard) {
         addBtn.style.flexGrow = '1';
         addBtn.style.margin = '0'; 
         footerRow.appendChild(addBtn);
-        footerRow.appendChild(listCheckBtn);
+        
+        if (activeBoard.showListCheck && activeBoard.showListCheck[list.id]) {
+            footerRow.appendChild(listCheckBtn);
+        }
 
         listContainer.appendChild(footerRow);
 
