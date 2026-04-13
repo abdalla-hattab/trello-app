@@ -5493,24 +5493,6 @@ function renderKanbanApp(activeBoard) {
                                 saveState();
                                 render();
                             }
-                        } else if (card.isTrelloTask) {
-                            try {
-                                const tToken = localStorage.getItem('trelloToken');
-                                const tKey = localStorage.getItem('trelloApiKey') || window.activeTrelloKey || 'a500980c5c361fa38cb2e9bd7f4eceeb';
-                                if (!tToken || !tKey) throw new Error("Missing auth");
-                                const res = await fetch(`https://api.trello.com/1/cards/${card.id}?key=${tKey}&token=${tToken}`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ name: newTitle })
-                                });
-                                if (!res.ok) throw new Error("Failed");
-                                if (typeof syncTrello === 'function') syncTrello();
-                            } catch (e) {
-                                showToast("Failed to rename Trello task");
-                                card.title = oldTitle;
-                                saveState();
-                                render();
-                            }
                         }
                     } else {
                         titleTextWrap.textContent = card.title;
@@ -5690,6 +5672,23 @@ function renderKanbanApp(activeBoard) {
             titleEl.style.justifyContent = 'space-between';
             titleEl.style.alignItems = 'flex-start';
             titleEl.appendChild(leftCol);
+            
+            if (activeBoard.listChecks && activeBoard.listChecks[list.id]) {
+                const cardCheckWrap = document.createElement('div');
+                cardCheckWrap.style.display = 'flex';
+                cardCheckWrap.style.alignItems = 'flex-start';
+                cardCheckWrap.style.justifyContent = 'center';
+                cardCheckWrap.style.marginLeft = '8px';
+                cardCheckWrap.style.marginTop = '2px';
+                cardCheckWrap.style.flexShrink = '0';
+                cardCheckWrap.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" fill="#20c997" stroke="none"/>
+                        <path d="M7.5 12 L10.5 15 L16.5 9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `;
+                titleEl.appendChild(cardCheckWrap);
+            }
             
             if (card.isPipedrive && activeBoard.pipedriveWhatsappFieldKey && card.pipedriveData) {
                 const waVal = card.pipedriveData[activeBoard.pipedriveWhatsappFieldKey];
@@ -7567,7 +7566,7 @@ function renderKanbanApp(activeBoard) {
             if (!activeBoard.listChecks) activeBoard.listChecks = {};
             activeBoard.listChecks[list.id] = !activeBoard.listChecks[list.id];
             saveState();
-            updateCheckBtnVisuals();
+            render();
         };
 
         addBtn.style.flexGrow = '1';
