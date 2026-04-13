@@ -7527,7 +7527,7 @@ function renderKanbanApp(activeBoard) {
                 listCheckBtn.innerHTML = `
                     <svg width="28" height="28" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="6" fill="none" stroke="#fff" stroke-width="2"/>
-                        <path d="M9.5 12 L11.5 14 L15 9.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 12.5 L11 14.5 L15 9.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 `;
             } else {
@@ -7535,9 +7535,8 @@ function renderKanbanApp(activeBoard) {
                 listCheckBtn.style.boxShadow = 'none';
                 listCheckBtn.innerHTML = `
                     <svg width="28" height="28" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(107, 119, 140, 0.2)" stroke-width="1.5"/>
                         <circle cx="12" cy="12" r="6" fill="none" stroke="#8c9bab" stroke-width="2"/>
-                        <path d="M9.5 12 L11.5 14 L15 9.5" fill="none" stroke="#8c9bab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 12.5 L11 14.5 L15 9.5" fill="none" stroke="#8c9bab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 `;
             }
