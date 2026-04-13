@@ -5436,7 +5436,24 @@ function renderKanbanApp(activeBoard) {
                 }
             } else if (list.trackerType === 'ads') {
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
-                cardEl.style.cursor = 'default';
+                cardEl.style.cursor = 'pointer';
+                if(cardEl) cardEl.onclick = (e) => {
+                    const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
+                    if (!hasIssue) {
+                        window.showConfirmModal(() => {
+                            if (!activeBoard.adCardIssues) activeBoard.adCardIssues = {};
+                            activeBoard.adCardIssues[card.id] = true;
+                            saveState();
+                            render();
+                        }, "مشكلة في البطاقة؟", "هل تم إغلاق حساب هذا العميل بسبب مشكلة في البطاقة الائتمانية؟");
+                    } else {
+                        window.showConfirmModal(() => {
+                            delete activeBoard.adCardIssues[card.id];
+                            saveState();
+                            render();
+                        }, "إزالة المشكلة؟", "هل تم حل مشكلة البطاقة وإعادة تفعيل الحساب؟");
+                    }
+                };
             } else {
                 if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
@@ -5737,45 +5754,38 @@ function renderKanbanApp(activeBoard) {
             }
             
             if (list.trackerType === 'ads') {
-                const ccWrap = document.createElement('div');
-                ccWrap.style.display = 'flex';
-                ccWrap.style.alignItems = 'flex-start';
-                ccWrap.style.justifyContent = 'center';
-                ccWrap.style.marginLeft = '6px';
-                ccWrap.style.marginTop = '2px';
-                ccWrap.style.flexShrink = '0';
-                ccWrap.style.cursor = 'pointer';
-                
                 const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
                 
-                const redCcSvg = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff5f5" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
-                        <line x1="2" y1="10" x2="22" y2="10"></line>
-                    </svg>`;
+                if (hasIssue) {
+                    const ccWrap = document.createElement('div');
+                    ccWrap.style.display = 'flex';
+                    ccWrap.style.alignItems = 'flex-start';
+                    ccWrap.style.justifyContent = 'center';
+                    ccWrap.style.marginLeft = '6px';
+                    ccWrap.style.marginTop = '2px';
+                    ccWrap.style.flexShrink = '0';
+                    ccWrap.style.cursor = 'pointer';
                     
-                const greyCcSvg = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dfe1e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
-                        <line x1="2" y1="10" x2="22" y2="10"></line>
-                    </svg>`;
+                    const redCcSvg = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff5f5" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="2" y1="10" x2="22" y2="10"></line>
+                        </svg>`;
 
-                ccWrap.innerHTML = hasIssue ? redCcSvg : greyCcSvg;
-                ccWrap.title = hasIssue ? 'Credit Card Issue (Click to clear)' : 'Mark as Credit Card Issue';
-                
-                ccWrap.onclick = (e) => {
-                    e.stopPropagation();
-                    if (!activeBoard.adCardIssues) activeBoard.adCardIssues = {};
-                    if (hasIssue) {
-                        delete activeBoard.adCardIssues[card.id];
-                    } else {
-                        activeBoard.adCardIssues[card.id] = true;
-                    }
-                    saveState();
-                    render();
-                };
-                
-                titleEl.appendChild(ccWrap);
+                    ccWrap.innerHTML = redCcSvg;
+                    ccWrap.title = 'Credit Card Issue (Click to clear)';
+                    
+                    ccWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        window.showConfirmModal(() => {
+                            delete activeBoard.adCardIssues[card.id];
+                            saveState();
+                            render();
+                        }, "إزالة المشكلة؟", "هل تم حل مشكلة البطاقة وإعادة تفعيل الحساب؟");
+                    };
+                    
+                    titleEl.appendChild(ccWrap);
+                }
             }
             
             if (card.isPipedrive && activeBoard.pipedriveWhatsappFieldKey && card.pipedriveData) {
