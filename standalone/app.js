@@ -5531,12 +5531,14 @@ function renderKanbanApp(activeBoard) {
             if (list.trackerType === 'ads') {
                 if (!activeBoard.cardSubtitles) activeBoard.cardSubtitles = {};
                 subtitleTextWrap = document.createElement('span');
-            subtitleTextWrap.textContent = activeBoard.cardSubtitles[card.id] || 'Add subtitle...';
+            subtitleTextWrap.innerText = activeBoard.cardSubtitles[card.id] || 'Add subtitle...';
             if (!activeBoard.cardSubtitles[card.id]) {
                 subtitleTextWrap.style.display = 'none';
             }
             
-            subtitleTextWrap.style.lineHeight = "1.3";
+            subtitleTextWrap.style.lineHeight = "1.4";
+            subtitleTextWrap.style.whiteSpace = "pre-wrap";
+            subtitleTextWrap.style.wordBreak = "break-word";
             subtitleTextWrap.style.cursor = 'text';
             subtitleTextWrap.style.padding = '2px';
             subtitleTextWrap.style.margin = '2px -2px -2px -2px';
@@ -5568,7 +5570,7 @@ function renderKanbanApp(activeBoard) {
                 subtitleTextWrap.contentEditable = 'false';
                 subtitleTextWrap.style.background = '';
                 subtitleTextWrap.style.cursor = 'pointer';
-                const newSubtitle = subtitleTextWrap.textContent.trim();
+                const newSubtitle = subtitleTextWrap.innerText.trim();
                 
                 if (newSubtitle && newSubtitle !== 'Add subtitle...') {
                     if (newSubtitle !== activeBoard.cardSubtitles[card.id]) {
@@ -5589,7 +5591,7 @@ function renderKanbanApp(activeBoard) {
                 }
             };
                 subtitleTextWrap.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         subtitleTextWrap.blur();
                     }
