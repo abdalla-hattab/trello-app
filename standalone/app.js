@@ -762,7 +762,7 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
                     reactivateBtn.textContent = 'Reactivating...';
                     reactivateBtn.disabled = true;
                     try {
-                        const targetListId = targetLocalCard.trelloListId || targetLocalList.trelloListId;
+                        const targetListId = targetLocalCard.trelloListId || targetLocalCard.trelloTasksListId || targetLocalList.trelloListId || targetLocalList.trelloTasksListId;
                         if (!targetListId) throw new Error("Could not determine Trello list ID.");
 
                         const formData = new URLSearchParams();
