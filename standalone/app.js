@@ -5545,7 +5545,7 @@ function renderKanbanApp(activeBoard) {
             leftCol.appendChild(titleTextWrap);
             
             let subtitleTextWrap = null;
-            if (list.trackerType === 'ads') {
+            if (list.trackerType === 'ads' || card.isPipedrive || list.pipedriveStageId) {
                 if (!activeBoard.cardSubtitles) activeBoard.cardSubtitles = {};
                 subtitleTextWrap = document.createElement('span');
             subtitleTextWrap.innerText = activeBoard.cardSubtitles[card.id] || 'Add subtitle...';
@@ -7024,6 +7024,52 @@ function renderKanbanApp(activeBoard) {
 
                     badgeWrap.appendChild(toggleBadge);
                     badgeWrap.appendChild(statsWrap);
+                } else if (card.isPipedrive || list.pipedriveStageId) {
+                    const pipedriveFooterWrap = document.createElement('div');
+                    pipedriveFooterWrap.style.display = "flex";
+                    pipedriveFooterWrap.style.alignItems = "center";
+                    pipedriveFooterWrap.style.gap = "6px";
+                    pipedriveFooterWrap.style.marginTop = "8px";
+                    pipedriveFooterWrap.style.width = "100%";
+
+                    const addSubtitleFooterBtn = document.createElement('div');
+                    addSubtitleFooterBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
+                    addSubtitleFooterBtn.style.cursor = 'pointer';
+                    addSubtitleFooterBtn.style.color = '#7A869A';
+                    addSubtitleFooterBtn.style.background = '#f4f5f7';
+                    addSubtitleFooterBtn.style.padding = '4px';
+                    addSubtitleFooterBtn.style.borderRadius = '50%';
+                    addSubtitleFooterBtn.style.display = 'flex';
+                    addSubtitleFooterBtn.style.alignItems = 'center';
+                    addSubtitleFooterBtn.style.justifyContent = 'center';
+                    addSubtitleFooterBtn.title = 'Add Subtitle';
+                    addSubtitleFooterBtn.style.transition = 'all 0.2s ease';
+                    
+                    if (!activeBoard.cardSubtitles || !activeBoard.cardSubtitles[card.id]) {
+                        addSubtitleFooterBtn.style.display = 'flex';
+                    } else {
+                        addSubtitleFooterBtn.style.display = 'none';
+                    }
+
+                    addSubtitleFooterBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (subtitleTextWrap) {
+                            subtitleTextWrap.style.display = 'block';
+                            addSubtitleFooterBtn.style.display = 'none';
+                            subtitleTextWrap.contentEditable = 'true';
+                            setTimeout(() => subtitleTextWrap.focus(), 10);
+                            if (subtitleTextWrap.textContent === 'Add subtitle...') {
+                                subtitleTextWrap.textContent = '';
+                            }
+                        }
+                    };
+
+                    pipedriveFooterWrap.appendChild(addSubtitleFooterBtn);
+                    badgeWrap.appendChild(pipedriveFooterWrap);
+                    
+                    if (subtitleTextWrap) {
+                        subtitleTextWrap._footerBtn = addSubtitleFooterBtn;
+                    }
                 }
             }
             
