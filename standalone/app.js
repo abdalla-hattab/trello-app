@@ -5564,66 +5564,81 @@ function renderKanbanApp(activeBoard) {
             titleTextWrap.style.outline = 'none';
             titleTextWrap.dir = 'auto';
             
-            if (!card.isTrello) {
+            titleTextWrap.contentEditable = 'false';
+            if(titleTextWrap) titleTextWrap.onclick = (e) => {
+                e.stopPropagation();
+                if (titleTextWrap.contentEditable !== 'true') {
+                    titleTextWrap.contentEditable = 'true';
+                    setTimeout(() => {
+                        titleTextWrap.focus();
+                        // Optional: Select text
+                    }, 10);
+                }
+            };
+            titleTextWrap.onfocus = () => {
+                titleTextWrap.style.background = 'rgba(9, 30, 66, 0.08)';
+                titleTextWrap.style.cursor = 'text';
+            };
+            titleTextWrap.onblur = async () => {
                 titleTextWrap.contentEditable = 'false';
-                if(titleTextWrap) titleTextWrap.onclick = (e) => {
-                    e.stopPropagation();
-                    if (titleTextWrap.contentEditable !== 'true') {
-                        titleTextWrap.contentEditable = 'true';
-                        setTimeout(() => {
-                            titleTextWrap.focus();
-                            // Optional: Select text
-                        }, 10);
-                    }
-                };
-                titleTextWrap.onfocus = () => {
-                    titleTextWrap.style.background = 'rgba(9, 30, 66, 0.08)';
-                    titleTextWrap.style.cursor = 'text';
-                };
-                titleTextWrap.onblur = async () => {
-                    titleTextWrap.contentEditable = 'false';
-                    titleTextWrap.style.background = '';
-                    titleTextWrap.style.cursor = 'pointer';
-                    const newTitle = titleTextWrap.textContent.trim();
-                    if (newTitle && newTitle !== card.title) {
-                        const oldTitle = card.title;
-                        card.title = newTitle;
-                        saveState();
-                        render();
-                        
-                        if (card.isPipedrive) {
-                            const pId = String(card.id).replace('pd_', '');
-                            try {
-                                const res = await fetch(`https://${pipedriveDomain}.pipedrive.com/api/v1/deals/${pId}?api_token=${pipedriveToken}`, {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ title: newTitle })
-                                });
-                                if (!res.ok) throw new Error("Failed");
-                                if (card.pipedriveData) card.pipedriveData.title = newTitle;
-                                syncPipedrive();
-                                const modalInput = document.getElementById('pipedriveActionDealTitleInput');
-                                if (modalInput && typeof activePipedriveDealId !== 'undefined' && activePipedriveDealId === pId) {
-                                    modalInput.value = newTitle;
-                                }
-                            } catch (e) {
-                                showToast("Failed to rename Pipedrive deal");
-                                card.title = oldTitle;
-                                saveState();
-                                render();
+                titleTextWrap.style.background = '';
+                titleTextWrap.style.cursor = 'pointer';
+                const newTitle = titleTextWrap.textContent.trim();
+                if (newTitle && newTitle !== card.title) {
+                    const oldTitle = card.title;
+                    card.title = newTitle;
+                    saveState();
+                    render();
+                    
+                    if (card.isPipedrive) {
+                        const pId = String(card.id).replace('pd_', '');
+                        try {
+                            const res = await fetch(`https://${pipedriveDomain}.pipedrive.com/api/v1/deals/${pId}?api_token=${pipedriveToken}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ title: newTitle })
+                            });
+                            if (!res.ok) throw new Error("Failed");
+                            if (card.pipedriveData) card.pipedriveData.title = newTitle;
+                            syncPipedrive();
+                            const modalInput = document.getElementById('pipedriveActionDealTitleInput');
+                            if (modalInput && typeof activePipedriveDealId !== 'undefined' && activePipedriveDealId === pId) {
+                                modalInput.value = newTitle;
                             }
+                        } catch (e) {
+                            showToast("Failed to rename Pipedrive deal");
+                            card.title = oldTitle;
+                            saveState();
+                            render();
                         }
-                    } else {
-                        titleTextWrap.textContent = card.title;
+                    } else if (card.isTrello || card.isTrelloTask) {
+                        try {
+                            const trKey = localStorage.getItem('trelloKey');
+                            const trToken = localStorage.getItem('trelloToken');
+                            const res = await fetch(`https://api.trello.com/1/cards/${card.id}?key=${trKey}&token=${trToken}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: newTitle })
+                            });
+                            if (!res.ok) throw new Error("Failed connecting to Trello API");
+                            // sync should happen naturally in background, no need to trigger explicit sync
+                        } catch (e) {
+                            showToast("Failed to rename Trello task");
+                            card.title = oldTitle;
+                            saveState();
+                            render();
+                        }
                     }
-                };
-                titleTextWrap.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        titleTextWrap.blur();
-                    }
-                };
-            }
+                } else {
+                    titleTextWrap.textContent = card.title;
+                }
+            };
+            titleTextWrap.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    titleTextWrap.blur();
+                }
+            };
             
             leftCol.appendChild(titleTextWrap);
             
