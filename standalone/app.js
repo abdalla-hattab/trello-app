@@ -739,8 +739,75 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
             
             const deleteBtn = document.getElementById('trelloCardDeleteBtn');
             if (deleteBtn) deleteBtn.style.display = 'none';
+
+            const deletedActions = document.getElementById('trelloCardDeletedActions');
+            if (deletedActions) deletedActions.style.display = 'flex';
+
+            const localRemoveBtn = document.getElementById('trelloCardLocalRemoveBtn');
+            if (localRemoveBtn) {
+                localRemoveBtn.onclick = () => {
+                    activeBoard.lists.forEach(l => {
+                        l.cards = l.cards.filter(c => c.id !== cardId);
+                    });
+                    saveState();
+                    render();
+                    trelloCardDetailsModal.classList.remove('active');
+                    showToast("Card removed locally.");
+                };
+            }
+
+            const reactivateBtn = document.getElementById('trelloCardReactivateBtn');
+            if (reactivateBtn) {
+                reactivateBtn.onclick = async () => {
+                    reactivateBtn.textContent = 'Reactivating...';
+                    reactivateBtn.disabled = true;
+                    try {
+                        const targetListId = targetLocalCard.trelloListId || targetLocalList.trelloListId;
+                        if (!targetListId) throw new Error("Could not determine Trello list ID.");
+
+                        const formData = new URLSearchParams();
+                        formData.append('key', trelloKey);
+                        formData.append('token', trelloToken);
+                        formData.append('name', targetLocalCard.title || 'Completed Task');
+                        formData.append('desc', targetLocalCard.desc || '');
+                        formData.append('idList', targetListId);
+
+                        const res = await fetch(`https://api.trello.com/1/cards`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: formData
+                        });
+                        
+                        if (!res.ok) throw new Error(`Failed to create card in Trello (${res.status})`);
+                        
+                        const newCard = await res.json();
+                        
+                        activeBoard.lists.forEach(l => {
+                            const cIndex = l.cards.findIndex(c => c.id === cardId);
+                            if (cIndex !== -1) {
+                                l.cards[cIndex].id = newCard.id;
+                                l.cards[cIndex].isTrelloDeleted = false;
+                            }
+                        });
+                        
+                        saveState();
+                        render();
+                        trelloCardDetailsModal.classList.remove('active');
+                        showToast("Card reactivated in Trello!");
+                        reactivateBtn.textContent = 'Reactivate it';
+                        reactivateBtn.disabled = false;
+                    } catch (err) {
+                        showToast("Failed to reactivate card: " + err.message);
+                        reactivateBtn.textContent = 'Reactivate it';
+                        reactivateBtn.disabled = false;
+                    }
+                };
+            }
             return;
         }
+
+        const deletedActions = document.getElementById('trelloCardDeletedActions');
+        if (deletedActions) deletedActions.style.display = 'none';
 
         const res = await fetch(`https://api.trello.com/1/cards/${cardId}?fields=name,desc&key=${trelloKey}&token=${trelloToken}`);
         if (!res.ok) throw new Error("Failed to fetch card details");

@@ -733,6 +733,11 @@
                     <button id="trelloCardSaveBtn" style="width: 100%; padding: 10px; background: #0c66e4; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Save Description & Title to Trello</button>
                     <div id="trelloCardSaveStatus" style="font-size: 11px; text-align: center; margin-top: 6px; color: #00875A; font-weight: 600; opacity: 0; transition: opacity 0.3s;">Saved Details Globally!</div>
                     <button id="trelloCardDeleteBtn" style="width: 100%; padding: 8px; background: transparent; color: #c9372c; border: 1px solid #ffbdad; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 16px;" onmouseover="this.style.background='#fff2f0'" onmouseout="this.style.background='transparent'">Delete Card from Trello</button>
+                    
+                    <div id="trelloCardDeletedActions" style="display: none; flex-direction: column; gap: 8px; margin-top: 16px;">
+                        <button id="trelloCardLocalRemoveBtn" style="width: 100%; padding: 10px; background: #ffebe6; color: #bf2600; border: 1px solid #ffbdad; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Delete it for me after it's done</button>
+                        <button id="trelloCardReactivateBtn" style="width: 100%; padding: 10px; background: #e3fcef; color: #006644; border: 1px solid #abf5d1; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Reactivate it</button>
+                    </div>
                 </div>
 
                 <div id="trelloHistorySection">
