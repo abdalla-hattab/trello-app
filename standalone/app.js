@@ -726,6 +726,22 @@ window.openTrelloCardDetailsModal = async function(cardId, listId) {
     trelloCardDetailsModal.classList.add('active');
     
     try {
+        if (targetLocalCard && targetLocalCard.isTrelloDeleted) {
+            titleInput.value = targetLocalCard.title || 'Completed Task';
+            descInput.value = targetLocalCard.desc || 'This card was completed and removed from Trello.';
+            titleInput.disabled = true;
+            descInput.disabled = true;
+            saveBtn.disabled = true;
+            saveBtn.style.opacity = '0.5';
+            
+            const previewArea = document.getElementById('trelloCardDescPreviewArea');
+            if (previewArea) previewArea.innerHTML = '';
+            
+            const deleteBtn = document.getElementById('trelloCardDeleteBtn');
+            if (deleteBtn) deleteBtn.style.display = 'none';
+            return;
+        }
+
         const res = await fetch(`https://api.trello.com/1/cards/${cardId}?fields=name,desc&key=${trelloKey}&token=${trelloToken}`);
         if (!res.ok) throw new Error("Failed to fetch card details");
         const cardData = await res.json();
