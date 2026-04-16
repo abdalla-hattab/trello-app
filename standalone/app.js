@@ -7248,7 +7248,8 @@ function renderKanbanApp(activeBoard) {
                     const ageBadge = document.createElement('div');
                     ageBadge.className = 'badge badge-timer trello-age-clock';
                     if (list.isClientHappiness || list.isMoneySmelling) ageBadge.classList.add('hide-hours');
-                    ageBadge.dataset.startTime = creationTimestamp;
+                    const finalStartTime = card.startTime || creationTimestamp;
+                    ageBadge.dataset.startTime = finalStartTime;
                     
                     if (!activeBoard.clientHappinessData) activeBoard.clientHappinessData = {};
                     if (!activeBoard.cardColors) activeBoard.cardColors = {};
