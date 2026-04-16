@@ -7172,7 +7172,10 @@ function renderKanbanApp(activeBoard) {
             let creationTimestamp = 0;
             let showAgeBadge = false;
             
-            if (card.id && String(card.id).length === 24) {
+            if (card.customCreationTimestamp) {
+                creationTimestamp = card.customCreationTimestamp;
+                showAgeBadge = true;
+            } else if (card.id && String(card.id).length === 24) {
                 const hexTimestamp = card.id.substring(0, 8);
                 creationTimestamp = parseInt(hexTimestamp, 16) * 1000;
                 showAgeBadge = true;
@@ -7182,7 +7185,7 @@ function renderKanbanApp(activeBoard) {
                     showAgeBadge = true;
                 }
             } else if (list.isClientHappiness || list.isMoneySmelling || !card.isTrello) {
-                creationTimestamp = card.customCreationTimestamp || parseInt(String(card.id).replace('loc_', ''), 10);
+                creationTimestamp = parseInt(String(card.id).replace('loc_', ''), 10);
                 if (!isNaN(creationTimestamp) && creationTimestamp > 1000000000000) {
                     showAgeBadge = true;
                 }
@@ -7248,8 +7251,7 @@ function renderKanbanApp(activeBoard) {
                     const ageBadge = document.createElement('div');
                     ageBadge.className = 'badge badge-timer trello-age-clock';
                     if (list.isClientHappiness || list.isMoneySmelling) ageBadge.classList.add('hide-hours');
-                    const finalStartTime = card.startTime || creationTimestamp;
-                    ageBadge.dataset.startTime = finalStartTime;
+                    ageBadge.dataset.startTime = creationTimestamp;
                     
                     if (!activeBoard.clientHappinessData) activeBoard.clientHappinessData = {};
                     if (!activeBoard.cardColors) activeBoard.cardColors = {};
