@@ -4066,7 +4066,7 @@ function renderKanbanApp(activeBoard) {
         }
 
         const isMeList = list.title && list.title.toLowerCase() === 'me';
-        if ((list.trelloTasksListId || list.trelloBoardId || list.trelloListId) && list.trackerType !== 'ads' && list.cards.length === 0 && !hiddenListIds.has(list.id) && !isMeList) {
+        if (!list.trelloTasksListId && (list.trelloBoardId || list.trelloListId) && list.trackerType !== 'ads' && list.cards.length === 0 && !hiddenListIds.has(list.id) && !isMeList) {
             isFilteredOut = true;
         }
         
@@ -7172,10 +7172,7 @@ function renderKanbanApp(activeBoard) {
             let creationTimestamp = 0;
             let showAgeBadge = false;
             
-            if (card.customCreationTimestamp) {
-                creationTimestamp = card.customCreationTimestamp;
-                showAgeBadge = true;
-            } else if (card.id && String(card.id).length === 24) {
+            if (card.id && String(card.id).length === 24) {
                 const hexTimestamp = card.id.substring(0, 8);
                 creationTimestamp = parseInt(hexTimestamp, 16) * 1000;
                 showAgeBadge = true;
@@ -7185,7 +7182,7 @@ function renderKanbanApp(activeBoard) {
                     showAgeBadge = true;
                 }
             } else if (list.isClientHappiness || list.isMoneySmelling || !card.isTrello) {
-                creationTimestamp = parseInt(String(card.id).replace('loc_', ''), 10);
+                creationTimestamp = card.customCreationTimestamp || parseInt(String(card.id).replace('loc_', ''), 10);
                 if (!isNaN(creationTimestamp) && creationTimestamp > 1000000000000) {
                     showAgeBadge = true;
                 }
@@ -10428,8 +10425,8 @@ window.applySmartPacking = function(curBoard) {
                                 }
                             });
                         }
-                        // Baseline check: if a Trello tracker list is completely empty, it will be hidden from the canvas by the render() function.
-                        if (!listHiddenByFilter && targetList.cards && targetList.cards.length === 0 && (targetList.trelloTasksListId || targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && (!targetList.title || targetList.title.toLowerCase() !== 'me')) {
+                        // Baseline check: if a regular Trello tracker list is completely empty, it will be hidden from the canvas by the render() function. (Trello Task lists always remain visible)
+                        if (!listHiddenByFilter && targetList.cards && targetList.cards.length === 0 && !targetList.trelloTasksListId && (targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && (!targetList.title || targetList.title.toLowerCase() !== 'me')) {
                             listHiddenByFilter = true;
                         }
 
