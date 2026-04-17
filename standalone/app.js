@@ -5424,6 +5424,12 @@ function renderKanbanApp(activeBoard) {
                         }
                     });
 
+                    // Pinpoint the exact visual icon to use as an animation origin/destination
+                    const sRect = svgNode.getBoundingClientRect();
+                    const cRect = canvasContent.getBoundingClientRect();
+                    const iconX = (sRect.left + (sRect.width / 2) - cRect.left) / activeBoard.camera.z;
+                    const iconY = (sRect.top + (sRect.height / 2) - cRect.top) / activeBoard.camera.z;
+
                     if (willCollapse) {
                         list.collapsedEdges.push(collapseKey);
                         saveState();
@@ -5432,15 +5438,8 @@ function renderKanbanApp(activeBoard) {
                             const el = document.querySelector(`.kanban-list[data-id="${tid}"]`);
                             if (el) {
                                 el.classList.add('hidden-list');
-                                const tConn = activeBoard.connections.find(c => c.target === tid);
-                                if (tConn) {
-                                    const pEl = document.querySelector(`.kanban-list[data-id="${tConn.source}"]`);
-                                    if (pEl) {
-                                        const pInfo = getPortInfo(pEl, tConn.sourcePort || 'right');
-                                        el.style.left = `${pInfo.px - 160}px`;
-                                        el.style.top = `${pInfo.py - (el.offsetHeight / 2)}px`;
-                                    }
-                                }
+                                el.style.left = `${iconX - 160}px`; // Shrink into exactly the icon
+                                el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
                             }
                         });
                         
@@ -5451,7 +5450,7 @@ function renderKanbanApp(activeBoard) {
                         saveState();
                         
                         if (typeof animatingOrigins !== 'undefined') {
-                            animatingOrigins[list.id + '-' + edge] = getPortInfo(listContainer, edge);
+                            animatingOrigins[list.id + '-' + edge] = { px: iconX, py: iconY, nx: 0, ny: 1 };
                         }
 
                         specificTargets.forEach(tid => animatingOutIds.add(tid));
