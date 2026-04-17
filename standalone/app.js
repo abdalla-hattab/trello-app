@@ -115,6 +115,8 @@ function initFirebaseSync() {
                 }));
                 rootRef.set(cleanState).catch(e => console.error("Firebase initial dump error:", e));
             }
+        }
+        
         isFirebaseSynced = true;
 
         
