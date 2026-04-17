@@ -4059,7 +4059,10 @@ function renderKanbanApp(activeBoard) {
         activeBoard.camera.z = newZ;
         
         updateTransform();
-        saveState();
+        
+        // Debounce cloud saving during zoom to prevent severe network/CPU lag
+        if (window.zoomSaveTimeout) clearTimeout(window.zoomSaveTimeout);
+        window.zoomSaveTimeout = setTimeout(() => saveState(), 300);
     }, { passive: false });
 
     if(canvas) canvas.addEventListener('mousedown', (e) => {
