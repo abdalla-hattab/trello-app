@@ -73,9 +73,11 @@ function initFirebaseSync() {
     rootRef.once('value').then(snap => {
         const remoteData = snap.val();
         
+        const firebaseStr = (obj) => JSON.stringify(obj, (k, v) => (Array.isArray(v) && v.length === 0) ? undefined : v);
+
         if (remoteData && remoteData.boards) {
-            const localStr = JSON.stringify(boards);
-            const remoteStr = JSON.stringify(remoteData.boards);
+            const localStr = firebaseStr(boards);
+            const remoteStr = firebaseStr(remoteData.boards);
 
             // Server has data, use it!
             boards = remoteData.boards;
@@ -128,8 +130,8 @@ function initFirebaseSync() {
             if (!isFirebaseSynced) return; 
             const updated = snapshot.val();
             if (updated && updated.boards) {
-                const localStr = JSON.stringify(boards);
-                const remoteStr = JSON.stringify(updated.boards);
+                const localStr = firebaseStr(boards);
+                const remoteStr = firebaseStr(updated.boards);
                 
                 // Always ensure structure to inject missing Firebase arrays for incoming updates
                 boards = updated.boards;
