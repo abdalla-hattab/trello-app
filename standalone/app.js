@@ -3,21 +3,21 @@ let activeBoardId = localStorage.getItem('ai_active_board_id'); // fixed legacy 
 let activeCardId = null;
 let activeTargetListId = null;
 let isGlobalDragging = false;
+let isFirebaseSynced = false;
 
 // Migration from the old mixed storage 'ai_accounts_lists'
 let rawOldListsData = localStorage.getItem('ai_accounts_lists');
 let rawPrivate = localStorage.getItem('ai_private_boards');
 
+// Fallback init
 if (rawPrivate) {
     boards = JSON.parse(rawPrivate);
 } else if (rawOldListsData) {
-    // One time migration: extract private boards from old mixed storage
     let oldBoards = JSON.parse(rawOldListsData);
     boards = oldBoards.filter(b => b.type !== 'social_scheduler');
     localStorage.setItem('ai_private_boards', JSON.stringify(boards));
 }
 
-// Migrate Kanban structure
 function ensureBoardStructure() {
     boards.forEach(b => {
         if (!b.type) {
@@ -41,8 +41,96 @@ function ensureBoardStructure() {
 
     if (!activeBoardId && boards.length > 0) activeBoardId = boards[0].id;
 }
-
 ensureBoardStructure();
+
+// FIREBASE INITIALIZATION
+let fdb = null;
+if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+        firebase.initializeApp({
+            apiKey: "AIzaSyC7Ty_uaB7VE8ucSPS6ZlMNFAcnM-qpagk",
+            authDomain: "managing-work-live.firebaseapp.com",
+            databaseURL: "https://managing-work-live-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "managing-work-live",
+            storageBucket: "managing-work-live.firebasestorage.app",
+            messagingSenderId: "402823749331",
+            appId: "1:402823749331:web:27b250c52a49db6091be26"
+        });
+    }
+    fdb = firebase.database();
+}
+
+function initFirebaseSync() {
+    if (!fdb) return;
+    const rootRef = fdb.ref('agency_trello_app_data');
+    
+    // Dim the screen while loading globally
+    const blockOverlay = document.createElement('div');
+    blockOverlay.style.position = 'fixed';
+    blockOverlay.style.top = '0';
+    blockOverlay.style.left = '0';
+    blockOverlay.style.width = '100vw';
+    blockOverlay.style.height = '100vh';
+    blockOverlay.style.backgroundColor = 'rgba(9, 30, 66, 0.5)';
+    blockOverlay.style.zIndex = '9999999';
+    blockOverlay.style.display = 'flex';
+    blockOverlay.style.alignItems = 'center';
+    blockOverlay.style.justifyContent = 'center';
+    blockOverlay.style.color = '#fff';
+    blockOverlay.style.fontFamily = 'Inter, sans-serif';
+    blockOverlay.style.fontSize = '24px';
+    blockOverlay.style.fontWeight = 'bold';
+    blockOverlay.innerHTML = `<div>Syncing Database...</div>`;
+    document.body.appendChild(blockOverlay);
+    
+    rootRef.once('value').then(snap => {
+        const remoteData = snap.val();
+        
+        if (remoteData && remoteData.boards) {
+            // Server has data, use it!
+            boards = remoteData.boards;
+            activeBoardId = remoteData.activeBoardId || activeBoardId;
+            localStorage.setItem('ai_private_boards', JSON.stringify(boards));
+            localStorage.setItem('ai_active_board_id', activeBoardId || '');
+            ensureBoardStructure();
+            if (typeof render === 'function') render();
+            if (typeof initKanbanPan === 'function') initKanbanPan();
+        } else {
+            // Server has NO data! This is the virgin DB.
+            // Seed it with current localhost data (if we have boards).
+            if (boards.length > 0) {
+                rootRef.set({
+                    boards: boards,
+                    activeBoardId: activeBoardId || null
+                });
+            }
+        }
+        
+        isFirebaseSynced = true;
+        blockOverlay.remove();
+        
+        // Listen for realtime remote changes (from other tabs / browsers)
+        rootRef.on('value', (snapshot) => {
+            if (!isFirebaseSynced) return; 
+            const updated = snapshot.val();
+            if (updated && updated.boards) {
+                const localStr = JSON.stringify(boards);
+                const remoteStr = JSON.stringify(updated.boards);
+                // Simple delta check
+                if (localStr !== remoteStr) {
+                    boards = updated.boards;
+                    activeBoardId = updated.activeBoardId || activeBoardId;
+                    ensureBoardStructure();
+                    if (typeof render === 'function') render();
+                }
+            }
+        });
+    }).catch(err => {
+        console.error("Firebase sync failed:", err);
+        isFirebaseSynced = true; // Fallback to local
+        blockOverlay.remove();
+    });
+}
 
 function saveState() {
     boards.forEach(board => {
@@ -64,7 +152,15 @@ function saveState() {
     
     // Save locally
     localStorage.setItem('ai_private_boards', JSON.stringify(boards));
-    localStorage.setItem('ai_active_board_id', activeBoardId);
+    localStorage.setItem('ai_active_board_id', activeBoardId || '');
+    
+    // Save to Firebase backend
+    if (fdb && isFirebaseSynced) {
+        fdb.ref('agency_trello_app_data').set({
+            boards: boards,
+            activeBoardId: activeBoardId || null
+        });
+    }
     
     // Once migrated successfully, delete the old mixed state string to save local space
     if (localStorage.getItem('ai_accounts_lists')) {
@@ -11259,3 +11355,7 @@ setInterval(() => {
         }
     }
 }, 60000);
+
+document.addEventListener('DOMContentLoaded', () => {
+    initFirebaseSync();
+});
