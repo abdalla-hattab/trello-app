@@ -108,6 +108,7 @@ function initFirebaseSync() {
         
         isFirebaseSynced = true;
         blockOverlay.remove();
+        if (timeoutId) clearTimeout(timeoutId);
         
         // Listen for realtime remote changes (from other tabs / browsers)
         rootRef.on('value', (snapshot) => {
@@ -127,9 +128,20 @@ function initFirebaseSync() {
         });
     }).catch(err => {
         console.error("Firebase sync failed:", err);
-        isFirebaseSynced = true; // Fallback to local
+        isFirebaseSynced = false; // Fallback to local
         blockOverlay.remove();
+        if (timeoutId) clearTimeout(timeoutId);
     });
+
+    // 5 Second Fallback Failsafe
+    const timeoutId = setTimeout(() => {
+        if (!isFirebaseSynced) {
+            console.warn("Firebase sync timed out. Falling back to local storage.");
+            blockOverlay.remove();
+            if (typeof render === 'function') render();
+            if (typeof initKanbanPan === 'function') initKanbanPan();
+        }
+    }, 5000);
 }
 
 function saveState() {
