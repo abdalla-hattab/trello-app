@@ -99,10 +99,13 @@ function initFirebaseSync() {
             // Server has NO data! This is the virgin DB.
             // Seed it with current localhost data (if we have boards).
             if (boards.length > 0) {
-                rootRef.set({
+                // IMPORTANT: Firebase RTDB crashes immediately if the object contains 'undefined'. 
+                // We must forcefully stringify and parse to strip all undefined keys.
+                const cleanState = JSON.parse(JSON.stringify({
                     boards: boards,
                     activeBoardId: activeBoardId || null
-                });
+                }));
+                rootRef.set(cleanState).catch(e => console.error("Firebase initial dump error:", e));
             }
         }
         
@@ -168,10 +171,11 @@ function saveState() {
     
     // Save to Firebase backend
     if (fdb && isFirebaseSynced) {
-        fdb.ref('agency_trello_app_data').set({
+        const cleanState = JSON.parse(JSON.stringify({
             boards: boards,
             activeBoardId: activeBoardId || null
-        });
+        }));
+        fdb.ref('agency_trello_app_data').set(cleanState).catch(e => console.error("Firebase saveState error:", e));
     }
     
     // Once migrated successfully, delete the old mixed state string to save local space
