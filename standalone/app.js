@@ -65,25 +65,11 @@ function initFirebaseSync() {
     if (!fdb) return;
     const rootRef = fdb.ref('agency_trello_app_data');
     
-    // Dim the screen while loading globally
-    const blockOverlay = document.createElement('div');
-    blockOverlay.style.position = 'fixed';
-    blockOverlay.style.top = '0';
-    blockOverlay.style.left = '0';
-    blockOverlay.style.width = '100vw';
-    blockOverlay.style.height = '100vh';
-    blockOverlay.style.backgroundColor = 'rgba(9, 30, 66, 0.5)';
-    blockOverlay.style.zIndex = '9999999';
-    blockOverlay.style.display = 'flex';
-    blockOverlay.style.alignItems = 'center';
-    blockOverlay.style.justifyContent = 'center';
-    blockOverlay.style.color = '#fff';
-    blockOverlay.style.fontFamily = 'Inter, sans-serif';
-    blockOverlay.style.fontSize = '24px';
-    blockOverlay.style.fontWeight = 'bold';
-    blockOverlay.innerHTML = `<div>Syncing Database...</div>`;
-    document.body.appendChild(blockOverlay);
-    
+    // Optimistic UI: Render whatever we have in localStorage immediately.
+    ensureBoardStructure();
+    if (typeof render === 'function') render();
+    if (typeof initKanbanPan === 'function') initKanbanPan();
+
     rootRef.once('value').then(snap => {
         const remoteData = snap.val();
         
@@ -102,9 +88,15 @@ function initFirebaseSync() {
                 if (remoteData.settings.pipedriveToken) { localStorage.setItem('pipedriveToken', remoteData.settings.pipedriveToken); pipedriveToken = remoteData.settings.pipedriveToken; }
             }
             
-            ensureBoardStructure();
-            if (typeof render === 'function') render();
-            if (typeof initKanbanPan === 'function') initKanbanPan();
+            const localStr = JSON.stringify(boards);
+            const remoteStr = JSON.stringify(remoteData.boards);
+            
+            // Only re-render if the cloud actually has different data than what we just optimistically rendered
+            if (localStr !== remoteStr) {
+                ensureBoardStructure();
+                if (typeof render === 'function') render();
+                if (typeof initKanbanPan === 'function') initKanbanPan();
+            }
         } else {
             // Server has NO data! This is the virgin DB.
             // Seed it with current localhost data (if we have boards).
@@ -123,13 +115,8 @@ function initFirebaseSync() {
                 }));
                 rootRef.set(cleanState).catch(e => console.error("Firebase initial dump error:", e));
             }
-            if (typeof render === 'function') render();
-            if (typeof initKanbanPan === 'function') initKanbanPan();
-        }
-        
         isFirebaseSynced = true;
-        blockOverlay.remove();
-        if (timeoutId) clearTimeout(timeoutId);
+
         
         // Listen for realtime remote changes (from other tabs / browsers)
         rootRef.on('value', (snapshot) => {
@@ -157,20 +144,8 @@ function initFirebaseSync() {
         });
     }).catch(err => {
         console.error("Firebase sync failed:", err);
-        isFirebaseSynced = false; // Fallback to local
-        blockOverlay.remove();
-        if (timeoutId) clearTimeout(timeoutId);
+        isFirebaseSynced = false;
     });
-
-    // 5 Second Fallback Failsafe
-    const timeoutId = setTimeout(() => {
-        if (!isFirebaseSynced) {
-            console.warn("Firebase sync timed out. Falling back to local storage.");
-            blockOverlay.remove();
-            if (typeof render === 'function') render();
-            if (typeof initKanbanPan === 'function') initKanbanPan();
-        }
-    }, 5000);
 }
 
 function saveState() {
