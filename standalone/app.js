@@ -93,6 +93,15 @@ function initFirebaseSync() {
             activeBoardId = remoteData.activeBoardId || activeBoardId;
             localStorage.setItem('ai_private_boards', JSON.stringify(boards));
             localStorage.setItem('ai_active_board_id', activeBoardId || '');
+            
+            // Sync credentials from cloud
+            if (remoteData.settings) {
+                if (remoteData.settings.trelloKey) { localStorage.setItem('trelloKey', remoteData.settings.trelloKey); trelloKey = remoteData.settings.trelloKey; }
+                if (remoteData.settings.trelloToken) { localStorage.setItem('trelloToken', remoteData.settings.trelloToken); trelloToken = remoteData.settings.trelloToken; }
+                if (remoteData.settings.pipedriveDomain) { localStorage.setItem('pipedriveDomain', remoteData.settings.pipedriveDomain); pipedriveDomain = remoteData.settings.pipedriveDomain; }
+                if (remoteData.settings.pipedriveToken) { localStorage.setItem('pipedriveToken', remoteData.settings.pipedriveToken); pipedriveToken = remoteData.settings.pipedriveToken; }
+            }
+            
             ensureBoardStructure();
             if (typeof render === 'function') render();
             if (typeof initKanbanPan === 'function') initKanbanPan();
@@ -104,7 +113,13 @@ function initFirebaseSync() {
                 // We must forcefully stringify and parse to strip all undefined keys.
                 const cleanState = JSON.parse(JSON.stringify({
                     boards: boards,
-                    activeBoardId: activeBoardId || null
+                    activeBoardId: activeBoardId || null,
+                    settings: {
+                        trelloKey: localStorage.getItem('trelloKey') || '',
+                        trelloToken: localStorage.getItem('trelloToken') || '',
+                        pipedriveDomain: localStorage.getItem('pipedriveDomain') || '',
+                        pipedriveToken: localStorage.getItem('pipedriveToken') || ''
+                    }
                 }));
                 rootRef.set(cleanState).catch(e => console.error("Firebase initial dump error:", e));
             }
@@ -123,12 +138,20 @@ function initFirebaseSync() {
             if (updated && updated.boards) {
                 const localStr = JSON.stringify(boards);
                 const remoteStr = JSON.stringify(updated.boards);
-                // Simple delta check
+                // Simple delta check for boards
                 if (localStr !== remoteStr) {
                     boards = updated.boards;
                     activeBoardId = updated.activeBoardId || activeBoardId;
                     ensureBoardStructure();
                     if (typeof render === 'function') render();
+                }
+                
+                // Keep credentials softly refreshed
+                if (updated.settings) {
+                    if (updated.settings.trelloKey && updated.settings.trelloKey !== trelloKey) { localStorage.setItem('trelloKey', updated.settings.trelloKey); trelloKey = updated.settings.trelloKey; }
+                    if (updated.settings.trelloToken && updated.settings.trelloToken !== trelloToken) { localStorage.setItem('trelloToken', updated.settings.trelloToken); trelloToken = updated.settings.trelloToken; }
+                    if (updated.settings.pipedriveDomain && updated.settings.pipedriveDomain !== pipedriveDomain) { localStorage.setItem('pipedriveDomain', updated.settings.pipedriveDomain); pipedriveDomain = updated.settings.pipedriveDomain; }
+                    if (updated.settings.pipedriveToken && updated.settings.pipedriveToken !== pipedriveToken) { localStorage.setItem('pipedriveToken', updated.settings.pipedriveToken); pipedriveToken = updated.settings.pipedriveToken; }
                 }
             }
         });
@@ -176,7 +199,13 @@ function saveState() {
     if (fdb && isFirebaseSynced) {
         const cleanState = JSON.parse(JSON.stringify({
             boards: boards,
-            activeBoardId: activeBoardId || null
+            activeBoardId: activeBoardId || null,
+            settings: {
+                trelloKey: localStorage.getItem('trelloKey') || '',
+                trelloToken: localStorage.getItem('trelloToken') || '',
+                pipedriveDomain: localStorage.getItem('pipedriveDomain') || '',
+                pipedriveToken: localStorage.getItem('pipedriveToken') || ''
+            }
         }));
         fdb.ref('agency_trello_app_data').set(cleanState).catch(e => console.error("Firebase saveState error:", e));
     }
@@ -1122,6 +1151,7 @@ if (saveTrelloSettingsBtn) {
         
         trelloKey = key;
         trelloToken = token;
+        saveState(); // Sync credentials to cloud
         
         const curBoard = boards.find(b => b.id === activeBoardId);
         if (curBoard) {
