@@ -74,9 +74,16 @@ function initFirebaseSync() {
         const remoteData = snap.val();
         
         if (remoteData && remoteData.boards) {
+            const localStr = JSON.stringify(boards);
+            const remoteStr = JSON.stringify(remoteData.boards);
+
             // Server has data, use it!
             boards = remoteData.boards;
             activeBoardId = remoteData.activeBoardId || activeBoardId;
+
+            // ALWAYS ensure board structure since Firebase strips empty arrays like list.cards = []
+            ensureBoardStructure();
+
             localStorage.setItem('ai_private_boards', JSON.stringify(boards));
             localStorage.setItem('ai_active_board_id', activeBoardId || '');
             
@@ -88,12 +95,8 @@ function initFirebaseSync() {
                 if (remoteData.settings.pipedriveToken) { localStorage.setItem('pipedriveToken', remoteData.settings.pipedriveToken); pipedriveToken = remoteData.settings.pipedriveToken; }
             }
             
-            const localStr = JSON.stringify(boards);
-            const remoteStr = JSON.stringify(remoteData.boards);
-            
-            // Only re-render if the cloud actually has different data than what we just optimistically rendered
+            // Only re-render if the cloud actually has different data than what we optimistically rendered
             if (localStr !== remoteStr) {
-                ensureBoardStructure();
                 if (typeof render === 'function') render();
                 if (typeof initKanbanPan === 'function') initKanbanPan();
             }
@@ -127,11 +130,14 @@ function initFirebaseSync() {
             if (updated && updated.boards) {
                 const localStr = JSON.stringify(boards);
                 const remoteStr = JSON.stringify(updated.boards);
-                // Simple delta check for boards
+                
+                // Always ensure structure to inject missing Firebase arrays for incoming updates
+                boards = updated.boards;
+                activeBoardId = updated.activeBoardId || activeBoardId;
+                ensureBoardStructure();
+                
+                // Simple delta check for rendering
                 if (localStr !== remoteStr) {
-                    boards = updated.boards;
-                    activeBoardId = updated.activeBoardId || activeBoardId;
-                    ensureBoardStructure();
                     if (typeof render === 'function') render();
                 }
                 
