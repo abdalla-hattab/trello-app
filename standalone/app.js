@@ -107,6 +107,8 @@ function initFirebaseSync() {
                 }));
                 rootRef.set(cleanState).catch(e => console.error("Firebase initial dump error:", e));
             }
+            if (typeof render === 'function') render();
+            if (typeof initKanbanPan === 'function') initKanbanPan();
         }
         
         isFirebaseSynced = true;
