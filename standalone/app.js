@@ -3835,11 +3835,9 @@ function renderKanbanApp(activeBoard) {
             const targetEl = canvas.querySelector(`.kanban-list[data-id="${conn.target}"]`);
             if(!sourceEl || !targetEl) return;
             
+            // Always structurally draw connections toward hidden lists so they visually glide seamlessly all the way into the tracking icon singularity
             if (sourceEl.classList.contains('hidden-list') || targetEl.classList.contains('hidden-list')) {
-                // Determine if it actually finished scaling down (visually died)
-                const sourceR = sourceEl.getBoundingClientRect();
-                const targetR = targetEl.getBoundingClientRect();
-                if (sourceR.width < 100 || targetR.width < 100) return;
+                // By doing nothing, we allow getPortInfo to mathematically read the shrinking scale box down to 0 natively.
             }
             
             const sourceEdge = conn.sourcePort || 'right';
