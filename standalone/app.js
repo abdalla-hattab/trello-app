@@ -4,6 +4,7 @@ let activeCardId = null;
 let activeTargetListId = null;
 let isGlobalDragging = false;
 let isFirebaseSynced = false;
+const thisClientId = Math.random().toString(36).substr(2, 9);
 
 // Migration from the old mixed storage 'ai_accounts_lists'
 let rawOldListsData = localStorage.getItem('ai_accounts_lists');
@@ -129,6 +130,14 @@ function initFirebaseSync() {
         rootRef.on('value', (snapshot) => {
             if (!isFirebaseSynced) return; 
             const updated = snapshot.val();
+            
+            // Ignore echoes of our own writes since we already applied them optimistically.
+            // This prevents race conditions where rapid rapid panning saves old camera coordinates 
+            // that arrive back out-of-sync and snap the user back.
+            if (updated && updated.lastWriterTarget === thisClientId) {
+                return;
+            }
+            
             if (updated && updated.boards) {
                 const localStr = firebaseStr(boards);
                 const remoteStr = firebaseStr(updated.boards);
@@ -183,6 +192,7 @@ function saveState() {
     // Save to Firebase backend
     if (fdb && isFirebaseSynced) {
         const cleanState = JSON.parse(JSON.stringify({
+            lastWriterTarget: thisClientId,
             boards: boards,
             activeBoardId: activeBoardId || null,
             settings: {
@@ -7890,6 +7900,8 @@ function renderKanbanApp(activeBoard) {
             
             const addCardTimerSection = document.getElementById('addCardTimerSection');
             if (addCardTimerSection) addCardTimerSection.style.display = 'none';
+            const addCardPasswordGroup = document.getElementById('addCardPasswordGroup');
+            if (addCardPasswordGroup) addCardPasswordGroup.style.display = 'none';
             
             const isTrelloTask = !!list.trelloTasksListId;
             const isPipedrive = !!list.pipedriveStageId;
@@ -8929,6 +8941,8 @@ function renderTimerApp(activeBoard) {
         
         const addCardTimerSection = document.getElementById('addCardTimerSection');
         if (addCardTimerSection) addCardTimerSection.style.display = 'block';
+        const addCardPasswordGroup = document.getElementById('addCardPasswordGroup');
+        if (addCardPasswordGroup) addCardPasswordGroup.style.display = 'block';
         
         const modalTitle = document.querySelector('#addCardModal h3');
         const modalLabel = document.querySelector('#addCardModal label');
@@ -9242,7 +9256,9 @@ if(confirmAddBtn) confirmAddBtn.onclick = async () => {
                     dueDate = new Date(Date.now() + ms).toISOString();
                 }
             }
-            activeBoard.cards.push({ id: Date.now().toString(), title, dueDate });
+            const passwordNode = document.getElementById('newCardPassword');
+            const password = passwordNode ? passwordNode.value.trim() : '';
+            activeBoard.cards.push({ id: Date.now().toString(), title, dueDate, password });
         }
 
         saveState();
@@ -9412,6 +9428,11 @@ function openTimerModal(cardId, listId) {
         deleteCardBtn.style.width = 'auto';
         if (servicesAddRow) servicesAddRow.style.display = 'none';
         if (servicesItemInput) servicesItemInput.value = '';
+
+        const emailInput = document.getElementById('editCardEmail');
+        const passwordInput = document.getElementById('editCardPassword');
+        if (emailInput) emailInput.value = card.title || '';
+        if (passwordInput) passwordInput.value = card.password || '';
 
         if (card.dueDate) {
             const diffMs = new Date(card.dueDate) - new Date();
@@ -10264,24 +10285,50 @@ if(saveTimerBtn) saveTimerBtn.onclick = () => {
     const h = parseInt(inputHours.value) || 0;
     const m = parseInt(inputMins.value) || 0;
 
-    if (d === 0 && h === 0 && m === 0) {
-        alert("Please set a length greater than 0");
-        return;
+    let dueDate = null;
+    if (d > 0 || h > 0 || m > 0) {
+        const ms = (d * 86400000) + (h * 3600000) + (m * 60000);
+        dueDate = new Date(Date.now() + ms).toISOString();
     }
-
-    const ms = (d * 86400000) + (h * 3600000) + (m * 60000);
-    const dueDate = new Date(Date.now() + ms).toISOString();
 
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if(activeBoard.type === 'timer') {
         const card = activeBoard.cards.find(c => c.id === activeCardId);
         card.dueDate = dueDate;
+        
+        const emailInput = document.getElementById('editCardEmail');
+        const passwordInput = document.getElementById('editCardPassword');
+        if (emailInput && emailInput.value.trim() !== '') card.title = emailInput.value.trim();
+        if (passwordInput) card.password = passwordInput.value.trim();
+
         saveState();
         render();
         timerModal.classList.remove('active');
         showToast("Timer saved!");
     }
 };
+
+const copyEmailBtn = document.getElementById('copyEmailBtn');
+if (copyEmailBtn) {
+    copyEmailBtn.onclick = () => {
+        const emailInput = document.getElementById('editCardEmail');
+        if (emailInput && emailInput.value) {
+            navigator.clipboard.writeText(emailInput.value.trim());
+            showToast("Email copied!");
+        }
+    };
+}
+
+const copyPasswordBtn = document.getElementById('copyPasswordBtn');
+if (copyPasswordBtn) {
+    copyPasswordBtn.onclick = () => {
+        const passwordInput = document.getElementById('editCardPassword');
+        if (passwordInput && passwordInput.value) {
+            navigator.clipboard.writeText(passwordInput.value.trim());
+            showToast("Password copied!");
+        }
+    };
+}
 
 if(removeTimerBtn) removeTimerBtn.onclick = () => {
     if (!activeCardId) return;
@@ -10510,6 +10557,9 @@ async function syncTrello() {
         }
         
         if (needsRender) {
+            const currentlyDraggingOrHovering = isGlobalDragging || !!document.querySelector('.card:hover, .trello-task-card:hover, .kanban-card:hover');
+            if (currentlyDraggingOrHovering) return;
+            
             saveState();
             render();
         }
@@ -10902,6 +10952,9 @@ async function syncPipedrive() {
         
         
         if (needsRender) {
+            const currentlyDraggingOrHovering = isGlobalDragging || !!document.querySelector('.card:hover, .trello-task-card:hover, .kanban-card:hover');
+            if (currentlyDraggingOrHovering) return;
+            
             saveState();
             render();
         }
