@@ -5460,22 +5460,30 @@ function renderKanbanApp(activeBoard) {
                                 el.style.left = `${iconX - 160}px`;
                                 el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
                             } else {
-                                let fX = parseFloat(el.dataset.targetX || (iconX + 320));
-                                let fY = parseFloat(el.dataset.targetY || iconY);
+                                let fX = iconX + 320;
+                                let fY = iconY;
+                                
+                                const targetData = activeBoard.lists.find(l => l.id === tid);
+                                if (targetData) {
+                                    fX = targetData.x;
+                                    fY = targetData.y;
+                                }
+
                                 if (window.lastDOMPositions && window.lastDOMPositions[tid]) {
                                     fX = parseFloat(window.lastDOMPositions[tid].left);
                                     fY = parseFloat(window.lastDOMPositions[tid].top);
                                 }
                                 
                                 el.style.transition = 'none';
-                                // Teleport instantly to target position, so it grows/fades exactly where it belongs
-                                el.style.left = `${fX}px`;
-                                el.style.top = `${fY}px`;
+                                el.style.left = `${iconX - 160}px`;
+                                el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
                                 
                                 void el.offsetWidth; // Flush CSS
                                 
                                 el.style.transition = '';
                                 el.classList.remove('hidden-list');
+                                el.style.left = `${fX}px`;
+                                el.style.top = `${fY}px`;
                             }
                         });
                     };
