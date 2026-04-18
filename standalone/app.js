@@ -4894,6 +4894,33 @@ function renderKanbanApp(activeBoard) {
         };
         optionsMenu.appendChild(cardsCheckOption);
 
+        if (list.pipedriveStageId) {
+            addDiv();
+            let isShowingQual = list.showQualification;
+            if (isShowingQual === undefined) {
+                isShowingQual = (String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId));
+            }
+            
+            const qualOption = document.createElement('div');
+            qualOption.className = 'list-option-item';
+            const qualOptionText = isShowingQual ? 'Hide Qualification' : 'Show Qualification';
+            const qualOptionIcon = isShowingQual
+                ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"></path>`
+                : `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>`;
+                
+            qualOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${qualOptionIcon}</svg><span>${qualOptionText}</span>`;
+            if(qualOption) qualOption.onclick = (e) => {
+                e.stopPropagation();
+                list.showQualification = !isShowingQual;
+                // If they specifically untoggled the legacy first stage, we might detach it globally, 
+                // but setting list.showQualification = false overrides the legacy check anyway.
+                saveState();
+                render();
+                optionsMenu.style.display = 'none';
+            };
+            optionsMenu.appendChild(qualOption);
+        }
+
         addDiv();
         const themeOption = document.createElement('div');
         themeOption.className = 'list-option-item';
@@ -5920,17 +5947,9 @@ function renderKanbanApp(activeBoard) {
             let globalValWrap = null;
             
             if (card.isPipedrive || ((list.isMoneySmelling || list.isNewClients) && card.dealValue)) {
-                let isFirstPdStage = false;
-                if (String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId)) {
-                    isFirstPdStage = true;
-                } else if (list.pipedriveStageId && list.pipedrivePipelineId && activeBoard.connections) {
-                    const hasIncomingFromSamePipe = activeBoard.connections.some(c => 
-                        c.target === list.id && 
-                        activeBoard.lists.some(sl => sl.id === c.source && sl.pipedrivePipelineId === list.pipedrivePipelineId)
-                    );
-                    if (!hasIncomingFromSamePipe) {
-                        isFirstPdStage = true;
-                    }
+                let isFirstPdStage = list.showQualification;
+                if (isFirstPdStage === undefined) {
+                    isFirstPdStage = (String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId));
                 }
 
                 if (card.isPipedrive && activeBoard.pipedriveQualificationFieldKey && 
