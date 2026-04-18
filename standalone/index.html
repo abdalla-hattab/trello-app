@@ -191,8 +191,8 @@
                 <h3 id="modalTitle">Set Timer</h3>
                 <button class="close-btn" id="closeModal">&times;</button>
             </div>
-            <div class="modal-body" id="timerInputsSection">
-                <div class="input-group full-width" style="margin-bottom: 12px; flex-direction: row; align-items: flex-end; gap: 8px;">
+            <div class="modal-body" id="timerInputsSection" style="display:flex; flex-direction:column; gap:16px;">
+                <div class="input-group full-width" style="margin-bottom: 0px; flex-direction: row; align-items: flex-end; gap: 8px;">
                     <div style="flex: 1;">
                         <label>Account Email</label>
                         <input type="text" id="editCardEmail" placeholder="e.g. name123@gmail.com">
@@ -201,7 +201,7 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                 </div>
-                <div class="input-group full-width" style="margin-bottom: 20px; flex-direction: row; align-items: flex-end; gap: 8px;" id="editCardPasswordGroup">
+                <div class="input-group full-width" style="margin-bottom: 0px; flex-direction: row; align-items: flex-end; gap: 8px;" id="editCardPasswordGroup">
                     <div style="flex: 1;">
                         <label>Account Password</label>
                         <input type="text" id="editCardPassword" placeholder="e.g. password123">
@@ -210,17 +210,19 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                     </button>
                 </div>
-                <div class="input-group">
-                    <label>Days</label>
-                    <input type="number" id="inputDays" min="0" value="0">
-                </div>
-                <div class="input-group">
-                    <label>Hours</label>
-                    <input type="number" id="inputHours" min="0" max="23" value="0">
-                </div>
-                <div class="input-group">
-                    <label>Minutes</label>
-                    <input type="number" id="inputMins" min="0" max="59" value="0">
+                <div style="display:flex; flex-direction:row; gap:16px;">
+                    <div class="input-group">
+                        <label>Days</label>
+                        <input type="number" id="inputDays" min="0" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Hours</label>
+                        <input type="number" id="inputHours" min="0" max="23" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Minutes</label>
+                        <input type="number" id="inputMins" min="0" max="59" value="0">
+                    </div>
                 </div>
             </div>
             <div id="servicesSection" style="display:none; flex-direction:column; gap:12px; margin-bottom: 24px; align-items: flex-start;">
