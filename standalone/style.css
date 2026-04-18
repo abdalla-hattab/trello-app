@@ -470,10 +470,11 @@ body {
 .modal-content {
     background: white;
     width: 100%;
-    max-width: 400px;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    max-width: 440px;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0,0,0,0.05);
     transform: translateY(20px);
     transition: transform 0.2s ease;
 }
@@ -527,15 +528,21 @@ body {
 }
 
 .input-group input {
-    padding: 10px 12px;
+    padding: 12px 16px;
     border: 2px solid #dfe1e6;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
+    background: #fafbfc;
+    color: #172b4d;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
 }
 
-.input-group input:focus { border-color: #3b82f6; }
+.input-group input:focus { 
+    border-color: #3b82f6; 
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
 
 .modal-actions {
     display: flex;
@@ -551,27 +558,35 @@ body {
     background: #0052cc;
     color: white;
     border: none;
-    padding: 10px 16px;
-    border-radius: 4px;
-    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,82,204,0.15);
 }
 
-.save-btn:hover { background: #0043a6; }
+.save-btn:hover { 
+    background: #0043a6; 
+    box-shadow: 0 4px 8px rgba(0,82,204,0.25);
+    transform: translateY(-1px);
+}
 
 .danger-btn {
-    background: #091e4214;
-    color: #172b4d;
+    background: #f4f5f7;
+    color: #42526e;
     border: none;
-    padding: 10px 16px;
-    border-radius: 4px;
-    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
-.danger-btn:hover { background: #091e4224; }
+.danger-btn:hover { 
+    background: #ebecf0; 
+    color: #172b4d;
+}
 /* Hide Number Input Spinners */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
@@ -584,25 +599,29 @@ input[type=number] {
 }
 
 .delete-card-btn {
-    background: #fee2e2;
-    color: #991b1b;
+    background: #ffebe6;
+    color: #bf2600;
     border: none;
-    padding: 10px 16px;
-    border-radius: 4px;
-    font-weight: 500;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
-.delete-card-btn:hover { background: #fca5a5; }
+.delete-card-btn:hover { 
+    background: #ffbdad; 
+}
 
 .delete-card-btn.confirm-state {
-    background: #dc2626;
+    background: #de350b;
     color: white;
+    box-shadow: 0 4px 8px rgba(222, 53, 11, 0.25);
+    transform: translateY(-1px);
 }
 
 .delete-card-btn.confirm-state:hover {
-    background: #b91c1c;
+    background: #bf2600;
 }
 
 /* Board Switching Menu */
