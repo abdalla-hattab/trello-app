@@ -5435,8 +5435,8 @@ function renderKanbanApp(activeBoard) {
                     const iconX = (sRect.left + (sRect.width / 2) - cRect.left) / activeBoard.camera.z;
                     const iconY = (sRect.top + (sRect.height / 2) - cRect.top) / activeBoard.camera.z;
 
-                    // Build organic DOM smooth animation sequence
-                    const animateFlow = (collapsing) => {
+                    // Build organic DOM smooth animation sequence just for SVG
+                    const animateFlow = () => {
                         let start = Date.now();
                         let fin = false;
                         const runFrame = () => {
@@ -5446,46 +5446,9 @@ function renderKanbanApp(activeBoard) {
                             } else if (!fin) {
                                 fin = true;
                                 updateConnections();
-                                setTimeout(() => { if (typeof render === 'function') render(); }, 10);
                             }
                         };
                         requestAnimationFrame(runFrame);
-
-                        specificTargets.forEach(tid => {
-                            const el = document.querySelector(`.kanban-list[data-id="${tid}"]`);
-                            if (!el) return;
-                            
-                            if (collapsing) {
-                                el.classList.add('hidden-list');
-                                el.style.left = `${iconX - 160}px`;
-                                el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
-                            } else {
-                                let fX = iconX + 320;
-                                let fY = iconY;
-                                
-                                const targetData = activeBoard.lists.find(l => l.id === tid);
-                                if (targetData) {
-                                    fX = targetData.x;
-                                    fY = targetData.y;
-                                }
-
-                                if (window.lastDOMPositions && window.lastDOMPositions[tid]) {
-                                    fX = parseFloat(window.lastDOMPositions[tid].left);
-                                    fY = parseFloat(window.lastDOMPositions[tid].top);
-                                }
-                                
-                                el.style.transition = 'none';
-                                el.style.left = `${iconX - 160}px`;
-                                el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
-                                
-                                void el.offsetWidth; // Flush CSS
-                                
-                                el.style.transition = '';
-                                el.classList.remove('hidden-list');
-                                el.style.left = `${fX}px`;
-                                el.style.top = `${fY}px`;
-                            }
-                        });
                     };
 
                     if (willCollapse) {
@@ -5493,13 +5456,31 @@ function renderKanbanApp(activeBoard) {
                         toggleBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>`;
                         toggleBtn.style.color = '#8A94A5';
                         saveState();
-                        animateFlow(true);
+                        
+                        specificTargets.forEach(tid => {
+                            const el = document.querySelector(`.kanban-list[data-id="${tid}"]`);
+                            if (el) {
+                                el.classList.add('hidden-list');
+                                el.style.left = `${iconX - 160}px`;
+                                el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
+                            }
+                        });
+                        
+                        animateFlow();
+                        setTimeout(() => render(), 360);
                     } else {
                         list.collapsedEdges = list.collapsedEdges.filter(st => st !== collapseKey);
                         toggleBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="8" y1="12" x2="16" y2="12"></line></svg>`;
                         toggleBtn.style.color = '#c9372c';
                         saveState();
-                        animateFlow(false);
+                        
+                        if (typeof animatingOrigins !== 'undefined') {
+                            animatingOrigins[list.id + '-' + edge] = { px: iconX, py: iconY, nx: 0, ny: 1 };
+                        }
+
+                        specificTargets.forEach(tid => animatingOutIds.add(tid));
+                        render();
+                        animateFlow();
                     }
                 };
                 listContainer.appendChild(toggleBtn);
