@@ -3835,9 +3835,11 @@ function renderKanbanApp(activeBoard) {
             const targetEl = canvas.querySelector(`.kanban-list[data-id="${conn.target}"]`);
             if(!sourceEl || !targetEl) return;
             
-            // Always structurally draw connections toward hidden lists so they visually glide seamlessly all the way into the tracking icon singularity
             if (sourceEl.classList.contains('hidden-list') || targetEl.classList.contains('hidden-list')) {
-                // By doing nothing, we allow getPortInfo to mathematically read the shrinking scale box down to 0 natively.
+                return;
+            }
+            if (window.animatingConnIds && (window.animatingConnIds.has(conn.source) || window.animatingConnIds.has(conn.target))) {
+                return;
             }
             
             const sourceEdge = conn.sourcePort || 'right';
@@ -3887,18 +3889,6 @@ function renderKanbanApp(activeBoard) {
                 if (hasTrello) activeTypes.push('trello');
                 if (hasTrelloSpeech) activeTypes.push('trelloSpeech');
                 if (hasAds) activeTypes.push('ads');
-                
-                const sourceListConfig = activeBoard.lists.find(l => l.id === conn.source);
-                if (sourceListConfig && sourceListConfig.collapsedEdges) {
-                    const collapseKey = `${sourceEdge}:${myType}`;
-                    const isCollapsed = sourceListConfig.collapsedEdges.includes(collapseKey);
-                    const isAnimating = window.animatingCollapseEdges && window.animatingCollapseEdges.has(`${sourceListConfig.id}-${collapseKey}`);
-
-                    // Stop drawing this connection permanently IF it is closed AND the transition shrinking loop has successfully finished
-                    if (isCollapsed && !isAnimating) {
-                        return; 
-                    }
-                }
                 
                 const sList = activeBoard.lists.find(l => l.id === conn.source);
                 const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
@@ -5447,6 +5437,9 @@ function renderKanbanApp(activeBoard) {
 
                     // Build organic DOM smooth animation sequence just for SVG
                     const animateFlow = () => {
+                        window.animatingConnIds = window.animatingConnIds || new Set();
+                        specificTargets.forEach(tid => window.animatingConnIds.add(tid));
+                        
                         let start = Date.now();
                         let fin = false;
                         const runFrame = () => {
@@ -5455,6 +5448,7 @@ function renderKanbanApp(activeBoard) {
                                 requestAnimationFrame(runFrame);
                             } else if (!fin) {
                                 fin = true;
+                                specificTargets.forEach(tid => window.animatingConnIds.delete(tid));
                                 updateConnections();
                             }
                         };
@@ -5467,10 +5461,6 @@ function renderKanbanApp(activeBoard) {
                         toggleBtn.style.color = '#8A94A5';
                         saveState();
                         
-                        if (!window.animatingCollapseEdges) window.animatingCollapseEdges = new Set();
-                        const animKey = `${list.id}-${collapseKey}`;
-                        window.animatingCollapseEdges.add(animKey);
-                        
                         specificTargets.forEach(tid => {
                             const el = document.querySelector(`.kanban-list[data-id="${tid}"]`);
                             if (el) {
@@ -5481,10 +5471,7 @@ function renderKanbanApp(activeBoard) {
                         });
                         
                         animateFlow();
-                        setTimeout(() => {
-                            window.animatingCollapseEdges.delete(animKey);
-                            if (typeof render === 'function') render();
-                        }, 360);
+                        setTimeout(() => render(), 360);
                     } else {
                         list.collapsedEdges = list.collapsedEdges.filter(st => st !== collapseKey);
                         toggleBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="8" y1="12" x2="16" y2="12"></line></svg>`;
