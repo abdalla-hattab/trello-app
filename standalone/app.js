@@ -5920,8 +5920,21 @@ function renderKanbanApp(activeBoard) {
             let globalValWrap = null;
             
             if (card.isPipedrive || ((list.isMoneySmelling || list.isNewClients) && card.dealValue)) {
+                let isFirstPdStage = false;
+                if (String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId)) {
+                    isFirstPdStage = true;
+                } else if (list.pipedriveStageId && list.pipedrivePipelineId && activeBoard.connections) {
+                    const hasIncomingFromSamePipe = activeBoard.connections.some(c => 
+                        c.target === list.id && 
+                        activeBoard.lists.some(sl => sl.id === c.source && sl.pipedrivePipelineId === list.pipedrivePipelineId)
+                    );
+                    if (!hasIncomingFromSamePipe) {
+                        isFirstPdStage = true;
+                    }
+                }
+
                 if (card.isPipedrive && activeBoard.pipedriveQualificationFieldKey && 
-                    String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId) && 
+                    isFirstPdStage && 
                     card.pipedriveData && 
                     card.pipedriveData[activeBoard.pipedriveQualificationFieldKey]) {
                         
