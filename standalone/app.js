@@ -5468,15 +5468,14 @@ function renderKanbanApp(activeBoard) {
                                 }
                                 
                                 el.style.transition = 'none';
-                                el.style.left = `${iconX - 160}px`;
-                                el.style.top = `${iconY - (el.offsetHeight / 2)}px`;
+                                // Teleport instantly to target position, so it grows/fades exactly where it belongs
+                                el.style.left = `${fX}px`;
+                                el.style.top = `${fY}px`;
                                 
                                 void el.offsetWidth; // Flush CSS
                                 
                                 el.style.transition = '';
                                 el.classList.remove('hidden-list');
-                                el.style.left = `${fX}px`;
-                                el.style.top = `${fY}px`;
                             }
                         });
                     };
