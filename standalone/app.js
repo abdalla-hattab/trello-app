@@ -4273,7 +4273,7 @@ function renderKanbanApp(activeBoard) {
                 
                 if (sourceId && sourceId !== list.id) {
                     const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : (trackerType === 'nc' ? 'newClients' : (trackerType === 'trello-speech' ? 'trelloSpeech' : trackerType))));
-                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads', 'trelloSpeech': 'Speech Lists' };
+                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads', 'trelloSpeech': 'Trello Tracker 2' };
                     const formatName = formatNameMap[mappedType];
                     
                     const checkMatch = (t) => {
@@ -5029,8 +5029,8 @@ function renderKanbanApp(activeBoard) {
                 tBadge.style.color = '#00838F';
                 tBadge.style.border = '1px solid rgba(0, 188, 212, 0.3)';
             } else if (list.trackerType === 'trelloSpeech') {
-                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line></svg>Speech Lists`;
-                tBadge.title = "Connected to track Speech Lists (Trello Tracker 2)";
+                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line></svg>Trello Tracker 2`;
+                tBadge.title = "Connected to track Trello Tracker 2";
                 tBadge.style.background = 'rgba(156, 39, 176, 0.15)';
                 tBadge.style.color = '#7B1FA2';
                 tBadge.style.border = '1px solid rgba(156, 39, 176, 0.3)';
