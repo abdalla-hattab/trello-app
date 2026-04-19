@@ -10452,7 +10452,7 @@ async function syncTrello() {
         const promises = [];
         Array.from(uniqueBoardIds).forEach(boardId => {
             promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${trelloKey}&token=${trelloToken}`));
-            promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${trelloKey}&token=${trelloToken}`));
+            promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name,pos&key=${trelloKey}&token=${trelloToken}`));
         });
         
         const responses = await Promise.all(promises);
@@ -10478,7 +10478,15 @@ async function syncTrello() {
         let allTrelloLists = [];
         for (let i = 0; i < dataPayloads.length; i += 2) {
             allTrelloCards = allTrelloCards.concat(dataPayloads[i]);
-            allTrelloLists = allTrelloLists.concat(dataPayloads[i + 1]);
+            const listsPayload = dataPayloads[i + 1];
+            listsPayload.forEach((tList) => {
+                curBoard.lists.forEach(l => {
+                    if (l.trelloListId === tList.id || l.trelloTasksListId === tList.id) {
+                        l.trelloListPos = tList.pos;
+                    }
+                });
+            });
+            allTrelloLists = allTrelloLists.concat(listsPayload);
         }
         
         if (!curBoard.telemetry) curBoard.telemetry = {};
@@ -10699,6 +10707,11 @@ window.applySmartPacking = function(curBoard) {
                 
                 Object.keys(byDirection).forEach(dir => {
                     const sortedLists = byDirection[dir];
+                    sortedLists.sort((a, b) => {
+                        const aPos = typeof a.trelloListPos === 'number' ? a.trelloListPos : 999999;
+                        const bPos = typeof b.trelloListPos === 'number' ? b.trelloListPos : 999999;
+                        return aPos - bPos;
+                    });
                     
                     const spacingX = 380;
                     const totalOffsets = sortedLists.length * spacingX;
