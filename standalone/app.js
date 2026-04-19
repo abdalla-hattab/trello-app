@@ -4972,14 +4972,18 @@ function renderKanbanApp(activeBoard) {
             document.querySelectorAll('.list-options-menu').forEach(m => {
                 if(m !== optionsMenu) m.style.display = 'none';
             });
-            optionsMenu.style.display = optionsMenu.style.display === 'none' ? 'block' : 'none';
-        };
-
-        if(document) document.addEventListener('click', (e) => {
-            if (!optionsWrap.contains(e.target)) {
-                optionsMenu.style.display = 'none';
+            const willShow = optionsMenu.style.display === 'none';
+            optionsMenu.style.display = willShow ? 'block' : 'none';
+            if (willShow) {
+                const closeMenu = (ev) => {
+                    if (!optionsWrap.contains(ev.target)) {
+                        optionsMenu.style.display = 'none';
+                        document.removeEventListener('click', closeMenu);
+                    }
+                };
+                setTimeout(() => document.addEventListener('click', closeMenu), 10);
             }
-        });
+        };
 
         const buttonsSet = document.createElement('div');
         buttonsSet.style.display = 'flex';
