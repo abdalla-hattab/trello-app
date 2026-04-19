@@ -3845,10 +3845,8 @@ function renderKanbanApp(activeBoard) {
             const targetEl = canvas.querySelector(`.kanban-list[data-id="${conn.target}"]`);
             if(!sourceEl || !targetEl) return;
             
-            if (sourceEl.classList.contains('hidden-list') || targetEl.classList.contains('hidden-list')) {
-                return;
-            }
-            if (window.animatingConnIds && (window.animatingConnIds.has(conn.source) || window.animatingConnIds.has(conn.target))) {
+            const isAnimating = window.animatingConnIds && (window.animatingConnIds.has(conn.source) || window.animatingConnIds.has(conn.target));
+            if (!isAnimating && (sourceEl.classList.contains('hidden-list') || targetEl.classList.contains('hidden-list'))) {
                 return;
             }
             
@@ -3930,6 +3928,12 @@ function renderKanbanApp(activeBoard) {
             path.setAttribute('d', getBezierPath(sourceInfo, targetInfo));
             path.setAttribute('stroke', '#8A94A5');
             path.setAttribute('stroke-width', '2');
+            
+            if (isAnimating) {
+                const sOp = parseFloat(window.getComputedStyle(sourceEl).opacity);
+                const tOp = parseFloat(window.getComputedStyle(targetEl).opacity);
+                path.setAttribute('opacity', Math.min(isNaN(sOp) ? 1 : sOp, isNaN(tOp) ? 1 : tOp).toString());
+            }
             path.setAttribute('fill', 'none');
             path.setAttribute('marker-end', 'url(#arrowhead)');
             path.style.cursor = 'pointer';
