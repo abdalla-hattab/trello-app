@@ -2917,24 +2917,18 @@ if(generateTrelloTrackersBtn) {
             
             toAdd.forEach((inputCb) => {
                 const targetTrackerType = window.pendingTrackerType || 'trello';
-                const existingGlobalList = activeBoard.lists.find(l => l.trelloListId === inputCb.value && (l.trackerType || 'trello') === targetTrackerType);
                 
-                let targetListId;
-                if (existingGlobalList) {
-                    targetListId = existingGlobalList.id;
-                } else {
-                    targetListId = 'list_' + Date.now() + Math.random().toString(36).substr(2, 5);
-                    activeBoard.lists.push({
-                        id: targetListId,
-                        title: inputCb.dataset.name,
-                        x: 0,
-                        y: 0,
-                        cards: [],
-                        trelloListId: inputCb.value,
-                        trelloBoardId: selectedBoardId,
-                        trackerType: targetTrackerType
-                    });
-                }
+                const targetListId = 'list_' + Date.now() + Math.random().toString(36).substr(2, 5);
+                activeBoard.lists.push({
+                    id: targetListId,
+                    title: inputCb.dataset.name,
+                    x: 0,
+                    y: 0,
+                    cards: [],
+                    trelloListId: inputCb.value,
+                    trelloBoardId: selectedBoardId,
+                    trackerType: targetTrackerType
+                });
                 
                 activeBoard.connections.push({
                     source: pendingSourceList.id,
