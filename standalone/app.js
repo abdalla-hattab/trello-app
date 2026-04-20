@@ -5728,21 +5728,10 @@ function renderKanbanApp(activeBoard) {
                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
                 cardEl.style.cursor = 'pointer';
                 if(cardEl) cardEl.onclick = (e) => {
-                    const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
-                    if (!hasIssue) {
-                        window.showConfirmModal(() => {
-                            if (!activeBoard.adCardIssues) activeBoard.adCardIssues = {};
-                            activeBoard.adCardIssues[card.id] = true;
-                            saveState();
-                            render();
-                        }, "مشكلة في البطاقة؟", "هل تم إغلاق حساب هذا العميل بسبب مشكلة في البطاقة الائتمانية؟");
-                    } else {
-                        window.showConfirmModal(() => {
-                            delete activeBoard.adCardIssues[card.id];
-                            saveState();
-                            render();
-                        }, "إزالة المشكلة؟", "هل تم حل مشكلة البطاقة وإعادة تفعيل الحساب؟");
-                    }
+                    window.showAdsCardOptions(card, activeBoard, () => {
+                        saveState();
+                        render();
+                    });
                 };
             } else {
                 if(cardEl) cardEl.onclick = () => openTrelloCardDetailsModal(card.id, list.id);
@@ -6065,6 +6054,7 @@ function renderKanbanApp(activeBoard) {
             
             if (list.trackerType === 'ads') {
                 const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
+                const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
                 
                 if (hasIssue) {
                     const ccWrap = document.createElement('div');
@@ -6083,18 +6073,46 @@ function renderKanbanApp(activeBoard) {
                         </svg>`;
 
                     ccWrap.innerHTML = redCcSvg;
-                    ccWrap.title = 'Credit Card Issue (Click to clear)';
+                    ccWrap.title = 'مشكلة في البطاقة';
                     
                     ccWrap.onclick = (e) => {
                         e.stopPropagation();
-                        window.showConfirmModal(() => {
-                            delete activeBoard.adCardIssues[card.id];
+                        window.showAdsCardOptions(card, activeBoard, () => {
                             saveState();
                             render();
-                        }, "إزالة المشكلة؟", "هل تم حل مشكلة البطاقة وإعادة تفعيل الحساب؟");
+                        });
                     };
                     
                     titleEl.appendChild(ccWrap);
+                }
+
+                if (isWhatsappActive) {
+                    const waWrap = document.createElement('div');
+                    waWrap.style.display = 'flex';
+                    waWrap.style.alignItems = 'flex-start';
+                    waWrap.style.justifyContent = 'center';
+                    waWrap.style.marginLeft = '6px';
+                    waWrap.style.marginTop = '2px';
+                    waWrap.style.flexShrink = '0';
+                    waWrap.style.cursor = 'pointer';
+                    
+                    const greenWaSvg = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>`;
+
+                    waWrap.innerHTML = greenWaSvg;
+                    waWrap.title = 'أتمتة الواتساب مفعلة';
+                    
+                    waWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        window.showAdsCardOptions(card, activeBoard, () => {
+                            saveState();
+                            render();
+                        });
+                    };
+                    
+                    titleEl.appendChild(waWrap);
                 }
             }
             
@@ -11177,6 +11195,116 @@ window.showConfirmModal = function(callback, titleText, descText) {
     if(newBtnCancel) newBtnCancel.onclick = function() {
         modal.classList.remove('active');
     };
+};
+
+window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
+    const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
+    const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.style.zIndex = '9999';
+    overlay.style.alignItems = 'center';
+
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.maxWidth = '350px';
+    content.style.textAlign = 'center';
+    content.style.borderRadius = '16px';
+    content.style.padding = '32px 24px';
+
+    const titleEl = document.createElement('h3');
+    titleEl.innerText = "خيارات الإجراءات";
+    titleEl.style.margin = "0 0 24px";
+    titleEl.style.fontSize = "18px";
+    titleEl.style.color = "#1e293b";
+    titleEl.style.fontWeight = "700";
+    titleEl.style.fontFamily = "inherit";
+    content.appendChild(titleEl);
+
+    const btnIssue = document.createElement('button');
+    btnIssue.style.width = '100%';
+    btnIssue.style.padding = '12px';
+    btnIssue.style.borderRadius = '8px';
+    btnIssue.style.border = hasIssue ? '1px solid #ef4444' : '1px solid #cbd5e1';
+    btnIssue.style.background = hasIssue ? '#fee2e2' : 'white';
+    btnIssue.style.color = hasIssue ? '#ef4444' : '#475569';
+    btnIssue.style.fontWeight = '600';
+    btnIssue.style.fontFamily = "inherit";
+    btnIssue.style.cursor = 'pointer';
+    btnIssue.style.display = 'flex';
+    btnIssue.style.alignItems = 'center';
+    btnIssue.style.justifyContent = 'center';
+    btnIssue.style.gap = '8px';
+    btnIssue.style.marginBottom = '12px';
+    btnIssue.style.transition = 'all 0.2s';
+    btnIssue.onmouseover = () => btnIssue.style.background = hasIssue ? '#f87171' : '#f8fafc';
+    btnIssue.onmouseout = () => btnIssue.style.background = hasIssue ? '#fee2e2' : 'white';
+    
+    const ccIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`;
+    btnIssue.innerHTML = `${ccIcon} ${hasIssue ? 'إزالة مشكلة البطاقة' : 'مشكلة في البطاقة'}`;
+
+    btnIssue.onclick = () => {
+        if (!activeBoard.adCardIssues) activeBoard.adCardIssues = {};
+        if (hasIssue) delete activeBoard.adCardIssues[card.id];
+        else activeBoard.adCardIssues[card.id] = true;
+        document.body.removeChild(overlay);
+        if (onUpdate) onUpdate();
+    };
+
+    const btnWhatsapp = document.createElement('button');
+    btnWhatsapp.style.width = '100%';
+    btnWhatsapp.style.padding = '12px';
+    btnWhatsapp.style.borderRadius = '8px';
+    btnWhatsapp.style.border = isWhatsappActive ? '1px solid #22c55e' : '1px solid #cbd5e1';
+    btnWhatsapp.style.background = isWhatsappActive ? '#dcfce7' : 'white';
+    btnWhatsapp.style.color = isWhatsappActive ? '#16a34a' : '#475569';
+    btnWhatsapp.style.fontWeight = '600';
+    btnWhatsapp.style.fontFamily = "inherit";
+    btnWhatsapp.style.cursor = 'pointer';
+    btnWhatsapp.style.display = 'flex';
+    btnWhatsapp.style.alignItems = 'center';
+    btnWhatsapp.style.justifyContent = 'center';
+    btnWhatsapp.style.gap = '8px';
+    btnWhatsapp.style.marginBottom = '24px';
+    btnWhatsapp.style.transition = 'all 0.2s';
+    btnWhatsapp.onmouseover = () => btnWhatsapp.style.background = isWhatsappActive ? '#86efac' : '#f8fafc';
+    btnWhatsapp.onmouseout = () => btnWhatsapp.style.background = isWhatsappActive ? '#dcfce7' : 'white';
+
+    const waIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`;
+    btnWhatsapp.innerHTML = `${waIcon} ${isWhatsappActive ? 'إلغاء أتمتة الواتساب' : 'تفعيل أتمتة الواتساب'}`;
+
+    btnWhatsapp.onclick = () => {
+        if (!activeBoard.adCardWhatsapp) activeBoard.adCardWhatsapp = {};
+        if (isWhatsappActive) delete activeBoard.adCardWhatsapp[card.id];
+        else activeBoard.adCardWhatsapp[card.id] = true;
+        document.body.removeChild(overlay);
+        if (onUpdate) onUpdate();
+    };
+
+    const btnCancel = document.createElement('button');
+    btnCancel.innerText = 'إلغاء';
+    btnCancel.style.width = '100%';
+    btnCancel.style.padding = '10px';
+    btnCancel.style.borderRadius = '8px';
+    btnCancel.style.border = 'none';
+    btnCancel.style.background = '#f1f5f9';
+    btnCancel.style.color = '#64748b';
+    btnCancel.style.fontWeight = '600';
+    btnCancel.style.fontFamily = "inherit";
+    btnCancel.style.cursor = 'pointer';
+    btnCancel.onclick = () => document.body.removeChild(overlay);
+
+    content.appendChild(btnIssue);
+    content.appendChild(btnWhatsapp);
+    content.appendChild(btnCancel);
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) document.body.removeChild(overlay);
+    };
+
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
 };
 
 window.handleMediaUpload = function(input) {
