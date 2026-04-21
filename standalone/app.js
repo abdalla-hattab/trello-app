@@ -10436,6 +10436,7 @@ let syncInterval = null;
 let trelloRateLimitUntil = 0;
 
 async function syncTrello() {
+    if (document.hidden) return;
     const isHoveringCard = !!document.querySelector('.card:hover, .trello-task-card:hover, .kanban-card:hover');
     if (isGlobalDragging || isHoveringCard) return;
     if (!trelloKey || !trelloToken) return;
@@ -10585,6 +10586,7 @@ async function syncTrello() {
             targetTasksLists.forEach(targetList => {
                 if (targetList.title && targetList.title.toLowerCase() === 'me') return;
                 
+                const prevTask = existingTrelloTasks.find(t => t.card.id === tCard.id);
                 targetList.cards.push({
                     id: tCard.id,
                     title: tCard.name,
@@ -10593,7 +10595,7 @@ async function syncTrello() {
                     color: colorMemory[tCard.id],
                     adsMetrics: adsMetricsMemory[tCard.id],
                     isPinned: pinnedMemory[tCard.id],
-                    startTime: Date.now()
+                    startTime: prevTask ? prevTask.card.startTime : Date.now()
                 });
             });
         });
@@ -10827,6 +10829,7 @@ let lastPipedriveStagesFetch = {};
 let pipedriveRateLimitUntil = 0;
 
 async function syncPipedrive() {
+    if (document.hidden) return;
     const isHoveringCard = !!document.querySelector('.card:hover, .trello-task-card:hover, .kanban-card:hover');
     if (isGlobalDragging || isHoveringCard) return;
     if (!pipedriveDomain || !pipedriveToken) return;
@@ -11108,9 +11111,18 @@ setInterval(() => {
 // Initial state load
 render();
 setInterval(() => { 
+    if (document.hidden) return;
     const isHoveringCard = !!document.querySelector('.card:hover, .trello-task-card:hover, .kanban-card:hover');
     if (!isGlobalDragging && !isHoveringCard) render(); 
 }, 60000);
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        if (typeof syncTrello === 'function') syncTrello();
+        if (typeof syncPipedrive === 'function') syncPipedrive();
+        render();
+    }
+});
 
 window.openAddClientModal = function() {
     const smCount = boards.filter(b => b.type === 'social_scheduler').length;
