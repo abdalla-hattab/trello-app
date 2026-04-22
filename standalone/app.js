@@ -5639,7 +5639,7 @@ function renderKanbanApp(activeBoard) {
                 };
                 requestAnimationFrame(animateConnections);
             };
-            cardListEl.appendChild(showBtn);
+            listContainer.appendChild(showBtn);
         }
 
         let cardsToRender = list.cards;
