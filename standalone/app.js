@@ -3839,8 +3839,15 @@ function renderKanbanApp(activeBoard) {
             const targetEl = canvas.querySelector(`.kanban-list[data-id="${conn.target}"]`);
             if(!sourceEl || !targetEl) return;
             
+            const sourceListState = activeBoard.lists.find(l => l.id === conn.source);
+            const targetListState = activeBoard.lists.find(l => l.id === conn.target);
             const isAnimating = window.animatingConnIds && (window.animatingConnIds.has(conn.source) || window.animatingConnIds.has(conn.target));
-            if (!isAnimating && (sourceEl.classList.contains('hidden-list') || targetEl.classList.contains('hidden-list'))) {
+            if (!isAnimating && (
+                sourceEl.classList.contains('hidden-list') || 
+                targetEl.classList.contains('hidden-list') ||
+                (targetListState && targetListState.isTempHiddenForPacking) ||
+                (sourceListState && sourceListState.isTempHiddenForPacking)
+            )) {
                 return;
             }
             
@@ -5459,7 +5466,7 @@ function renderKanbanApp(activeBoard) {
                             if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                             if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
                             if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
-                            if (tType === 'ads' && tl.trelloListId && tl.trackerType === 'ads') matches = true;
+                            if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
                             
                             if (matches) {
                                 specificTargets.add(c.target);
@@ -10705,6 +10712,10 @@ window.applySmartPacking = function(curBoard) {
                         }
 
                         targetList.isTempHiddenForPacking = listHiddenByFilter;
+                        if (listHiddenByFilter) {
+                            const dNode = document.querySelector(`.kanban-list[data-id="${targetList.id}"]`);
+                            if (dNode) dNode.classList.add('hidden-list');
+                        }
                         if (!listHiddenByFilter && !allTargets.some(t => t.list.id === targetList.id)) {
                             allTargets.push({ list: targetList, direction: 'top' });
                         }

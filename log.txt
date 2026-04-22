@@ -1,0 +1,21 @@
+5393:                if(toggleBtn) toggleBtn.onclick = (e) => {
+5394-                    e.stopPropagation();
+5395-                    const svgNode = e.target.closest('svg');
+5396-                    if (!svgNode) return;
+5397-                    
+5398-                    const tType = svgNode.getAttribute('data-tracker-type');
+5399-                    if (!tType) return;
+5400-                    
+5401-                    const collapseKey = `${edge}:${tType}`;
+5402-                    const willCollapse = !list.collapsedEdges.includes(collapseKey);
+5403-                    
+5404-                    // Filter exact targets for this clicked tracker type
+5405-                    const specificTargets = new Set();
+5406-                    activeBoard.connections.forEach(c => {
+5407-                        if(c.source === list.id && c.sourcePort === edge) {
+5408-                            const tl = activeBoard.lists.find(l => l.id === c.target);
+5409-                            if (!tl) return;
+5410-                            
+5411-                            let matches = false;
+5412-                            if (tType === 'clientHappiness' && tl.isClientHappiness) matches = true;
+5413-                            if (tType === 'moneySmelling' && tl.isMoneySmelling) matches = true;
