@@ -5482,9 +5482,11 @@ function renderKanbanApp(activeBoard) {
                     const iconY = (sRect.top + (sRect.height / 2) - cRect.top) / activeBoard.camera.z;
 
                     // Build organic DOM smooth animation sequence just for SVG
-                    const animateFlow = () => {
+                    const animateFlow = (hideConns = false) => {
                         window.animatingConnIds = window.animatingConnIds || new Set();
-                        specificTargets.forEach(tid => window.animatingConnIds.add(tid));
+                        if (!hideConns) {
+                            specificTargets.forEach(tid => window.animatingConnIds.add(tid));
+                        }
                         
                         let start = Date.now();
                         let fin = false;
@@ -5494,7 +5496,9 @@ function renderKanbanApp(activeBoard) {
                                 requestAnimationFrame(runFrame);
                             } else if (!fin) {
                                 fin = true;
-                                specificTargets.forEach(tid => window.animatingConnIds.delete(tid));
+                                if (!hideConns) {
+                                    specificTargets.forEach(tid => window.animatingConnIds.delete(tid));
+                                }
                                 updateConnections();
                             }
                         };
@@ -5517,7 +5521,7 @@ function renderKanbanApp(activeBoard) {
                             }
                         });
                         
-                        animateFlow();
+                        animateFlow(true);
                         setTimeout(() => render(), 360);
                     } else {
                         list.collapsedEdges = list.collapsedEdges.filter(st => st !== collapseKey);
