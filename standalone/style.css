@@ -917,7 +917,7 @@ input[type=number] {
 
 /* Inline Task Card Animations */
 .trello-task-card {
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s, opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1;
     max-height: 300px; /* Big enough for standard cards */
     margin-bottom: 8px; /* Should match the gap in .card-list */
