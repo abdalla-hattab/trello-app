@@ -11114,6 +11114,7 @@ function formatTrelloTime(startTime, hideMinutes = false, hideHours = false) {
 }
 
 setInterval(() => {
+    if (isGlobalDragging || document.hidden) return;
     document.querySelectorAll('.trello-clock, .trello-age-clock').forEach(clock => {
         const hideMins = clock.classList.contains('trello-age-clock');
         const hideHours = clock.classList.contains('hide-hours');
