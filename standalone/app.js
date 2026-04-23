@@ -8476,6 +8476,8 @@ function renderKanbanApp(activeBoard) {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
                 dragClass: 'sortable-drag',
+                forceFallback: true,
+                fallbackClass: 'sortable-fallback',
                 direction: 'vertical',
                 revertOnSpill: true,
                 delay: 50,
