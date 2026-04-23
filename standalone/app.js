@@ -6,6 +6,12 @@ let isGlobalDragging = false;
 let isFirebaseSynced = false;
 const thisClientId = Math.random().toString(36).substr(2, 9);
 
+window.lastGlobalMouseX = 0;
+window.lastGlobalMouseY = 0;
+document.addEventListener('mousedown', (e) => {
+    window.lastGlobalMouseX = e.clientX;
+    window.lastGlobalMouseY = e.clientY;
+}, true);
 // Migration from the old mixed storage 'ai_accounts_lists'
 let rawOldListsData = localStorage.getItem('ai_accounts_lists');
 let rawPrivate = localStorage.getItem('ai_private_boards');
@@ -8488,6 +8494,25 @@ function renderKanbanApp(activeBoard) {
                 scrollSensitivity: 80,
                 scrollSpeed: 20,
                 bubbleScroll: true,
+                setData: function (dataTransfer, dragEl) {
+                    const rect = dragEl.getBoundingClientRect();
+                    const offsetX = (window.lastGlobalMouseX || 0) - rect.left;
+                    const offsetY = (window.lastGlobalMouseY || 0) - rect.top;
+
+                    const ghost = dragEl.cloneNode(true);
+                    ghost.style.position = 'absolute';
+                    ghost.style.top = '-9999px';
+                    ghost.style.left = '-9999px';
+                    ghost.classList.remove('sortable-ghost', 'sortable-drag');
+                    ghost.style.zoom = activeBoard.camera.z;
+                    
+                    document.body.appendChild(ghost);
+                    dataTransfer.setDragImage(ghost, offsetX, offsetY);
+                    
+                    setTimeout(() => {
+                        if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+                    }, 0);
+                },
                 onStart: function(evt) {
                     isGlobalDragging = true;
                 },
