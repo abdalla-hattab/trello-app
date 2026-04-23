@@ -8478,6 +8478,7 @@ function renderKanbanApp(activeBoard) {
                 dragClass: 'sortable-drag',
                 direction: 'vertical',
                 swapThreshold: 0.65,
+                invertSwap: true,
                 revertOnSpill: true,
                 delay: 50,
                 delayOnTouchOnly: true,
