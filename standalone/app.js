@@ -6235,8 +6235,8 @@ function renderKanbanApp(activeBoard) {
                     };
                     const daysWord = getDaysText(daysLeft);
 
-                    let badgeColor = '#22c55e'; // Green
-                    let badgeBg = '#dcfce7';
+                    let badgeColor = '#1f822b'; // Soft Green
+                    let badgeBg = '#eaf2e3';
                     let badgeText = `⏳ باقي ${daysLeft} ${daysWord}`;
                     
                     if (daysLeft < 0) {
