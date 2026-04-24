@@ -6062,6 +6062,7 @@ function renderKanbanApp(activeBoard) {
                 const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
                 const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
                 const needsLaunch = activeBoard.adCardLaunch && activeBoard.adCardLaunch[card.id];
+                const needsInquiry = activeBoard.adCardInquire && activeBoard.adCardInquire[card.id];
                 
                 if (hasIssue) {
                     const ccWrap = document.createElement('div');
@@ -6181,6 +6182,37 @@ function renderKanbanApp(activeBoard) {
                     };
                     
                     titleEl.appendChild(launchWrap);
+                }
+
+                if (needsInquiry) {
+                    const inquireWrap = document.createElement('div');
+                    inquireWrap.style.display = 'flex';
+                    inquireWrap.style.alignItems = 'flex-start';
+                    inquireWrap.style.justifyContent = 'center';
+                    inquireWrap.style.marginLeft = '6px';
+                    inquireWrap.style.marginTop = '2px';
+                    inquireWrap.style.flexShrink = '0';
+                    inquireWrap.style.cursor = 'pointer';
+                    
+                    const purpleInquireSvg = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>`;
+
+                    inquireWrap.innerHTML = purpleInquireSvg;
+                    inquireWrap.title = 'استفسار عن الأداء';
+                    
+                    inquireWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        window.showAdsCardOptions(card, activeBoard, () => {
+                            saveState();
+                            render();
+                        });
+                    };
+                    
+                    titleEl.appendChild(inquireWrap);
                 }
             }
             
@@ -11288,6 +11320,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
     const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
     const needsLaunch = activeBoard.adCardLaunch && activeBoard.adCardLaunch[card.id];
+    const needsInquiry = activeBoard.adCardInquire && activeBoard.adCardInquire[card.id];
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
@@ -11414,7 +11447,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     btnLaunch.style.alignItems = 'center';
     btnLaunch.style.justifyContent = 'center';
     btnLaunch.style.gap = '8px';
-    btnLaunch.style.marginBottom = '24px';
+    btnLaunch.style.marginBottom = '12px';
     btnLaunch.style.transition = 'all 0.2s';
     btnLaunch.onmouseover = () => btnLaunch.style.background = needsLaunch ? '#bfdbfe' : '#f8fafc';
     btnLaunch.onmouseout = () => btnLaunch.style.background = needsLaunch ? '#dbeafe' : 'white';
@@ -11426,6 +11459,36 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
         if (!activeBoard.adCardLaunch) activeBoard.adCardLaunch = {};
         if (needsLaunch) delete activeBoard.adCardLaunch[card.id];
         else activeBoard.adCardLaunch[card.id] = true;
+        document.body.removeChild(overlay);
+        if (onUpdate) onUpdate();
+    };
+
+    const btnInquire = document.createElement('button');
+    btnInquire.style.width = '100%';
+    btnInquire.style.padding = '12px';
+    btnInquire.style.borderRadius = '8px';
+    btnInquire.style.border = needsInquiry ? '1px solid #a855f7' : '1px solid #cbd5e1';
+    btnInquire.style.background = needsInquiry ? '#f3e8ff' : 'white';
+    btnInquire.style.color = needsInquiry ? '#7e22ce' : '#475569';
+    btnInquire.style.fontWeight = '600';
+    btnInquire.style.fontFamily = "inherit";
+    btnInquire.style.cursor = 'pointer';
+    btnInquire.style.display = 'flex';
+    btnInquire.style.alignItems = 'center';
+    btnInquire.style.justifyContent = 'center';
+    btnInquire.style.gap = '8px';
+    btnInquire.style.marginBottom = '24px';
+    btnInquire.style.transition = 'all 0.2s';
+    btnInquire.onmouseover = () => btnInquire.style.background = needsInquiry ? '#e9d5ff' : '#f8fafc';
+    btnInquire.onmouseout = () => btnInquire.style.background = needsInquiry ? '#f3e8ff' : 'white';
+
+    const inquireIconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+    btnInquire.innerHTML = `${inquireIconHtml} ${needsInquiry ? 'إلغاء الاستفسار عن الأداء' : 'استفسار عن الأداء'}`;
+
+    btnInquire.onclick = () => {
+        if (!activeBoard.adCardInquire) activeBoard.adCardInquire = {};
+        if (needsInquiry) delete activeBoard.adCardInquire[card.id];
+        else activeBoard.adCardInquire[card.id] = true;
         document.body.removeChild(overlay);
         if (onUpdate) onUpdate();
     };
@@ -11447,6 +11510,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     content.appendChild(btnWhatsapp);
     content.appendChild(btnTax);
     content.appendChild(btnLaunch);
+    content.appendChild(btnInquire);
     content.appendChild(btnCancel);
 
     overlay.onclick = (e) => {
