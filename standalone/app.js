@@ -6214,6 +6214,64 @@ function renderKanbanApp(activeBoard) {
                     
                     titleEl.appendChild(inquireWrap);
                 }
+
+                const subDateStr = activeBoard.adCardSubscription && activeBoard.adCardSubscription[card.id];
+                if (subDateStr) {
+                    const startDate = new Date(subDateStr);
+                    const now = new Date();
+                    // normalize dates to start of day for accurate day calculation
+                    const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    
+                    const msPassed = today.getTime() - startDay.getTime();
+                    const daysPassed = Math.floor(msPassed / (1000 * 60 * 60 * 24));
+                    const daysLeft = 30 - daysPassed;
+                    
+                    let badgeColor = '#22c55e'; // Green
+                    let badgeBg = '#dcfce7';
+                    let badgeText = `⏳ باقي ${daysLeft} يوم`;
+                    
+                    if (daysLeft < 0) {
+                        badgeColor = '#ef4444'; // Red
+                        badgeBg = '#fee2e2';
+                        badgeText = `⚠️ متأخر ${Math.abs(daysLeft)} يوم`;
+                    } else if (daysLeft <= 5 && daysLeft > 0) {
+                        badgeColor = '#f97316'; // Orange
+                        badgeBg = '#ffedd5';
+                        badgeText = `🚨 باقي ${daysLeft} يوم`;
+                    } else if (daysLeft === 0) {
+                        badgeColor = '#ef4444'; // Red
+                        badgeBg = '#fee2e2';
+                        badgeText = `⚠️ ينتهي اليوم`;
+                    }
+
+                    const subWrap = document.createElement('div');
+                    subWrap.style.display = 'inline-flex';
+                    subWrap.style.alignItems = 'center';
+                    subWrap.style.justifyContent = 'center';
+                    subWrap.style.padding = '2px 8px';
+                    subWrap.style.borderRadius = '12px';
+                    subWrap.style.fontSize = '11px';
+                    subWrap.style.fontWeight = 'bold';
+                    subWrap.style.color = badgeColor;
+                    subWrap.style.background = badgeBg;
+                    subWrap.style.marginLeft = '6px';
+                    subWrap.style.marginTop = '2px';
+                    subWrap.style.cursor = 'pointer';
+                    subWrap.style.border = `1px solid ${badgeColor}40`;
+                    subWrap.title = `تاريخ البداية: ${subDateStr}`;
+                    subWrap.innerText = badgeText;
+                    
+                    subWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        window.showAdsCardOptions(card, activeBoard, () => {
+                            saveState();
+                            render();
+                        });
+                    };
+                    
+                    titleEl.appendChild(subWrap);
+                }
             }
             
             if (card.isPipedrive && activeBoard.pipedriveWhatsappFieldKey && card.pipedriveData) {
@@ -11342,6 +11400,50 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     titleEl.style.fontWeight = "700";
     titleEl.style.fontFamily = "inherit";
     content.appendChild(titleEl);
+
+    const subContainer = document.createElement('div');
+    subContainer.style.background = '#f8fafc';
+    subContainer.style.border = '1px solid #e2e8f0';
+    subContainer.style.borderRadius = '8px';
+    subContainer.style.padding = '12px';
+    subContainer.style.marginBottom = '24px';
+    subContainer.style.textAlign = 'right';
+
+    const subLabel = document.createElement('label');
+    subLabel.innerText = 'تاريخ بداية الاشتراك (30 يوم):';
+    subLabel.style.display = 'block';
+    subLabel.style.fontSize = '13px';
+    subLabel.style.fontWeight = '600';
+    subLabel.style.color = '#475569';
+    subLabel.style.marginBottom = '8px';
+
+    const subInput = document.createElement('input');
+    subInput.type = 'date';
+    subInput.style.width = '100%';
+    subInput.style.padding = '8px';
+    subInput.style.borderRadius = '6px';
+    subInput.style.border = '1px solid #cbd5e1';
+    subInput.style.fontFamily = 'inherit';
+    subInput.style.boxSizing = 'border-box';
+    
+    if (activeBoard.adCardSubscription && activeBoard.adCardSubscription[card.id]) {
+        subInput.value = activeBoard.adCardSubscription[card.id];
+    }
+
+    subInput.onchange = (e) => {
+        if (!activeBoard.adCardSubscription) activeBoard.adCardSubscription = {};
+        if (e.target.value) {
+            activeBoard.adCardSubscription[card.id] = e.target.value;
+        } else {
+            delete activeBoard.adCardSubscription[card.id];
+        }
+        saveState();
+        render(); // Reflect changes immediately in background
+    };
+
+    subContainer.appendChild(subLabel);
+    subContainer.appendChild(subInput);
+    content.appendChild(subContainer);
 
     const btnIssue = document.createElement('button');
     btnIssue.style.width = '100%';
