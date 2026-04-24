@@ -6610,6 +6610,7 @@ function renderKanbanApp(activeBoard) {
                 badgeWrap.style.display = 'flex';
                 badgeWrap.style.justifyContent = 'space-between';
                 badgeWrap.style.alignItems = 'center';
+                badgeWrap.style.flexWrap = 'nowrap';
                 
                 if (list.trackerType === 'ads') {
                     const m = card.adsMetrics || {};
@@ -7580,7 +7581,7 @@ function renderKanbanApp(activeBoard) {
                 badgeWrap.className = 'badges';
                 badgeWrap.style.display = 'flex';
                 badgeWrap.style.alignItems = 'center';
-                badgeWrap.style.flexWrap = 'wrap';
+                badgeWrap.style.flexWrap = 'nowrap';
                 badgeWrap.style.gap = '8px';
                 badgeWrap.style.marginTop = '8px';
                 badgeWrap.style.fontSize = '12px';
@@ -7611,7 +7612,7 @@ function renderKanbanApp(activeBoard) {
                 rightBadgeGroup.style.marginLeft = 'auto';
                 rightBadgeGroup.style.display = 'flex';
                 rightBadgeGroup.style.alignItems = 'center';
-                rightBadgeGroup.style.gap = '4px';
+                rightBadgeGroup.style.gap = '2px';
 
                 if (typeof subWrap !== 'undefined' && subWrap) {
                     rightBadgeGroup.appendChild(subWrap);
