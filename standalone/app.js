@@ -6061,6 +6061,7 @@ function renderKanbanApp(activeBoard) {
                 const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
                 const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
                 const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
+                const needsLaunch = activeBoard.adCardLaunch && activeBoard.adCardLaunch[card.id];
                 
                 if (hasIssue) {
                     const ccWrap = document.createElement('div');
@@ -6150,6 +6151,36 @@ function renderKanbanApp(activeBoard) {
                     };
                     
                     titleEl.appendChild(taxWrap);
+                }
+
+                if (needsLaunch) {
+                    const launchWrap = document.createElement('div');
+                    launchWrap.style.display = 'flex';
+                    launchWrap.style.alignItems = 'flex-start';
+                    launchWrap.style.justifyContent = 'center';
+                    launchWrap.style.marginLeft = '6px';
+                    launchWrap.style.marginTop = '2px';
+                    launchWrap.style.flexShrink = '0';
+                    launchWrap.style.cursor = 'pointer';
+                    
+                    const blueLaunchSvg = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m3 11 18-5v12L3 14v-3z"></path>
+                            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
+                        </svg>`;
+
+                    launchWrap.innerHTML = blueLaunchSvg;
+                    launchWrap.title = 'يتطلب إطلاق الإعلان';
+                    
+                    launchWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        window.showAdsCardOptions(card, activeBoard, () => {
+                            saveState();
+                            render();
+                        });
+                    };
+                    
+                    titleEl.appendChild(launchWrap);
                 }
             }
             
@@ -11256,6 +11287,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
     const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
     const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
+    const needsLaunch = activeBoard.adCardLaunch && activeBoard.adCardLaunch[card.id];
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
@@ -11352,7 +11384,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     btnTax.style.alignItems = 'center';
     btnTax.style.justifyContent = 'center';
     btnTax.style.gap = '8px';
-    btnTax.style.marginBottom = '24px';
+    btnTax.style.marginBottom = '12px';
     btnTax.style.transition = 'all 0.2s';
     btnTax.onmouseover = () => btnTax.style.background = hasTax ? '#fde047' : '#f8fafc';
     btnTax.onmouseout = () => btnTax.style.background = hasTax ? '#fef08a' : 'white';
@@ -11364,6 +11396,36 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
         if (!activeBoard.adCardTax) activeBoard.adCardTax = {};
         if (hasTax) delete activeBoard.adCardTax[card.id];
         else activeBoard.adCardTax[card.id] = true;
+        document.body.removeChild(overlay);
+        if (onUpdate) onUpdate();
+    };
+
+    const btnLaunch = document.createElement('button');
+    btnLaunch.style.width = '100%';
+    btnLaunch.style.padding = '12px';
+    btnLaunch.style.borderRadius = '8px';
+    btnLaunch.style.border = needsLaunch ? '1px solid #3b82f6' : '1px solid #cbd5e1';
+    btnLaunch.style.background = needsLaunch ? '#dbeafe' : 'white';
+    btnLaunch.style.color = needsLaunch ? '#2563eb' : '#475569';
+    btnLaunch.style.fontWeight = '600';
+    btnLaunch.style.fontFamily = "inherit";
+    btnLaunch.style.cursor = 'pointer';
+    btnLaunch.style.display = 'flex';
+    btnLaunch.style.alignItems = 'center';
+    btnLaunch.style.justifyContent = 'center';
+    btnLaunch.style.gap = '8px';
+    btnLaunch.style.marginBottom = '24px';
+    btnLaunch.style.transition = 'all 0.2s';
+    btnLaunch.onmouseover = () => btnLaunch.style.background = needsLaunch ? '#bfdbfe' : '#f8fafc';
+    btnLaunch.onmouseout = () => btnLaunch.style.background = needsLaunch ? '#dbeafe' : 'white';
+
+    const launchIconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"></path><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path></svg>`;
+    btnLaunch.innerHTML = `${launchIconHtml} ${needsLaunch ? 'إلغاء إطلاق الإعلان' : 'تفعيل إطلاق الإعلان'}`;
+
+    btnLaunch.onclick = () => {
+        if (!activeBoard.adCardLaunch) activeBoard.adCardLaunch = {};
+        if (needsLaunch) delete activeBoard.adCardLaunch[card.id];
+        else activeBoard.adCardLaunch[card.id] = true;
         document.body.removeChild(overlay);
         if (onUpdate) onUpdate();
     };
@@ -11384,6 +11446,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     content.appendChild(btnIssue);
     content.appendChild(btnWhatsapp);
     content.appendChild(btnTax);
+    content.appendChild(btnLaunch);
     content.appendChild(btnCancel);
 
     overlay.onclick = (e) => {
