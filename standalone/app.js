@@ -6250,9 +6250,9 @@ function renderKanbanApp(activeBoard) {
                     subWrap.style.display = 'inline-flex';
                     subWrap.style.alignItems = 'center';
                     subWrap.style.justifyContent = 'center';
-                    subWrap.style.padding = '4px 8px';
+                    subWrap.style.padding = '2px 6px';
                     subWrap.style.borderRadius = '6px';
-                    subWrap.style.fontSize = '11px';
+                    subWrap.style.fontSize = '10px';
                     subWrap.style.fontWeight = '600';
                     subWrap.style.color = badgeColor;
                     subWrap.style.background = badgeBg;
@@ -7303,13 +7303,13 @@ function renderKanbanApp(activeBoard) {
                     attachTooltip(calculatorBadge, 'Advanced Margin Calculator');
                     calculatorBadge.style.background = 'rgba(9, 30, 66, 0.04)';
                     calculatorBadge.style.color = '#172b4d';
-                    calculatorBadge.style.padding = '4px 8px';
+                    calculatorBadge.style.padding = '2px 6px';
                     calculatorBadge.style.borderRadius = '6px';
                     calculatorBadge.style.display = 'flex';
                     calculatorBadge.style.alignItems = 'center';
                     calculatorBadge.style.cursor = 'pointer';
                     calculatorBadge.style.border = '1px solid rgba(9, 30, 66, 0.08)';
-                    calculatorBadge.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="14.01"></line><line x1="16" x2="16" y1="18" y2="18.01"></line><line x1="12" x2="12" y1="14" y2="14.01"></line><line x1="12" x2="12" y1="18" y2="18.01"></line><line x1="8" x2="8" y1="14" y2="14.01"></line><line x1="8" x2="8" y1="18" y2="18.01"></line></svg><span style="font-weight:600; font-size:11px; letter-spacing:0.5px;">KPI</span>`;
+                    calculatorBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><rect width="16" height="20" x="4" y="2" rx="2"></rect><line x1="8" x2="16" y1="6" y2="6"></line><line x1="16" x2="16" y1="14" y2="14.01"></line><line x1="16" x2="16" y1="18" y2="18.01"></line><line x1="12" x2="12" y1="14" y2="14.01"></line><line x1="12" x2="12" y1="18" y2="18.01"></line><line x1="8" x2="8" y1="14" y2="14.01"></line><line x1="8" x2="8" y1="18" y2="18.01"></line></svg><span style="font-weight:600; font-size:10px; letter-spacing:0.5px;">KPI</span>`;
                     calculatorBadge.onmouseenter = () => calculatorBadge.style.background = 'rgba(9, 30, 66, 0.08)';
                     calculatorBadge.onmouseleave = () => calculatorBadge.style.background = 'rgba(9, 30, 66, 0.04)';
                     if(calculatorBadge) calculatorBadge.onclick = (e) => {
@@ -7595,13 +7595,13 @@ function renderKanbanApp(activeBoard) {
                 timeBadge.style.background = 'rgba(12, 102, 228, 0.08)';
                 timeBadge.style.color = '#0c66e4';
                 timeBadge.style.border = '1px solid rgba(12, 102, 228, 0.2)';
-                timeBadge.style.padding = '4px 8px';
+                timeBadge.style.padding = '2px 6px';
                 timeBadge.style.borderRadius = '6px';
                 timeBadge.style.display = 'flex';
                 timeBadge.style.alignItems = 'center';
                 
                 const initialText = typeof formatTrelloTime === 'function' ? formatTrelloTime(card.startTime) : '0m';
-                timeBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> <span class="clock-text" style="font-weight:600; letter-spacing:0.5px; font-size:11px; line-height: 1;">${initialText}</span>`;
+                timeBadge.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:3px; flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> <span class="clock-text" style="font-weight:600; letter-spacing:0.5px; font-size:10px; line-height: 1;">${initialText}</span>`;
                 timeBadge.title = "Time spent in current list";
                 createdTimeBadge = timeBadge;
             }
