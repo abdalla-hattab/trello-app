@@ -5744,6 +5744,7 @@ function renderKanbanApp(activeBoard) {
                 cardEl.style.cursor = 'pointer';
             }
 
+            let subWrap = null;
             const titleEl = document.createElement('div');
             titleEl.className = 'card-title';
             
@@ -6245,18 +6246,16 @@ function renderKanbanApp(activeBoard) {
                         badgeText = `⚠️ ينتهي اليوم`;
                     }
 
-                    const subWrap = document.createElement('div');
+                    subWrap = document.createElement('div');
                     subWrap.style.display = 'inline-flex';
                     subWrap.style.alignItems = 'center';
                     subWrap.style.justifyContent = 'center';
-                    subWrap.style.padding = '2px 8px';
-                    subWrap.style.borderRadius = '12px';
+                    subWrap.style.padding = '4px 8px';
+                    subWrap.style.borderRadius = '6px';
                     subWrap.style.fontSize = '11px';
-                    subWrap.style.fontWeight = 'bold';
+                    subWrap.style.fontWeight = '600';
                     subWrap.style.color = badgeColor;
                     subWrap.style.background = badgeBg;
-                    subWrap.style.marginLeft = '6px';
-                    subWrap.style.marginTop = '2px';
                     subWrap.style.cursor = 'pointer';
                     subWrap.style.border = `1px solid ${badgeColor}40`;
                     subWrap.title = `تاريخ البداية: ${subDateStr}`;
@@ -6269,8 +6268,6 @@ function renderKanbanApp(activeBoard) {
                             render();
                         });
                     };
-                    
-                    titleEl.appendChild(subWrap);
                 }
             }
             
@@ -7615,6 +7612,10 @@ function renderKanbanApp(activeBoard) {
                 rightBadgeGroup.style.display = 'flex';
                 rightBadgeGroup.style.alignItems = 'center';
                 rightBadgeGroup.style.gap = '4px';
+
+                if (typeof subWrap !== 'undefined' && subWrap) {
+                    rightBadgeGroup.appendChild(subWrap);
+                }
 
                 if (typeof calculatorBadge !== 'undefined' && calculatorBadge) {
                     rightBadgeGroup.appendChild(calculatorBadge);
