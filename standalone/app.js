@@ -6,12 +6,6 @@ let isGlobalDragging = false;
 let isFirebaseSynced = false;
 const thisClientId = Math.random().toString(36).substr(2, 9);
 
-window.lastGlobalMouseX = 0;
-window.lastGlobalMouseY = 0;
-document.addEventListener('mousedown', (e) => {
-    window.lastGlobalMouseX = e.clientX;
-    window.lastGlobalMouseY = e.clientY;
-}, true);
 // Migration from the old mixed storage 'ai_accounts_lists'
 let rawOldListsData = localStorage.getItem('ai_accounts_lists');
 let rawPrivate = localStorage.getItem('ai_private_boards');
@@ -6066,6 +6060,7 @@ function renderKanbanApp(activeBoard) {
             if (list.trackerType === 'ads') {
                 const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
                 const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
+                const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
                 
                 if (hasIssue) {
                     const ccWrap = document.createElement('div');
@@ -6124,6 +6119,37 @@ function renderKanbanApp(activeBoard) {
                     };
                     
                     titleEl.appendChild(waWrap);
+                }
+
+                if (hasTax) {
+                    const taxWrap = document.createElement('div');
+                    taxWrap.style.display = 'flex';
+                    taxWrap.style.alignItems = 'flex-start';
+                    taxWrap.style.justifyContent = 'center';
+                    taxWrap.style.marginLeft = '6px';
+                    taxWrap.style.marginTop = '2px';
+                    taxWrap.style.flexShrink = '0';
+                    taxWrap.style.cursor = 'pointer';
+                    
+                    const yellowTaxSvg = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 2v20l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2V2l-2 2-2-2-2 2-2-2-2 2-2-2-2 2Z"></path>
+                            <path d="M16 14h-6"></path>
+                            <path d="M16 10h-6"></path>
+                        </svg>`;
+
+                    taxWrap.innerHTML = yellowTaxSvg;
+                    taxWrap.title = 'ضريبة مضافة';
+                    
+                    taxWrap.onclick = (e) => {
+                        e.stopPropagation();
+                        window.showAdsCardOptions(card, activeBoard, () => {
+                            saveState();
+                            render();
+                        });
+                    };
+                    
+                    titleEl.appendChild(taxWrap);
                 }
             }
             
@@ -8494,25 +8520,6 @@ function renderKanbanApp(activeBoard) {
                 scrollSensitivity: 80,
                 scrollSpeed: 20,
                 bubbleScroll: true,
-                setData: function (dataTransfer, dragEl) {
-                    const rect = dragEl.getBoundingClientRect();
-                    const offsetX = (window.lastGlobalMouseX || 0) - rect.left;
-                    const offsetY = (window.lastGlobalMouseY || 0) - rect.top;
-
-                    const ghost = dragEl.cloneNode(true);
-                    ghost.style.position = 'absolute';
-                    ghost.style.top = '-9999px';
-                    ghost.style.left = '-9999px';
-                    ghost.classList.remove('sortable-ghost', 'sortable-drag');
-                    ghost.style.zoom = activeBoard.camera.z;
-                    
-                    document.body.appendChild(ghost);
-                    dataTransfer.setDragImage(ghost, offsetX, offsetY);
-                    
-                    setTimeout(() => {
-                        if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
-                    }, 0);
-                },
                 onStart: function(evt) {
                     isGlobalDragging = true;
                 },
@@ -11248,6 +11255,7 @@ window.showConfirmModal = function(callback, titleText, descText) {
 window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
     const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
+    const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
@@ -11314,7 +11322,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     btnWhatsapp.style.alignItems = 'center';
     btnWhatsapp.style.justifyContent = 'center';
     btnWhatsapp.style.gap = '8px';
-    btnWhatsapp.style.marginBottom = '24px';
+    btnWhatsapp.style.marginBottom = '12px';
     btnWhatsapp.style.transition = 'all 0.2s';
     btnWhatsapp.onmouseover = () => btnWhatsapp.style.background = isWhatsappActive ? '#86efac' : '#f8fafc';
     btnWhatsapp.onmouseout = () => btnWhatsapp.style.background = isWhatsappActive ? '#dcfce7' : 'white';
@@ -11326,6 +11334,36 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
         if (!activeBoard.adCardWhatsapp) activeBoard.adCardWhatsapp = {};
         if (isWhatsappActive) delete activeBoard.adCardWhatsapp[card.id];
         else activeBoard.adCardWhatsapp[card.id] = true;
+        document.body.removeChild(overlay);
+        if (onUpdate) onUpdate();
+    };
+
+    const btnTax = document.createElement('button');
+    btnTax.style.width = '100%';
+    btnTax.style.padding = '12px';
+    btnTax.style.borderRadius = '8px';
+    btnTax.style.border = hasTax ? '1px solid #eab308' : '1px solid #cbd5e1';
+    btnTax.style.background = hasTax ? '#fef08a' : 'white';
+    btnTax.style.color = hasTax ? '#ca8a04' : '#475569';
+    btnTax.style.fontWeight = '600';
+    btnTax.style.fontFamily = "inherit";
+    btnTax.style.cursor = 'pointer';
+    btnTax.style.display = 'flex';
+    btnTax.style.alignItems = 'center';
+    btnTax.style.justifyContent = 'center';
+    btnTax.style.gap = '8px';
+    btnTax.style.marginBottom = '24px';
+    btnTax.style.transition = 'all 0.2s';
+    btnTax.onmouseover = () => btnTax.style.background = hasTax ? '#fde047' : '#f8fafc';
+    btnTax.onmouseout = () => btnTax.style.background = hasTax ? '#fef08a' : 'white';
+
+    const taxIconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2V2l-2 2-2-2-2 2-2-2-2 2-2-2-2 2Z"></path><path d="M16 14h-6"></path><path d="M16 10h-6"></path></svg>`;
+    btnTax.innerHTML = `${taxIconHtml} ${hasTax ? 'إزالة الضريبة' : 'إضافة ضريبة'}`;
+
+    btnTax.onclick = () => {
+        if (!activeBoard.adCardTax) activeBoard.adCardTax = {};
+        if (hasTax) delete activeBoard.adCardTax[card.id];
+        else activeBoard.adCardTax[card.id] = true;
         document.body.removeChild(overlay);
         if (onUpdate) onUpdate();
     };
@@ -11345,6 +11383,7 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
 
     content.appendChild(btnIssue);
     content.appendChild(btnWhatsapp);
+    content.appendChild(btnTax);
     content.appendChild(btnCancel);
 
     overlay.onclick = (e) => {
