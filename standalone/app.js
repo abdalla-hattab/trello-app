@@ -6228,18 +6228,25 @@ function renderKanbanApp(activeBoard) {
                     const daysPassed = Math.floor(msPassed / (1000 * 60 * 60 * 24));
                     const daysLeft = 30 - daysPassed;
                     
+                    const getDaysText = (d) => {
+                        const absD = Math.abs(d);
+                        if (absD >= 3 && absD <= 10) return 'أيام';
+                        return 'يوم';
+                    };
+                    const daysWord = getDaysText(daysLeft);
+
                     let badgeColor = '#22c55e'; // Green
                     let badgeBg = '#dcfce7';
-                    let badgeText = `⏳ باقي ${daysLeft} يوم`;
+                    let badgeText = `⏳ باقي ${daysLeft} ${daysWord}`;
                     
                     if (daysLeft < 0) {
                         badgeColor = '#ef4444'; // Red
                         badgeBg = '#fee2e2';
-                        badgeText = `⚠️ متأخر ${Math.abs(daysLeft)} يوم`;
+                        badgeText = `⚠️ متأخر ${Math.abs(daysLeft)} ${daysWord}`;
                     } else if (daysLeft <= 5 && daysLeft > 0) {
                         badgeColor = '#f97316'; // Orange
                         badgeBg = '#ffedd5';
-                        badgeText = `🚨 باقي ${daysLeft} يوم`;
+                        badgeText = `🚨 باقي ${daysLeft} ${daysWord}`;
                     } else if (daysLeft === 0) {
                         badgeColor = '#ef4444'; // Red
                         badgeBg = '#fee2e2';
