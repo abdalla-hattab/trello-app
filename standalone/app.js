@@ -6237,7 +6237,7 @@ function renderKanbanApp(activeBoard) {
 
                     let badgeColor = '#1f822b'; // Soft Green
                     let badgeBg = '#eaf2e3';
-                    let badgeText = `⏳ باقي ${daysLeft} ${daysWord}`;
+                    let badgeText = `${daysLeft}`;
                     
                     if (daysLeft < 0) {
                         badgeColor = '#ef4444'; // Red
