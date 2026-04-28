@@ -10186,7 +10186,18 @@ if (pipedriveEditPhoneSaveBtn) {
         if (!activePipedriveDealId || !activeBoardId) return;
         const phoneInput = document.getElementById('pipedriveEditPhoneInput');
         if (!phoneInput) return;
-        const newVal = phoneInput.value.trim();
+        let newVal = phoneInput.value.trim();
+        
+        if (newVal) {
+            let cleanNum = newVal.replace(/[^\d+]/g, '');
+            if (cleanNum && !cleanNum.startsWith('+')) {
+                cleanNum = '+' + cleanNum;
+            }
+            if (cleanNum) {
+                newVal = `https://wa.me/${cleanNum}`;
+                phoneInput.value = newVal; // Update input field to show the formatted link
+            }
+        }
 
         try {
             const originalBtnHtml = pipedriveEditPhoneSaveBtn.innerHTML;
