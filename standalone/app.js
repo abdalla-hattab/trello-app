@@ -3905,7 +3905,7 @@ function renderKanbanApp(activeBoard) {
                     else if (targetList.isMoneySmelling) myType = 'moneySmelling';
                     else if (targetList.isNewClients) myType = 'newClients';
                     else if (targetList.pipedriveStageId) myType = 'pipedrive';
-                    else if ((targetList.trackerType === 'ads' || targetList.trackerType === 'ads2')) myType = 'ads';
+                    else if (targetList.trackerType === 'ads') myType = 'ads';
                     else if (targetList.trackerType === 'ads2') myType = 'ads2';
                     else if (targetList.trackerType === 'trelloSpeech') myType = 'trelloSpeech';
                 }
