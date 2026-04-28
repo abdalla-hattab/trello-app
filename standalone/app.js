@@ -3868,7 +3868,7 @@ function renderKanbanApp(activeBoard) {
             let offsetPx = 0;
             const toggleEl = sourceEl.querySelector(`.port-toggle-${sourceEdge}`);
             if (toggleEl) {
-                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasTrelloSpeech = false, hasAds = false;
+                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasTrelloSpeech = false, hasAds = false, hasAds2 = false;
                 activeBoard.connections.forEach(c => {
                     if (c.source === conn.source && c.sourcePort === sourceEdge) {
                         const targList = activeBoard.lists.find(l => l.id === c.target);
@@ -3882,19 +3882,6 @@ function renderKanbanApp(activeBoard) {
                             if (targList.trackerType === 'ads') hasAds = true;
                             if (targList.trackerType === 'ads2') hasAds2 = true;
                         }
-                    }
-                    
-                    if (hasAds2) {
-                        const aText = a2Cards === 1 ? '1 Ad' : `${a2Cards} Ads`;
-                        finalHtml += `
-                            <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
-                                <div data-clicker="true" data-pid="${list.id}" data-ptype="ads2" data-pcolor="null" style="display:flex; align-items:center; gap: 4px; background: rgba(0, 188, 212, 0.15); color: #00838F; padding: 4px 10px; border-radius: 6px; cursor:pointer;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                                    <span>${aText} (2)</span>
-                                </div>
-                                ${buildTally(a2Col, list.id, 'ads2') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(a2Col, list.id, 'ads2')}</div>` : ''}
-                            </div>
-                        `;
                     }
                 });
                 
