@@ -6230,14 +6230,14 @@ function renderKanbanApp(activeBoard) {
                     taxWrap.style.flexShrink = '0';
                     taxWrap.style.cursor = 'pointer';
                     
-                    const yellowTaxSvg = `
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 2v20l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2V2l-2 2-2-2-2 2-2-2-2 2-2-2-2 2Z"></path>
-                            <path d="M16 14h-6"></path>
-                            <path d="M16 10h-6"></path>
+                    const scaryTaxSvg = `
+                        <svg width="22" height="22" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.6));">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="#ef4444" stroke="#991b1b" stroke-width="2" stroke-linejoin="round"/>
+                            <line x1="12" y1="9" x2="12" y2="14" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="12" cy="17.5" r="1.5" fill="#ffffff"/>
                         </svg>`;
 
-                    taxWrap.innerHTML = yellowTaxSvg;
+                    taxWrap.innerHTML = scaryTaxSvg;
                     taxWrap.title = 'ضريبة مضافة';
                     
                     taxWrap.onclick = (e) => {
@@ -7463,11 +7463,11 @@ function renderKanbanApp(activeBoard) {
 
                     const taxBadge = document.createElement('div');
                     const isTax = m.taxEnabled === true;
-                    taxBadge.style.background = isTax ? '#ffbdad' : '#f4f5f7';
-                    taxBadge.style.color = isTax ? '#bf2600' : '#5e6c84';
+                    taxBadge.style.background = isTax ? '#fee2e2' : '#f4f5f7';
+                    taxBadge.style.color = isTax ? '#dc2626' : '#5e6c84';
                     taxBadge.style.padding = '4px 8px';
                     taxBadge.style.borderRadius = '6px';
-                    taxBadge.style.border = isTax ? '1px solid #bf260033' : '1px solid #5e6c8433';
+                    taxBadge.style.border = isTax ? '1px solid #ef4444' : '1px solid #5e6c8433';
                     taxBadge.style.cursor = 'pointer';
                     taxBadge.style.display = 'flex';
                     taxBadge.style.alignItems = 'center';
@@ -7494,9 +7494,9 @@ function renderKanbanApp(activeBoard) {
                             if (card.updateReadonlyBadges) card.updateReadonlyBadges();
                             if (card.adsTotalSpendEl) card.adsTotalSpendEl.innerText = formatNum(finalTotal);
                             
-                            taxBadge.style.background = m.taxEnabled ? '#ffbdad' : '#f4f5f7';
-                            taxBadge.style.color = m.taxEnabled ? '#bf2600' : '#5e6c84';
-                            taxBadge.style.border = m.taxEnabled ? '1px solid #bf260033' : '1px solid #5e6c8433';
+                            taxBadge.style.background = m.taxEnabled ? '#fee2e2' : '#f4f5f7';
+                            taxBadge.style.color = m.taxEnabled ? '#dc2626' : '#5e6c84';
+                            taxBadge.style.border = m.taxEnabled ? '1px solid #ef4444' : '1px solid #5e6c8433';
                         }
                     };
 
@@ -7587,9 +7587,9 @@ function renderKanbanApp(activeBoard) {
                         breakevenBadge.innerHTML = `<span style="font-size:10px;opacity:0.8;margin-right:4px">Breakeven</span> <span style="font-weight:700">${beRoas}x</span>`;
                         
                         if (metrics.taxEnabled) {
-                            taxBadge.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;height:14px;width:14px;">⚖️</span>`;
+                            taxBadge.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;height:14px;width:14px;">⚠️</span>`;
                         } else {
-                            taxBadge.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;height:14px;width:14px;opacity:0.7;">⚖️</span>`;
+                            taxBadge.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;height:14px;width:14px;opacity:0.7;">⚠️</span>`;
                         }
                     };
 
@@ -11714,9 +11714,9 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     btnTax.style.width = '100%';
     btnTax.style.padding = '12px';
     btnTax.style.borderRadius = '8px';
-    btnTax.style.border = hasTax ? '1px solid #eab308' : '1px solid #cbd5e1';
-    btnTax.style.background = hasTax ? '#fef08a' : 'white';
-    btnTax.style.color = hasTax ? '#ca8a04' : '#475569';
+    btnTax.style.border = hasTax ? '1px solid #ef4444' : '1px solid #cbd5e1';
+    btnTax.style.background = hasTax ? '#fee2e2' : 'white';
+    btnTax.style.color = hasTax ? '#b91c1c' : '#475569';
     btnTax.style.fontWeight = '600';
     btnTax.style.fontFamily = "inherit";
     btnTax.style.cursor = 'pointer';
@@ -11726,10 +11726,10 @@ window.showAdsCardOptions = function(card, activeBoard, onUpdate) {
     btnTax.style.gap = '8px';
     btnTax.style.marginBottom = '12px';
     btnTax.style.transition = 'all 0.2s';
-    btnTax.onmouseover = () => btnTax.style.background = hasTax ? '#fde047' : '#f8fafc';
-    btnTax.onmouseout = () => btnTax.style.background = hasTax ? '#fef08a' : 'white';
+    btnTax.onmouseover = () => btnTax.style.background = hasTax ? '#fca5a5' : '#f8fafc';
+    btnTax.onmouseout = () => btnTax.style.background = hasTax ? '#fee2e2' : 'white';
 
-    const taxIconHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2V2l-2 2-2-2-2 2-2-2-2 2-2-2-2 2Z"></path><path d="M16 14h-6"></path><path d="M16 10h-6"></path></svg>`;
+    const taxIconHtml = `<svg width="20" height="20" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="${hasTax ? '#ef4444' : 'none'}" stroke="${hasTax ? '#991b1b' : 'currentColor'}" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14" stroke="${hasTax ? '#ffffff' : 'currentColor'}" stroke-width="3" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.5" fill="${hasTax ? '#ffffff' : 'currentColor'}"/></svg>`;
     btnTax.innerHTML = `${taxIconHtml} ${hasTax ? 'إزالة الضريبة' : 'إضافة ضريبة'}`;
 
     btnTax.onclick = () => {
