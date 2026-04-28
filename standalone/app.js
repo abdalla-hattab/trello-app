@@ -5571,6 +5571,7 @@ function renderKanbanApp(activeBoard) {
             });
         }
         
+        let trelloTasksShowBtn = null;
         if (list.trelloTasksListId) {
             const showBtn = document.createElement('button');
             showBtn.className = 'add-card-btn';
@@ -5639,7 +5640,7 @@ function renderKanbanApp(activeBoard) {
                 };
                 requestAnimationFrame(animateConnections);
             };
-            listContainer.appendChild(showBtn);
+            trelloTasksShowBtn = showBtn;
         }
 
         let cardsToRender = list.cards;
@@ -8581,6 +8582,10 @@ function renderKanbanApp(activeBoard) {
 
         if (list.cards.length > 0 && !list.trelloTasksListId && list.trackerType !== 'ads' && !list.pipedriveStageId) {
             listContainer.insertBefore(hideCardsBtn, cardListEl);
+        }
+        
+        if (typeof trelloTasksShowBtn !== 'undefined' && trelloTasksShowBtn) {
+            listContainer.insertBefore(trelloTasksShowBtn, cardListEl);
         }
 
         // Strictly ensure pinned cards render natively BELOW all emoji badges and summary elements
