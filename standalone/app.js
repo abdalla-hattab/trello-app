@@ -6278,11 +6278,15 @@ function renderKanbanApp(activeBoard) {
                 }
             }
             
-            if (card.isPipedrive && activeBoard.pipedriveWhatsappFieldKey && card.pipedriveData) {
-                const waVal = card.pipedriveData[activeBoard.pipedriveWhatsappFieldKey];
-                if (waVal) {
-                    const waNum = String(waVal).replace(/[^\d+]/g, '');
-                    if (waNum.length > 5) {
+            let waVal = null;
+            if (card.whatsappPhone) {
+                waVal = card.whatsappPhone;
+            } else if (card.isPipedrive && activeBoard.pipedriveWhatsappFieldKey && card.pipedriveData) {
+                waVal = card.pipedriveData[activeBoard.pipedriveWhatsappFieldKey];
+            }
+            if (waVal) {
+                const waNum = String(waVal).replace(/[^\d+]/g, '');
+                if (waNum.length > 5) {
                         const waLink = document.createElement('a');
                         waLink.href = `https://wa.me/${waNum.startsWith('+') ? waNum.substring(1) : waNum}`;
                         waLink.target = '_blank';
@@ -9875,6 +9879,17 @@ function openPipedriveActionModal(cardId, listId) {
         }
     }
     
+    const editPhoneInput = document.getElementById('pipedriveEditPhoneInput');
+    if (editPhoneInput) {
+        if (card.whatsappPhone) {
+            editPhoneInput.value = card.whatsappPhone;
+        } else if (card.isPipedrive && activeBoard.pipedriveWhatsappFieldKey && card.pipedriveData) {
+            editPhoneInput.value = card.pipedriveData[activeBoard.pipedriveWhatsappFieldKey] || '';
+        } else {
+            editPhoneInput.value = '';
+        }
+    }
+    
     if (lostReasonContainer) lostReasonContainer.style.display = 'none';
     if (primaryBtns) primaryBtns.style.display = card.isPipedrive ? 'flex' : 'none'; // Hide Won/Lost for local cards
     if (lostReasonInput) lostReasonInput.value = '';
@@ -10162,6 +10177,76 @@ if (pipedriveActionNoteInput) {
             }
         } finally {
             pipedriveActionNoteInput.disabled = false;
+        }
+    };
+}
+
+const pipedriveEditPhoneSaveBtn = document.getElementById('pipedriveEditPhoneSaveBtn');
+if (pipedriveEditPhoneSaveBtn) {
+    pipedriveEditPhoneSaveBtn.onclick = async () => {
+        if (!activePipedriveDealId || !activeBoardId) return;
+        const phoneInput = document.getElementById('pipedriveEditPhoneInput');
+        if (!phoneInput) return;
+        const newVal = phoneInput.value.trim();
+
+        try {
+            const originalBtnHtml = pipedriveEditPhoneSaveBtn.innerHTML;
+            pipedriveEditPhoneSaveBtn.innerHTML = 'Saving...';
+            pipedriveEditPhoneSaveBtn.disabled = true;
+
+            const activeBoard = boards.find(b => b.id === activeBoardId);
+            let foundCard = null;
+            if (activeBoard) {
+                for (let l of activeBoard.lists) {
+                    foundCard = l.cards.find(c => c.id === window.activePipedriveCardId);
+                    if (foundCard) break;
+                }
+            }
+
+            if (foundCard && !foundCard.isPipedrive) {
+                foundCard.whatsappPhone = newVal;
+                showToast("WhatsApp Number updated!");
+                saveState();
+                render();
+            } else if (foundCard && foundCard.isPipedrive && activeBoard.pipedriveWhatsappFieldKey) {
+                // If it's a Pipedrive card, update pipedrive
+                const payload = {};
+                payload[activeBoard.pipedriveWhatsappFieldKey] = newVal;
+                const res = await fetch(`https://${pipedriveDomain}.pipedrive.com/api/v1/deals/${activePipedriveDealId}?api_token=${pipedriveToken}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    if (!foundCard.pipedriveData) foundCard.pipedriveData = {};
+                    foundCard.pipedriveData[activeBoard.pipedriveWhatsappFieldKey] = newVal;
+                    // Also store locally for fallback
+                    foundCard.whatsappPhone = newVal;
+                    showToast("WhatsApp Number updated in Pipedrive!");
+                    saveState();
+                    render();
+                    syncPipedrive();
+                } else {
+                    throw new Error("Failed to update WhatsApp number in Pipedrive");
+                }
+            } else if (foundCard) {
+                // Fallback for Pipedrive without WA field mapped
+                foundCard.whatsappPhone = newVal;
+                showToast("WhatsApp Number saved locally!");
+                saveState();
+                render();
+            }
+
+            setTimeout(() => {
+                pipedriveEditPhoneSaveBtn.innerHTML = originalBtnHtml;
+                pipedriveEditPhoneSaveBtn.disabled = false;
+            }, 500);
+        } catch (e) {
+            console.error(e);
+            showToast("Error updating WhatsApp number");
+            pipedriveEditPhoneSaveBtn.innerHTML = 'Save';
+            pipedriveEditPhoneSaveBtn.disabled = false;
         }
     };
 }
