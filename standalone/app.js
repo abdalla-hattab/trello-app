@@ -6307,7 +6307,6 @@ function renderKanbanApp(activeBoard) {
                         titleEl.appendChild(waLink);
                     }
                 }
-            }
             
             const pinBtn = document.createElement('div');
             pinBtn.className = 'card-pin-btn';
