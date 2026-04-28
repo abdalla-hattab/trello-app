@@ -4679,24 +4679,16 @@ function renderKanbanApp(activeBoard) {
         }
 
         if (activeBoard.trelloBoardId && (list.trackerType === 'trelloSpeech' || !list.trelloListId)) {
-            const isUnlink = list.trelloListId && list.trackerType === 'trelloSpeech';
-            const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line>`;
-            const text = isUnlink ? 'Unlink Trello Tracker 2' : 'Trello Tracker 2';
+            const isActive = list.trelloListId && list.trackerType === 'trelloSpeech';
+            const icon = isActive ? `<polyline points="20 6 9 17 4 12"></polyline>` : `<line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line>`;
+            const text = 'Trello Tracker 2';
             
             const opt = document.createElement('div');
             opt.className = 'list-option-item';
             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
             if(opt) opt.onclick = (e) => {
                 e.stopPropagation();
-                if (list.trelloListId && list.trackerType === 'trelloSpeech') {
-                    if(confirm("Unlink this Trello Tracker 2 layout?")) {
-                        list.trelloListId = null;
-                        list.trackerType = null;
-                        list.cards = list.cards.filter(c => !c.isTrello);
-                        saveState();
-                        render();
-                    }
-                } else openTrelloMappingGenerator(list, 'trelloSpeech');
+                openTrelloMappingGenerator(list, 'trelloSpeech');
                 optionsMenu.style.display = 'none';
             };
             optionsMenu.appendChild(opt);
@@ -4893,6 +4885,24 @@ function renderKanbanApp(activeBoard) {
                 optionsMenu.style.display = 'none';
             };
             optionsMenu.appendChild(tasksOption);
+        }
+
+        if (list.trelloListId && list.trackerType === 'trelloSpeech') {
+            const deactOption = document.createElement('div');
+            deactOption.className = 'list-option-item';
+            deactOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span>Deactivate Trello Tracker 2</span>`;
+            if(deactOption) deactOption.onclick = (e) => {
+                e.stopPropagation();
+                if(confirm("Are you sure you want to deactivate Trello Tracker 2?")) {
+                    list.trelloListId = null;
+                    list.trackerType = null;
+                    list.cards = list.cards.filter(c => !c.isTrello);
+                    saveState();
+                    render();
+                }
+                optionsMenu.style.display = 'none';
+            };
+            optionsMenu.appendChild(deactOption);
         }
 
         const isShowCheck = activeBoard.showListCheck && activeBoard.showListCheck[list.id];
