@@ -3546,7 +3546,7 @@ function updateAllTrackersSummaries(activeBoard) {
     activeBoard.lists.forEach(list => {
         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
         const isAdsTracker = list.trackerType === 'ads' || list.trackerType === 'ads2';
-        const isTrelloTracker = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && !list.isClientHappiness && !list.isMoneySmelling;
+        const isTrelloTracker = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
 
         if (hasOutgoing || isAdsTracker || isTrelloTracker) {
             let allDescendants = new Set();
@@ -3726,6 +3726,19 @@ function updateAllTrackersSummaries(activeBoard) {
                         `;
                     }
                     
+                    if (hasAds2) {
+                        const aText = a2Cards === 1 ? '1 Ad' : `${a2Cards} Ads`;
+                        finalHtml += `
+                            <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
+                                <div data-clicker="true" data-pid="${list.id}" data-ptype="ads2" data-pcolor="null" style="display:flex; align-items:center; gap: 4px; background: rgba(0, 188, 212, 0.15); color: #00838F; padding: 4px 10px; border-radius: 6px; cursor:pointer;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                                    <span>${aText} (2)</span>
+                                </div>
+                                ${buildTally(a2Col, list.id, 'ads2') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(a2Col, list.id, 'ads2')}</div>` : ''}
+                            </div>
+                        `;
+                    }
+                    
                     finalHtml += `</div>`;
 
                     const summaryEl = document.querySelector(`.kanban-list[data-id="${list.id}"] .downstream-trackers-summary`);
@@ -3878,7 +3891,7 @@ function renderKanbanApp(activeBoard) {
                             if (targList.isNewClients) hasNewClients = true;
                             if (targList.pipedriveStageId) hasPipedrive = true;
                             if (targList.trackerType === 'trelloSpeech') hasTrelloSpeech = true;
-                            if ((targList.trelloTasksListId || targList.trelloBoardId || targList.trelloListId) && targList.trackerType !== 'ads' && targList.trackerType !== 'trelloSpeech') hasTrello = true;
+                            if ((targList.trelloTasksListId || targList.trelloBoardId || targList.trelloListId) && targList.trackerType !== 'ads' && targList.trackerType !== 'ads2' && targList.trackerType !== 'trelloSpeech') hasTrello = true;
                             if (targList.trackerType === 'ads') hasAds = true;
                             if (targList.trackerType === 'ads2') hasAds2 = true;
                         }
@@ -4144,7 +4157,7 @@ function renderKanbanApp(activeBoard) {
                         if (tType === 'newClients' && tl.isNewClients) matches = true;
                         if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                         if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
-                        if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
+                        if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'ads2' && tl.trackerType !== 'trelloSpeech') matches = true;
                         if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
                             if (tType === 'ads2' && tl.trackerType === 'ads2') matches = true;
                     }
@@ -4188,7 +4201,7 @@ function renderKanbanApp(activeBoard) {
             allD.forEach(childId => {
                 const cl = activeBoard.lists.find(l => l.id === childId);
                 if (cl && cl.id !== pId) {
-                    if (pType === 'trello' && (cl.trelloTasksListId || cl.trelloBoardId || cl.trelloListId) && cl.trackerType !== 'ads') {
+                    if (pType === 'trello' && (cl.trelloTasksListId || cl.trelloBoardId || cl.trelloListId) && cl.trackerType !== 'ads' && cl.trackerType !== 'ads2') {
                         effectiveFilters[childId] = { value: color, type: pType };
                     } else if ((pType === 'ads' && cl.trackerType === 'ads') || (pType === 'ads2' && cl.trackerType === 'ads2')) {
                         effectiveFilters[childId] = { value: color, type: pType };
@@ -4227,7 +4240,7 @@ function renderKanbanApp(activeBoard) {
         }
 
         const isMeList = list.title && list.title.toLowerCase() === 'me';
-        if (!list.trelloTasksListId && (list.trelloBoardId || list.trelloListId) && list.trackerType !== 'ads' && list.cards.length === 0 && !hiddenListIds.has(list.id) && !isMeList) {
+        if (!list.trelloTasksListId && (list.trelloBoardId || list.trelloListId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && list.cards.length === 0 && !hiddenListIds.has(list.id) && !isMeList) {
             isFilteredOut = true;
         }
         
@@ -4296,7 +4309,7 @@ function renderKanbanApp(activeBoard) {
                         if (mappedType === 'ads') return t.trackerType === 'ads';
                         if (mappedType === 'ads2') return t.trackerType === 'ads2';
                         if (mappedType === 'trelloSpeech') return t.trackerType === 'trelloSpeech';
-                        if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && t.trackerType !== 'trelloSpeech' && !t.isClientHappiness && !t.isMoneySmelling && !t.isNewClients;
+                        if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && t.trackerType !== 'ads2' && t.trackerType !== 'trelloSpeech' && !t.isClientHappiness && !t.isMoneySmelling && !t.isNewClients;
                         return false;
                     };
 
@@ -4594,8 +4607,8 @@ function renderKanbanApp(activeBoard) {
         };
 
         // GROUP 1: INTEGRATIONS
-        if (activeBoard.trelloBoardId && (list.trackerType !== 'ads' && list.trackerType !== 'trelloSpeech' || !list.trelloListId)) {
-            const isUnlink = list.trelloListId && list.trackerType !== 'ads' && list.trackerType !== 'trelloSpeech';
+        if (activeBoard.trelloBoardId && (list.trackerType !== 'ads' && list.trackerType !== 'ads2' && list.trackerType !== 'trelloSpeech' || !list.trelloListId)) {
+            const isUnlink = list.trelloListId && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && list.trackerType !== 'trelloSpeech';
             const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<polyline points="20 6 9 17 4 12"></polyline>`;
             const text = isUnlink ? 'Unlink Trello Tracker' : 'Trello Tracker';
             
@@ -5242,7 +5255,7 @@ function renderKanbanApp(activeBoard) {
             listContainer.appendChild(port);
 
             const hasTrelloTrackers = activeBoard.connections && activeBoard.connections.some(c => 
-                c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType !== 'ads' && l.trackerType !== 'trelloSpeech')
+                c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType !== 'ads' && l.trackerType !== 'ads2' && l.trackerType !== 'trelloSpeech')
             );
             const hasTrelloSpeechTrackers = activeBoard.connections && activeBoard.connections.some(c => 
                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType === 'trelloSpeech')
@@ -5547,7 +5560,7 @@ function renderKanbanApp(activeBoard) {
                             if (tType === 'newClients' && tl.isNewClients) matches = true;
                             if (tType === 'pipedrive' && tl.pipedriveStageId) matches = true;
                             if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
-                            if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
+                            if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'ads2' && tl.trackerType !== 'trelloSpeech') matches = true;
                             if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
                             
                             if (matches) {
@@ -7668,7 +7681,7 @@ function renderKanbanApp(activeBoard) {
                 }
             }
 
-            const needsTimeBadge = (card.isTrello || card.isPipedrive) && card.startTime && list.trackerType !== 'ads';
+            const needsTimeBadge = (card.isTrello || card.isPipedrive) && card.startTime && list.trackerType !== 'ads' && list.trackerType !== 'ads2';
 
             if (!badgeWrap && (needsTimeBadge || showAgeBadge)) {
                 badgeWrap = document.createElement('div');
@@ -8607,7 +8620,7 @@ function renderKanbanApp(activeBoard) {
         renderTrackerStats('clientHappiness', l => l.isClientHappiness, staticSvgCH, 'application/x-transfer-ch');
 
         const isAdsTrackerNode = list.trackerType === 'ads' || list.trackerType === 'ads2';
-        const isTrelloTrackerNode = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && !list.isClientHappiness && !list.isMoneySmelling;
+        const isTrelloTrackerNode = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
 
         if (hasOutgoing || isAdsTrackerNode || isTrelloTrackerNode) {
             const summaryEl = document.createElement('div');
@@ -8662,7 +8675,7 @@ function renderKanbanApp(activeBoard) {
             requestAnimationFrame(animateConnections);
         };
 
-        if (list.cards.length > 0 && !list.trelloTasksListId && list.trackerType !== 'ads' && !list.pipedriveStageId) {
+        if (list.cards.length > 0 && !list.trelloTasksListId && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.pipedriveStageId) {
             listContainer.insertBefore(hideCardsBtn, cardListEl);
         }
         
@@ -11002,7 +11015,7 @@ window.applySmartPacking = function(curBoard) {
                 if (c.source === sourceId) {
                     const targetList = curBoard.lists.find(l => l.id === c.target && (l.trelloListId || l.trackerType === 'ads'));
                     if (targetList && targetList.cards) {
-                        if (targetList.trelloListId && targetList.trackerType !== 'ads' && targetList.trackerType !== 'trelloSpeech') {
+                        if (targetList.trelloListId && targetList.trackerType !== 'ads' && targetList.trackerType !== 'ads2' && targetList.trackerType !== 'trelloSpeech') {
                             delete targetList.isManualLayout; // REVERTED: Restore background squashing mathematical algorithm
                         }
                         const eff = curBoard.sentimentFilters;
@@ -11028,7 +11041,7 @@ window.applySmartPacking = function(curBoard) {
                                         
                                         // Evaluate same rigid type exclusions as the main canvas algorithm
                                         let typeMatches = false;
-                                        if (pType === 'trello' && (targetList.trelloTasksListId || targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && targetList.trackerType !== 'trelloSpeech') {
+                                        if (pType === 'trello' && (targetList.trelloTasksListId || targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && targetList.trackerType !== 'ads2' && targetList.trackerType !== 'trelloSpeech') {
                                             typeMatches = true;
                                         } else if (pType === 'trelloSpeech' && targetList.trackerType === 'trelloSpeech') {
                                             typeMatches = true;
@@ -11057,7 +11070,7 @@ window.applySmartPacking = function(curBoard) {
                             });
                         }
                         // Baseline check: if a regular Trello tracker list is completely empty, it will be hidden from the canvas by the render() function. (Trello Task lists always remain visible)
-                        if (!listHiddenByFilter && targetList.cards && targetList.cards.length === 0 && !targetList.trelloTasksListId && (targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && (!targetList.title || targetList.title.toLowerCase() !== 'me')) {
+                        if (!listHiddenByFilter && targetList.cards && targetList.cards.length === 0 && !targetList.trelloTasksListId && (targetList.trelloBoardId || targetList.trelloListId) && targetList.trackerType !== 'ads' && targetList.trackerType !== 'ads2' && (!targetList.title || targetList.title.toLowerCase() !== 'me')) {
                             listHiddenByFilter = true;
                         }
 
