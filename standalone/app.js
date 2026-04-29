@@ -9602,7 +9602,7 @@ if(confirmAddBtn) confirmAddBtn.onclick = async () => {
         showToast(activeBoard.type === 'kanban' ? "Card added!" : "Account added!");
     }
 };
-newCardTitle.onkeydown = (e) => { if (e.key === 'Enter') confirmAddBtn.click(); };
+newCardTitle.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmAddBtn.click(); } };
 
 // Timers / Details Modal Flow
 let deleteConfirmTimeout = null;
