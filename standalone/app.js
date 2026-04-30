@@ -2079,6 +2079,8 @@ async function openTrelloMappingGenerator(sourceList, trackerType = 'trello') {
             
             const fetchListsForBoard = async (boardId) => {
                 trelloTrackerCheckboxes.innerHTML = '<div style="padding:10px; font-size:13px; color:#5e6c84;">Loading lists...</div>';
+                const premiumSelect = document.getElementById('trelloPremiumListSelect');
+                if (premiumSelect) premiumSelect.innerHTML = '<option value="">-- None --</option>';
                 try {
                     const res = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${trelloKey}&token=${trelloToken}`);
                     if(!res.ok) throw new Error("Failed parameter");
@@ -2118,6 +2120,13 @@ async function openTrelloMappingGenerator(sourceList, trackerType = 'trello') {
                         row.appendChild(cb);
                         row.appendChild(span);
                         trelloTrackerCheckboxes.appendChild(row);
+
+                        if (premiumSelect) {
+                            const opt = document.createElement('option');
+                            opt.value = tl.id;
+                            opt.textContent = tl.name;
+                            premiumSelect.appendChild(opt);
+                        }
                     });
                 } catch (err) {
                     showToast("Failed to fetch Trello lists");
@@ -2887,7 +2896,16 @@ if(generateTrelloTrackersBtn) {
     if(generateTrelloTrackersBtn) generateTrelloTrackersBtn.onclick = () => {
         try {
             const activeBoard = boards.find(b => b.id === activeBoardId);
-            const checkedList = Array.from(document.querySelectorAll('.trello-tracker-cb')).filter(cb => cb.checked);
+            const premiumSelect = document.getElementById('trelloPremiumListSelect');
+            const premiumListId = premiumSelect ? premiumSelect.value : null;
+
+            let checkedList = Array.from(document.querySelectorAll('.trello-tracker-cb')).filter(cb => cb.checked);
+            
+            if (premiumListId && !checkedList.some(cb => cb.value === premiumListId)) {
+                const premiumCb = document.querySelector(`.trello-tracker-cb[value="${premiumListId}"]`);
+                if (premiumCb) checkedList.push(premiumCb);
+            }
+
             const checkedTrelloIds = checkedList.map(cb => cb.value);
             
             if (!activeBoard.connections) activeBoard.connections = [];
@@ -2944,6 +2962,14 @@ if(generateTrelloTrackersBtn) {
                 checkedTrelloIds.includes(l.trelloListId) &&
                 (l.trackerType || 'trello') === typeMatch
             );
+            
+            if (premiumListId) {
+                allActiveTrackers.sort((a, b) => {
+                    if (a.trelloListId === premiumListId) return 1;
+                    if (b.trelloListId === premiumListId) return -1;
+                    return 0;
+                });
+            }
             
             if (allActiveTrackers.length > 0) {
                 const preExistingCountForThisPort = activeBoard.connections.filter(c => 
