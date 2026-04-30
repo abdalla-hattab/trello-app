@@ -5919,8 +5919,14 @@ function renderKanbanApp(activeBoard) {
                         purple: '#9f8fef', blue: '#579dff', sky: '#6cc3e0', lime: '#b3f1d0',
                         pink: '#e774bb', black: '#091e42'
                     };
-                    const hex = trelloColors[lbl.color] || '#091e420f';
-                    const textColor = (lbl.color === 'black' || lbl.color === 'blue' || lbl.color === 'purple' || lbl.color === 'green' || lbl.color === 'red' || lbl.color === 'orange') ? '#fff' : '#172b4d';
+                    
+                    let resolvedColor = lbl.color;
+                    if (resolvedColor && resolvedColor.includes('_')) {
+                        resolvedColor = resolvedColor.split('_')[0]; // Handle 'green_dark', 'green_light', etc.
+                    }
+                    
+                    const hex = trelloColors[resolvedColor] || trelloColors['green'];
+                    const textColor = (resolvedColor === 'black' || resolvedColor === 'blue' || resolvedColor === 'purple' || resolvedColor === 'green' || resolvedColor === 'red' || resolvedColor === 'orange') ? '#fff' : '#172b4d';
                     
                     const lblSpan = document.createElement('span');
                     lblSpan.style.background = hex;
