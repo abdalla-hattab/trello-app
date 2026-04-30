@@ -2108,7 +2108,8 @@ async function openTrelloMappingGenerator(sourceList, trackerType = 'trello') {
                         cb.dataset.name = tl.name;
                         cb.style.cursor = 'pointer';
                         cb.style.margin = '0';
-                        cb.checked = existingTrackerTrelloIds.includes(tl.id);
+                        const isPremiumList = existingTrackers.some(l => l.trelloListId === tl.id && l.isPremium);
+                        cb.checked = existingTrackerTrelloIds.includes(tl.id) && !isPremiumList;
 
                         const span = document.createElement('span');
                         span.textContent = tl.name;
