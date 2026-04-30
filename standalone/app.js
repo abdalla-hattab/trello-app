@@ -5824,6 +5824,12 @@ function renderKanbanApp(activeBoard) {
             });
         }
         
+        if (list.isPremium) {
+            cardsToRender = cardsToRender.filter(card => {
+                return card.labels && card.labels.some(lbl => lbl.name && lbl.name.toLowerCase().startsWith('skip'));
+            });
+        }
+        
         cardsToRender.forEach(card => {
             const cardEl = document.createElement('div');
             cardEl.className = 'card';
@@ -5896,7 +5902,43 @@ function renderKanbanApp(activeBoard) {
             leftCol.style.gap = "4px";
             
             const titleTextWrap = document.createElement('span');
-            titleTextWrap.textContent = card.title;
+            
+            if (list.isPremium && card.labels && card.labels.length > 0) {
+                const labelsToShow = card.labels.filter(lbl => lbl.name && lbl.name.toLowerCase().startsWith('skip'));
+                
+                if (labelsToShow.length > 0) {
+                    const labelsContainer = document.createElement('div');
+                    labelsContainer.style.display = 'flex';
+                    labelsContainer.style.flexWrap = 'wrap';
+                    labelsContainer.style.gap = '4px';
+                    labelsContainer.style.marginBottom = '6px';
+                    
+                    labelsToShow.forEach(lbl => {
+                    const trelloColors = {
+                        green: '#4bce97', yellow: '#e2b203', orange: '#faa53d', red: '#f87462',
+                        purple: '#9f8fef', blue: '#579dff', sky: '#6cc3e0', lime: '#b3f1d0',
+                        pink: '#e774bb', black: '#091e42'
+                    };
+                    const hex = trelloColors[lbl.color] || '#091e420f';
+                    const textColor = (lbl.color === 'black' || lbl.color === 'blue' || lbl.color === 'purple' || lbl.color === 'green' || lbl.color === 'red' || lbl.color === 'orange') ? '#fff' : '#172b4d';
+                    
+                    const lblSpan = document.createElement('span');
+                    lblSpan.style.background = hex;
+                    lblSpan.style.color = textColor;
+                    lblSpan.style.padding = '2px 6px';
+                    lblSpan.style.borderRadius = '4px';
+                    lblSpan.style.fontSize = '11px';
+                    lblSpan.style.fontWeight = '600';
+                    lblSpan.textContent = lbl.name || '';
+                    if (lblSpan.textContent) labelsContainer.appendChild(lblSpan);
+                });
+                titleTextWrap.appendChild(labelsContainer);
+            }
+        }
+            
+            const titleTextNode = document.createTextNode(card.title);
+            titleTextWrap.appendChild(titleTextNode);
+            
             titleTextWrap.style.lineHeight = "1.3";
             titleTextWrap.style.cursor = 'text';
             titleTextWrap.style.padding = '2px';
@@ -10878,7 +10920,7 @@ async function syncTrello() {
     try {
         const promises = [];
         Array.from(uniqueBoardIds).forEach(boardId => {
-            promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos&key=${trelloKey}&token=${trelloToken}`));
+            promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/cards?fields=name,desc,idList,pos,labels&key=${trelloKey}&token=${trelloToken}`));
             promises.push(fetch(`https://api.trello.com/1/boards/${boardId}/lists?fields=name,pos&key=${trelloKey}&token=${trelloToken}`));
         });
         
@@ -10992,6 +11034,7 @@ async function syncTrello() {
                     color: colorMemory[tCard.id],
                     adsMetrics: adsMetricsMemory[tCard.id],
                     isPinned: pinnedMemory[tCard.id],
+                    labels: tCard.labels,
                     startTime: record ? record.startTime : Date.now()
                 });
             });
@@ -11009,6 +11052,7 @@ async function syncTrello() {
                     color: colorMemory[tCard.id],
                     adsMetrics: adsMetricsMemory[tCard.id],
                     isPinned: pinnedMemory[tCard.id],
+                    labels: tCard.labels,
                     startTime: prevTask ? prevTask.card.startTime : Date.now()
                 });
             });
