@@ -2128,6 +2128,13 @@ async function openTrelloMappingGenerator(sourceList, trackerType = 'trello') {
                             premiumSelect.appendChild(opt);
                         }
                     });
+
+                    if (premiumSelect) {
+                        const premiumTracker = existingTrackers.find(l => l.isPremium);
+                        if (premiumTracker && premiumTracker.trelloListId) {
+                            premiumSelect.value = premiumTracker.trelloListId;
+                        }
+                    }
                 } catch (err) {
                     showToast("Failed to fetch Trello lists");
                     trelloTrackerCheckboxes.innerHTML = '';
@@ -2964,11 +2971,21 @@ if(generateTrelloTrackersBtn) {
             );
             
             if (premiumListId) {
+                allActiveTrackers.forEach(l => {
+                    if (l.trelloListId === premiumListId) {
+                        l.isPremium = true;
+                    } else {
+                        delete l.isPremium;
+                    }
+                });
+
                 allActiveTrackers.sort((a, b) => {
                     if (a.trelloListId === premiumListId) return 1;
                     if (b.trelloListId === premiumListId) return -1;
                     return 0;
                 });
+            } else {
+                allActiveTrackers.forEach(l => delete l.isPremium);
             }
             
             if (allActiveTrackers.length > 0) {
