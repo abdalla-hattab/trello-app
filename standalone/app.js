@@ -5206,10 +5206,7 @@ function renderKanbanApp(activeBoard) {
             listTotalHeader.style.padding = "0px 16px 12px 16px";
             listTotalHeader.style.fontSize = "12px";
             listTotalHeader.style.fontWeight = "700";
-            listTotalHeader.style.color = list.isMoneySmelling ? "#DC2626" : "#00875A";
-            if (list.isMoneySmelling) {
-                listTotalHeader.style.textShadow = "0px 1px 2px rgba(220, 38, 38, 0.2)";
-            }
+            listTotalHeader.style.color = "#00875A";
             listTotalHeader.style.letterSpacing = "0.5px";
             listTotalHeader.style.display = "flex";
             listTotalHeader.style.alignItems = "center";
