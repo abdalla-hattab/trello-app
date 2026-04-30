@@ -5206,9 +5206,9 @@ function renderKanbanApp(activeBoard) {
             listTotalHeader.style.padding = "0px 16px 12px 16px";
             listTotalHeader.style.fontSize = "12px";
             listTotalHeader.style.fontWeight = "700";
-            listTotalHeader.style.color = list.isMoneySmelling ? "#00B87C" : "#00875A";
+            listTotalHeader.style.color = list.isMoneySmelling ? "#DC2626" : "#00875A";
             if (list.isMoneySmelling) {
-                listTotalHeader.style.textShadow = "0px 1px 2px rgba(0, 184, 124, 0.2)";
+                listTotalHeader.style.textShadow = "0px 1px 2px rgba(220, 38, 38, 0.2)";
             }
             listTotalHeader.style.letterSpacing = "0.5px";
             listTotalHeader.style.display = "flex";
@@ -6189,8 +6189,8 @@ function renderKanbanApp(activeBoard) {
                     globalValWrap.style.fontSize = "16px";
                     globalValWrap.style.fontWeight = "800";
                     if (list.isMoneySmelling) {
-                        globalValWrap.style.color = "#00B87C"; 
-                        globalValWrap.style.textShadow = "0px 1px 2px rgba(0, 184, 124, 0.2)";
+                        globalValWrap.style.color = "#DC2626"; 
+                        globalValWrap.style.textShadow = "0px 1px 2px rgba(220, 38, 38, 0.2)";
                     } else {
                         globalValWrap.style.color = "#00875A"; 
                     }
