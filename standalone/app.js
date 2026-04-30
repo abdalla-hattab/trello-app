@@ -3849,11 +3849,11 @@ function renderKanbanApp(activeBoard) {
             ny = 1;
         } else if (edge === 'left') {
             px -= padding;
-            py += 87;
+            py += listEl.offsetHeight / 2;
             nx = -1;
         } else { // 'right'
             px += listEl.offsetWidth + padding;
-            py += 87;
+            py += listEl.offsetHeight / 2;
             nx = 1;
         }
         

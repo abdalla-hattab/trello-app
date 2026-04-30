@@ -830,8 +830,8 @@ input[type=number] {
 }
 .port-top { top: -7px; left: calc(50% - 7px); }
 .port-bottom { bottom: -7px; left: calc(50% - 7px); }
-.port-left { left: -7px; top: 80px; }
-.port-right { right: -7px; top: 80px; }
+.port-left { left: -7px; top: calc(50% - 7px); }
+.port-right { right: -7px; top: calc(50% - 7px); }
 
 .kanban-list:hover .board-port {
     opacity: 1;
@@ -897,8 +897,8 @@ input[type=number] {
 /* Position exactly slightly further out from the port, scaled from center */
 .port-toggle-top { top: -42px; left: 50%; transform: translateX(-50%); margin-top:-6px; flex-direction: row; }
 .port-toggle-bottom { bottom: -42px; left: 50%; transform: translateX(-50%); margin-bottom:-6px; flex-direction: row; }
-.port-toggle-left { left: -42px; top: 87px; transform: translateY(-50%); flex-direction: column; }
-.port-toggle-right { right: -42px; top: 87px; transform: translateY(-50%); flex-direction: column; }
+.port-toggle-left { left: -42px; top: 50%; transform: translateY(-50%); flex-direction: column; }
+.port-toggle-right { right: -42px; top: 50%; transform: translateY(-50%); flex-direction: column; }
 
 .port-toggle svg {
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
