@@ -3660,7 +3660,7 @@ function updateAllTrackersSummaries(activeBoard) {
                     
                     allDescendants.forEach(tid => {
                         const tList = activeBoard.lists.find(l => l.id === tid);
-                        if (tList && tList.cards) {
+                        if (tList && tList.cards && !tList.isPremium) {
                             const isAds = tList.trackerType === 'ads';
                             const isAds2 = tList.trackerType === 'ads2';
                             const isTs = tList.trackerType === 'trelloSpeech';
