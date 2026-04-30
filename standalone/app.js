@@ -5206,7 +5206,10 @@ function renderKanbanApp(activeBoard) {
             listTotalHeader.style.padding = "0px 16px 12px 16px";
             listTotalHeader.style.fontSize = "12px";
             listTotalHeader.style.fontWeight = "700";
-            listTotalHeader.style.color = "#00875A";
+            listTotalHeader.style.color = list.isMoneySmelling ? "#00B87C" : "#00875A";
+            if (list.isMoneySmelling) {
+                listTotalHeader.style.textShadow = "0px 1px 2px rgba(0, 184, 124, 0.2)";
+            }
             listTotalHeader.style.letterSpacing = "0.5px";
             listTotalHeader.style.display = "flex";
             listTotalHeader.style.alignItems = "center";
@@ -6185,7 +6188,12 @@ function renderKanbanApp(activeBoard) {
                     globalValWrap.innerHTML = displayVal;
                     globalValWrap.style.fontSize = "16px";
                     globalValWrap.style.fontWeight = "800";
-                    globalValWrap.style.color = "#00875A"; 
+                    if (list.isMoneySmelling) {
+                        globalValWrap.style.color = "#00B87C"; 
+                        globalValWrap.style.textShadow = "0px 1px 2px rgba(0, 184, 124, 0.2)";
+                    } else {
+                        globalValWrap.style.color = "#00875A"; 
+                    }
                     globalValWrap.style.letterSpacing = "0.3px";
                     globalValWrap.style.display = "flex";
                     globalValWrap.style.alignItems = "center";
