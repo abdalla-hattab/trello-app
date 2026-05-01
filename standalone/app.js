@@ -471,6 +471,12 @@ const openAddKanbanBoardBtn = document.getElementById('openAddKanbanBoardBtn');
 const openAddSocialBoardBtn = document.getElementById('openAddSocialBoardBtn');
 let pendingNewBoardType = 'timer';
 
+let activeExternalLinkListId = null;
+const setExternalLinkModal = document.getElementById('setExternalLinkModal');
+const closeExternalLinkModal = document.getElementById('closeExternalLinkModal');
+const externalLinkInput = document.getElementById('externalLinkInput');
+const saveExternalLinkBtn = document.getElementById('saveExternalLinkBtn');
+
 const addCardModal = document.getElementById('addCardModal');
 const closeAddModal = document.getElementById('closeAddModal');
 const confirmAddBtn = document.getElementById('confirmAddBtn');
@@ -4990,16 +4996,12 @@ function renderKanbanApp(activeBoard) {
         if (linkOption) linkOption.onclick = (e) => {
             e.stopPropagation();
             const currentLink = (activeBoard.listLinks && activeBoard.listLinks[list.id]) || '';
-            const newLink = prompt("Enter the external link for this list (leave empty to remove):", currentLink);
-            if (newLink !== null) {
-                if (!activeBoard.listLinks) activeBoard.listLinks = {};
-                if (newLink.trim() === '') {
-                    delete activeBoard.listLinks[list.id];
-                } else {
-                    activeBoard.listLinks[list.id] = newLink.trim();
-                }
-                saveState();
-                render();
+            activeExternalLinkListId = list.id;
+            
+            if (setExternalLinkModal && externalLinkInput) {
+                externalLinkInput.value = currentLink;
+                setExternalLinkModal.classList.add('active');
+                setTimeout(() => externalLinkInput.focus(), 50);
             }
             optionsMenu.style.display = 'none';
         };
@@ -9512,6 +9514,39 @@ function renderTimerApp(activeBoard) {
 
 // Add Card Flow
 if(closeAddModal) closeAddModal.onclick = () => addCardModal.classList.remove('active');
+
+if(closeExternalLinkModal) {
+    closeExternalLinkModal.onclick = () => {
+        if(setExternalLinkModal) setExternalLinkModal.classList.remove('active');
+    };
+}
+if(saveExternalLinkBtn) {
+    saveExternalLinkBtn.onclick = () => {
+        if(activeExternalLinkListId && externalLinkInput) {
+            const newLink = externalLinkInput.value;
+            const activeBoard = boards.find(b => b.id === activeBoardId);
+            if (activeBoard) {
+                if (!activeBoard.listLinks) activeBoard.listLinks = {};
+                if (newLink.trim() === '') {
+                    delete activeBoard.listLinks[activeExternalLinkListId];
+                } else {
+                    activeBoard.listLinks[activeExternalLinkListId] = newLink.trim();
+                }
+                saveState();
+                render();
+            }
+        }
+        if(setExternalLinkModal) setExternalLinkModal.classList.remove('active');
+    };
+}
+if(externalLinkInput) {
+    externalLinkInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveExternalLinkBtn.click();
+        }
+    };
+}
 
 const modalLinkAccountsBtn = document.getElementById('modalLinkAccountsBtn');
 if (modalLinkAccountsBtn) {

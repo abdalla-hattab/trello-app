@@ -184,6 +184,25 @@
         </div>
     </div>
 
+    <!-- Modal for Setting External Link -->
+    <div class="modal-overlay" id="setExternalLinkModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 18px;">Set External Link</h3>
+                <button class="close-btn" id="closeExternalLinkModal">&times;</button>
+            </div>
+            <div class="modal-body" style="display:block;">
+                <p style="font-size:13px; color: var(--text-color); opacity: 0.8; margin-bottom:16px; line-height: 1.5;">Enter the URL for this list. Leave empty to remove the link.</p>
+                <div class="input-group full-width" style="margin-bottom: 20px;">
+                    <input type="text" id="externalLinkInput" placeholder="https://example.com" class="modal-input" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #dfe1e6; font-size: 14px;">
+                </div>
+                <div class="modal-actions right" style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 16px;">
+                    <button class="save-btn" id="saveExternalLinkBtn" style="padding: 10px 20px; border-radius: 6px;">Save Link</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Settings / Timers -->
     <div class="modal-overlay" id="modal">
         <div class="modal-content">
