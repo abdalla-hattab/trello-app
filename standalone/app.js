@@ -4967,24 +4967,9 @@ function renderKanbanApp(activeBoard) {
         if (checkOption) checkOption.onclick = (e) => {
             e.stopPropagation();
             if (!activeBoard.showListCheck) activeBoard.showListCheck = {};
-            const newVal = !activeBoard.showListCheck[list.id];
-            activeBoard.showListCheck[list.id] = newVal;
+            activeBoard.showListCheck[list.id] = !activeBoard.showListCheck[list.id];
             saveState();
-            
-            if (newVal) {
-                if (footerRow && listCheckBtn) {
-                    footerRow.insertBefore(listCheckBtn, footerRow.firstChild);
-                }
-            } else {
-                if (listCheckBtn && listCheckBtn.parentElement) listCheckBtn.parentElement.removeChild(listCheckBtn);
-            }
-
-            checkOption.querySelector('span').textContent = newVal ? 'Hide List Check' : 'Show List Check';
-            const iconHTML = newVal 
-                ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"></path>`
-                : `<circle cx="12" cy="12" r="10"></circle><path d="M9 12l2 2 4-4"></path>`;
-            checkOption.querySelector('svg').innerHTML = iconHTML;
-
+            render();
             optionsMenu.style.display = 'none';
         };
         optionsMenu.appendChild(checkOption);
@@ -8433,10 +8418,6 @@ function renderKanbanApp(activeBoard) {
         addBtn.style.margin = '0'; 
         footerRow.appendChild(addBtn);
         
-        if (activeBoard.showListCheck && activeBoard.showListCheck[list.id]) {
-            footerRow.appendChild(listCheckBtn);
-        }
-        
         if (activeBoard.listLinks && activeBoard.listLinks[list.id]) {
             const listLinkBtn = document.createElement('div');
             listLinkBtn.style.cursor = 'pointer';
@@ -8466,6 +8447,10 @@ function renderKanbanApp(activeBoard) {
             };
             
             footerRow.appendChild(listLinkBtn);
+        }
+
+        if (activeBoard.showListCheck && activeBoard.showListCheck[list.id]) {
+            footerRow.appendChild(listCheckBtn);
         }
 
         listContainer.appendChild(footerRow);
