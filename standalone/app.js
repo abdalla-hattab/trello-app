@@ -4982,6 +4982,28 @@ function renderKanbanApp(activeBoard) {
             optionsMenu.style.display = 'none';
         };
         optionsMenu.appendChild(checkOption);
+        
+        const linkOptionText = (activeBoard.listLinks && activeBoard.listLinks[list.id]) ? 'Edit External Link' : 'Set External Link';
+        const linkOption = document.createElement('div');
+        linkOption.className = 'list-option-item';
+        linkOption.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span>${linkOptionText}</span>`;
+        if (linkOption) linkOption.onclick = (e) => {
+            e.stopPropagation();
+            const currentLink = (activeBoard.listLinks && activeBoard.listLinks[list.id]) || '';
+            const newLink = prompt("Enter the external link for this list (leave empty to remove):", currentLink);
+            if (newLink !== null) {
+                if (!activeBoard.listLinks) activeBoard.listLinks = {};
+                if (newLink.trim() === '') {
+                    delete activeBoard.listLinks[list.id];
+                } else {
+                    activeBoard.listLinks[list.id] = newLink.trim();
+                }
+                saveState();
+                render();
+            }
+            optionsMenu.style.display = 'none';
+        };
+        optionsMenu.appendChild(linkOption);
 
         const isShowCardsCheck = activeBoard.showCardsCheck && activeBoard.showCardsCheck[list.id];
         const cardsCheckOptionText = isShowCardsCheck ? 'Hide Cards Check' : 'Show Cards Check';
@@ -8411,6 +8433,37 @@ function renderKanbanApp(activeBoard) {
         
         if (activeBoard.showListCheck && activeBoard.showListCheck[list.id]) {
             footerRow.appendChild(listCheckBtn);
+        }
+        
+        if (activeBoard.listLinks && activeBoard.listLinks[list.id]) {
+            const listLinkBtn = document.createElement('div');
+            listLinkBtn.style.cursor = 'pointer';
+            listLinkBtn.style.display = 'flex';
+            listLinkBtn.style.alignItems = 'center';
+            listLinkBtn.style.justifyContent = 'center';
+            listLinkBtn.style.width = '28px';
+            listLinkBtn.style.height = '28px';
+            listLinkBtn.style.marginLeft = '4px';
+            listLinkBtn.style.borderRadius = '50%';
+            listLinkBtn.style.background = '#091e420f';
+            listLinkBtn.style.color = '#5e6c84';
+            listLinkBtn.style.transition = 'all 0.2s';
+            listLinkBtn.style.flexShrink = '0';
+            listLinkBtn.title = "Open External Link: " + activeBoard.listLinks[list.id];
+            
+            listLinkBtn.onmouseover = () => { listLinkBtn.style.background = '#091e4224'; };
+            listLinkBtn.onmouseout = () => { listLinkBtn.style.background = '#091e420f'; };
+
+            listLinkBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>`;
+            
+            listLinkBtn.onclick = (e) => {
+                e.stopPropagation();
+                const targetUrl = activeBoard.listLinks[list.id];
+                const validUrl = targetUrl.startsWith('http://') || targetUrl.startsWith('https://') ? targetUrl : 'https://' + targetUrl;
+                window.open(validUrl, '_blank');
+            };
+            
+            footerRow.appendChild(listLinkBtn);
         }
 
         listContainer.appendChild(footerRow);
