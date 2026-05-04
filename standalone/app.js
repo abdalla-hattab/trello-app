@@ -8528,14 +8528,6 @@ function renderKanbanApp(activeBoard) {
             
             listCalcBtn.onclick = (e) => {
                 e.stopPropagation();
-                let sum = 0;
-                if (list.cards) {
-                    list.cards.forEach(c => {
-                        if (c.dealValue) sum += Number(c.dealValue);
-                        else if (c.pipedriveData && c.pipedriveData.value) sum += Number(c.pipedriveData.value);
-                    });
-                }
-                const formattedSum = sum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                 
                 const popupWrap = document.createElement('div');
                 popupWrap.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);';
@@ -8547,13 +8539,63 @@ function renderKanbanApp(activeBoard) {
                     <div style="width:48px; height:48px; border-radius:50%; background:#e3fcef; color:#00875a; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
+                    <div style="margin-bottom: 16px; display: flex; gap: 8px; justify-content: center; align-items: center;">
+                        <input type="date" id="calcStartDate" style="padding:6px; border:1px solid #dfe1e6; border-radius:4px; font-size:12px; color:#172b4d; outline:none; width:125px; cursor:pointer;">
+                        <span style="font-size:12px; color:#5e6c84;">to</span>
+                        <input type="date" id="calcEndDate" style="padding:6px; border:1px solid #dfe1e6; border-radius:4px; font-size:12px; color:#172b4d; outline:none; width:125px; cursor:pointer;">
+                    </div>
                     <h3 style="margin:0 0 8px; font-size:18px; color:#172b4d;">Total Payments</h3>
-                    <p style="margin:0 0 24px; font-size:24px; font-weight:800; color:#00875a;">SAR ${formattedSum}</p>
+                    <p id="calcTotalText" style="margin:0 0 24px; font-size:24px; font-weight:800; color:#00875a;">SAR 0</p>
                     <button id="closeCalcModalBtn" style="width:100%; padding:10px; background:#0052cc; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>
                 `;
                 
                 popupWrap.appendChild(popupBox);
                 document.body.appendChild(popupWrap);
+                
+                const startDateInput = popupBox.querySelector('#calcStartDate');
+                const endDateInput = popupBox.querySelector('#calcEndDate');
+                const totalText = popupBox.querySelector('#calcTotalText');
+                
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                
+                const formatDate = (d) => {
+                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const day = d.getDate().toString().padStart(2, '0');
+                    return `${d.getFullYear()}-${month}-${day}`;
+                };
+                
+                startDateInput.value = formatDate(firstDay);
+                endDateInput.value = formatDate(lastDay);
+                
+                const updateSum = () => {
+                    const startTs = new Date(startDateInput.value + 'T00:00:00').getTime();
+                    const endTs = new Date(endDateInput.value + 'T23:59:59').getTime();
+                    
+                    let sum = 0;
+                    if (list.cards) {
+                        list.cards.forEach(c => {
+                            let ts = c.customCreationTimestamp || c.creationTimestamp;
+                            if (!ts && c.id && c.id.length >= 13) {
+                                const parsed = parseInt(c.id.substring(0, 13));
+                                if (!isNaN(parsed) && parsed > 1600000000000 && parsed < 2000000000000) ts = parsed;
+                            }
+                            if (!ts) ts = Date.now();
+                            
+                            if (ts >= startTs && ts <= endTs) {
+                                if (c.dealValue) sum += Number(c.dealValue);
+                                else if (c.pipedriveData && c.pipedriveData.value) sum += Number(c.pipedriveData.value);
+                            }
+                        });
+                    }
+                    totalText.textContent = `SAR ${sum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                };
+                
+                startDateInput.onchange = updateSum;
+                endDateInput.onchange = updateSum;
+                
+                updateSum();
                 
                 setTimeout(() => {
                     popupBox.style.transform = 'translateY(0)';
