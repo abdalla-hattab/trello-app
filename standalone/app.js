@@ -2278,14 +2278,50 @@ function openServiceCardsModal(title, icon, cards) {
                     nameContainer.appendChild(svcsEl);
                 }
                 
+                const rightContainer = document.createElement('div');
+                rightContainer.style.display = 'flex';
+                rightContainer.style.alignItems = 'center';
+                rightContainer.style.gap = '12px';
+                
+                if (card.dealValue || card.dain || (card.pipedriveData && card.pipedriveData.value)) {
+                    const finEl = document.createElement('div');
+                    finEl.style.display = 'flex';
+                    finEl.style.alignItems = 'center';
+                    finEl.style.gap = '8px';
+                    
+                    const dealVal = card.dealValue || (card.pipedriveData ? card.pipedriveData.value : null);
+                    if (dealVal) {
+                        const valEl = document.createElement('span');
+                        valEl.style.color = '#00875A';
+                        valEl.style.fontSize = '13px';
+                        valEl.style.fontWeight = '700';
+                        valEl.textContent = `SAR ${Number(dealVal).toLocaleString()}`;
+                        finEl.appendChild(valEl);
+                    }
+                    if (card.dain) {
+                        const dainEl = document.createElement('span');
+                        dainEl.style.color = '#DC2626';
+                        dainEl.style.fontSize = '12px';
+                        dainEl.style.fontWeight = '700';
+                        dainEl.style.background = '#FEE2E2';
+                        dainEl.style.padding = '2px 6px';
+                        dainEl.style.borderRadius = '4px';
+                        dainEl.textContent = `دين: ${Number(card.dain).toLocaleString()}`;
+                        finEl.appendChild(dainEl);
+                    }
+                    rightContainer.appendChild(finEl);
+                }
+                
                 const viewBtn = document.createElement('div');
                 viewBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7; transition: opacity 0.2s;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
                 
                 cardEl.onmouseenter = () => viewBtn.querySelector('svg').style.opacity = '1';
                 cardEl.onmouseleave = () => viewBtn.querySelector('svg').style.opacity = '0.7';
                 
+                rightContainer.appendChild(viewBtn);
+                
                 cardEl.appendChild(nameContainer);
-                cardEl.appendChild(viewBtn);
+                cardEl.appendChild(rightContainer);
                 
                 if(cardEl) cardEl.onclick = () => {
                     serviceCardsModal.classList.remove('active');
