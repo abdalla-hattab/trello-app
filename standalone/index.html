@@ -244,6 +244,19 @@
                     </div>
                 </div>
             </div>
+            <div id="financialsSection" style="display:none; flex-direction:column; gap:12px; margin-bottom: 24px;">
+                <h4 style="margin: 0 0 6px 0; color:var(--text-color); font-size:14px; width: 100%;">Financials</h4>
+                <div style="display:flex; gap:16px;">
+                    <div class="input-group" style="flex:1;">
+                        <label style="font-size: 11px; font-weight: 700; color: var(--secondary-color); margin-bottom: 8px; display: block; text-transform: uppercase;">Deal Value (SAR)</label>
+                        <input type="number" id="editDealValue" placeholder="e.g. 1500" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #dfe1e6; font-size: 14px; font-weight: 600;">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label style="font-size: 11px; font-weight: 700; color: #DC2626; margin-bottom: 8px; display: block; text-transform: uppercase;">Dain / Debt (SAR)</label>
+                        <input type="number" id="editDainValue" placeholder="e.g. 500" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ffcccc; background: #fff5f5; font-size: 14px; font-weight: 600; color: #DC2626;">
+                    </div>
+                </div>
+            </div>
             <div id="servicesSection" style="display:none; flex-direction:column; gap:12px; margin-bottom: 24px; align-items: flex-start;">
                 <h4 id="servicesSectionTitle" style="margin: 0 0 6px 0; color:var(--text-color); font-size:14px; width: 100%;">Provided Services</h4>
                 <div id="servicesList" style="display:flex; flex-direction:column; gap:12px; width: 100%;"></div>

@@ -10097,6 +10097,9 @@ function openTimerModal(cardId, listId) {
     const servicesList = document.getElementById('servicesList');
     const servicesAddRow = document.getElementById('servicesAddRow');
     const servicesItemInput = document.getElementById('servicesItemInput');
+    const financialsSection = document.getElementById('financialsSection');
+    const editDealValue = document.getElementById('editDealValue');
+    const editDainValue = document.getElementById('editDainValue');
 
     if (activeBoard.type === 'kanban') {
         modalTitle.textContent = 'Card Options';
@@ -10111,6 +10114,7 @@ function openTimerModal(cardId, listId) {
             deleteCardBtn.textContent = 'Delete Client';
             deleteCardBtn.style.width = '100%';
 
+            if (financialsSection) financialsSection.style.display = 'flex';
             if (servicesSection) servicesSection.style.display = 'flex';
             if (servicesSectionTitle) servicesSectionTitle.textContent = 'Agreed Services Checklist';
             if (servicesAddRow) servicesAddRow.style.display = 'flex';
@@ -10122,6 +10126,7 @@ function openTimerModal(cardId, listId) {
         } else if (list && (list.isClientHappiness || list.isMoneySmelling)) {
             deleteCardBtn.textContent = 'Delete Client';
             deleteCardBtn.style.width = '100%';
+            if (financialsSection) financialsSection.style.display = list.isMoneySmelling ? 'flex' : 'none';
             if (servicesSectionTitle) servicesSectionTitle.textContent = 'Provided Services';
             if (servicesAddRow) servicesAddRow.style.display = 'none';
             if (servicesItemInput) servicesItemInput.value = '';
@@ -10216,6 +10221,7 @@ function openTimerModal(cardId, listId) {
         } else {
             deleteCardBtn.textContent = 'Delete Card';
             deleteCardBtn.style.width = '100%';
+            if (financialsSection) financialsSection.style.display = 'none';
             if (servicesSection) servicesSection.style.display = 'none';
             if (servicesAddRow) servicesAddRow.style.display = 'none';
             if (servicesItemInput) servicesItemInput.value = '';
@@ -10258,6 +10264,37 @@ function openTimerModal(cardId, listId) {
         if (typeof servicesSection !== 'undefined' && servicesSection) {
             servicesSection.style.display = 'none';
         }
+        if (typeof financialsSection !== 'undefined' && financialsSection) {
+            financialsSection.style.display = 'none';
+        }
+    }
+
+    if (editDealValue) {
+        editDealValue.value = card.dealValue || '';
+        editDealValue.oninput = (e) => {
+            const val = e.target.value;
+            if (val !== '') {
+                card.dealValue = parseInt(val) || 0;
+            } else {
+                delete card.dealValue;
+            }
+            saveState();
+            render();
+        };
+    }
+    
+    if (editDainValue) {
+        editDainValue.value = card.dain || '';
+        editDainValue.oninput = (e) => {
+            const val = e.target.value;
+            if (val !== '') {
+                card.dain = parseInt(val) || 0;
+            } else {
+                delete card.dain;
+            }
+            saveState();
+            render();
+        };
     }
 
     clearTimeout(deleteConfirmTimeout);
