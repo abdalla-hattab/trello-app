@@ -6148,7 +6148,7 @@ function renderKanbanApp(activeBoard) {
             
             let globalValWrap = null;
             
-            if (card.isPipedrive || ((list.isMoneySmelling || list.isNewClients) && card.dealValue)) {
+            if (card.isPipedrive || list.isMoneySmelling || list.isNewClients) {
                 let isFirstPdStage = list.showQualification;
                 if (isFirstPdStage === undefined) {
                     isFirstPdStage = (String(list.pipedriveStageId) === String(activeBoard.pipedriveFirstStageId));
@@ -6182,6 +6182,8 @@ function renderKanbanApp(activeBoard) {
                     displayValStr = card.pipedriveData.formatted_value;
                 } else if (!card.isPipedrive && card.dealValue) {
                     displayValStr = `SAR ${card.dealValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                } else if (!card.isPipedrive && !card.dealValue && (list.isMoneySmelling || list.isNewClients)) {
+                    displayValStr = "Add Value";
                 }
 
                 if (displayValStr) {
@@ -6194,7 +6196,13 @@ function renderKanbanApp(activeBoard) {
                     globalValWrap.innerHTML = displayVal;
                     globalValWrap.style.fontSize = "16px";
                     globalValWrap.style.fontWeight = "800";
-                    if (list.isMoneySmelling) {
+                    if (displayVal === "Add Value") {
+                        globalValWrap.style.color = "#7A869A";
+                        globalValWrap.style.fontSize = "12px";
+                        globalValWrap.style.borderBottom = "1px dashed #7A869A";
+                        globalValWrap.style.cursor = "pointer";
+                        globalValWrap.style.fontWeight = "600";
+                    } else if (list.isMoneySmelling) {
                         globalValWrap.style.color = "#DC2626"; 
                         globalValWrap.style.textShadow = "0px 1px 2px rgba(220, 38, 38, 0.2)";
                     } else {
@@ -6204,6 +6212,28 @@ function renderKanbanApp(activeBoard) {
                     globalValWrap.style.display = "flex";
                     globalValWrap.style.alignItems = "center";
                     globalValWrap.style.position = "relative";
+                    
+                    if (!card.isPipedrive && (list.isMoneySmelling || list.isNewClients)) {
+                        globalValWrap.style.cursor = "pointer";
+                        globalValWrap.title = "Click to edit deal value";
+                        globalValWrap.onclick = (e) => {
+                            e.stopPropagation();
+                            const currentVal = card.dealValue || "";
+                            const newV = prompt("Enter deal value in SAR:", currentVal);
+                            if (newV !== null) {
+                                const parsed = parseFloat(newV);
+                                if (!isNaN(parsed)) {
+                                    card.dealValue = parsed;
+                                    saveState();
+                                    render();
+                                } else if (newV.trim() === "") {
+                                    delete card.dealValue;
+                                    saveState();
+                                    render();
+                                }
+                            }
+                        };
+                    }
                 }
                 
                 const spacer = document.createElement('span');
