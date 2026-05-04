@@ -2211,7 +2211,33 @@ function openServiceCardsModal(title, icon, cards) {
         if (cards.length === 0) {
             container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--secondary-color); font-size: 13px;">No clients found for this criteria.</div>';
         } else {
+            const formatAgeStr = (ts) => {
+                if (!ts) return '';
+                const diff = Date.now() - ts;
+                if (diff < 0) return '';
+                const totalMins = Math.floor(diff / 60000);
+                const h = Math.floor(totalMins / 60);
+                const d = Math.floor(h / 24);
+                if (d === 0) return h === 0 ? `${totalMins}m` : `${h}h`;
+                if (d < 30) return `${d}d`;
+                const mo = Math.floor(d / 30);
+                if (mo < 12) {
+                    const remD = d % 30;
+                    return remD > 0 ? `${mo}mo ${remD}d` : `${mo}mo`;
+                }
+                const y = Math.floor(mo / 12);
+                const remMo = mo % 12;
+                return remMo > 0 ? `${y}y ${remMo}mo` : `${y}y`;
+            };
+
             cards.forEach(card => {
+                let ts = card.customCreationTimestamp || card.creationTimestamp;
+                if (!ts && card.id && card.id.length >= 13) {
+                    const match = String(card.id).replace('loc_', '').match(/^\d{13}/);
+                    if (match) ts = parseInt(match[0], 10);
+                }
+                if (!ts || isNaN(ts) || ts < 1000000000000 || ts > 2500000000000) ts = Date.now();
+                const ageStr = formatAgeStr(ts);
                 const cardEl = document.createElement('div');
                 cardEl.className = 'card';
                 cardEl.style.flexDirection = 'row';
@@ -2310,6 +2336,19 @@ function openServiceCardsModal(title, icon, cards) {
                         finEl.appendChild(dainEl);
                     }
                     rightContainer.appendChild(finEl);
+                }
+                
+                if (ageStr) {
+                    const ageEl = document.createElement('span');
+                    ageEl.style.fontSize = '12px';
+                    ageEl.style.color = '#7A869A';
+                    ageEl.style.display = 'flex';
+                    ageEl.style.alignItems = 'center';
+                    ageEl.style.gap = '4px';
+                    ageEl.style.fontWeight = '600';
+                    ageEl.style.marginLeft = '4px';
+                    ageEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${ageStr}`;
+                    rightContainer.appendChild(ageEl);
                 }
                 
                 const viewBtn = document.createElement('div');
