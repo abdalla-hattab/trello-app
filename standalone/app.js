@@ -10100,6 +10100,7 @@ function openTimerModal(cardId, listId) {
     const financialsSection = document.getElementById('financialsSection');
     const editDealValue = document.getElementById('editDealValue');
     const editDainValue = document.getElementById('editDainValue');
+    const saveFinancialsBtn = document.getElementById('saveFinancialsBtn');
 
     if (activeBoard.type === 'kanban') {
         modalTitle.textContent = 'Card Options';
@@ -10271,29 +10272,39 @@ function openTimerModal(cardId, listId) {
 
     if (editDealValue) {
         editDealValue.value = card.dealValue || '';
-        editDealValue.oninput = (e) => {
-            const val = e.target.value;
-            if (val !== '') {
-                card.dealValue = parseInt(val) || 0;
-            } else {
-                delete card.dealValue;
-            }
-            saveState();
-            render();
-        };
     }
     
     if (editDainValue) {
         editDainValue.value = card.dain || '';
-        editDainValue.oninput = (e) => {
-            const val = e.target.value;
-            if (val !== '') {
-                card.dain = parseInt(val) || 0;
-            } else {
-                delete card.dain;
+    }
+    
+    if (saveFinancialsBtn) {
+        saveFinancialsBtn.onclick = () => {
+            if (editDealValue) {
+                const val = editDealValue.value;
+                if (val !== '') {
+                    card.dealValue = parseInt(val) || 0;
+                } else {
+                    delete card.dealValue;
+                }
+            }
+            if (editDainValue) {
+                const val = editDainValue.value;
+                if (val !== '') {
+                    card.dain = parseInt(val) || 0;
+                } else {
+                    delete card.dain;
+                }
             }
             saveState();
             render();
+            
+            saveFinancialsBtn.textContent = "Saved!";
+            saveFinancialsBtn.style.background = "#00875a";
+            setTimeout(() => {
+                saveFinancialsBtn.textContent = "Save Financials";
+                saveFinancialsBtn.style.background = "#0052cc";
+            }, 1500);
         };
     }
 
