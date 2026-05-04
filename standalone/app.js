@@ -4664,7 +4664,7 @@ function renderKanbanApp(activeBoard) {
         titleH2.title = 'Click to rename';
         
         if(titleH2) titleH2.onclick = (e) => {
-            if (list.trelloListId) {
+            if (list.trelloListId && (!list.trackerType || list.trackerType === 'trello' || list.trackerType === 'trelloSpeech')) {
                 navigator.clipboard.writeText(list.title || titleH2.textContent).then(() => {
                     showToast("Title copied to clipboard!");
                 }).catch(() => {});
