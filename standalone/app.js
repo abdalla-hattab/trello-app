@@ -8723,9 +8723,20 @@ function renderKanbanApp(activeBoard) {
                         <button id="btnAllTime" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">All Time</button>
                     </div>
                     
-                    <p id="calcTotalText" style="margin:10px 0 0 0; font-size:32px; font-weight:900; color:#00875a;">SAR 0</p>
-                    <p id="calcDealsText" style="margin:4px 0 10px 0; font-size:16px; font-weight:600; color:#5e6c84;">Deals: 0</p>
-                    <p id="calcDainText" style="margin:0 0 10px 0; font-size:18px; font-weight:700; color:#DC2626; display:none;">دين: SAR 0</p>
+                    <div style="display:flex; gap:12px; width:100%; margin:16px 0;">
+                        <div style="flex:1; background:#f4f5f7; border-radius:8px; padding:16px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                            <span style="font-size:12px; font-weight:700; color:#5e6c84; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Deals</span>
+                            <span id="calcDealsText" style="font-size:24px; font-weight:900; color:#172b4d;">0</span>
+                        </div>
+                        <div style="flex:1.5; background:#e3fcef; border-radius:8px; padding:16px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                            <span style="font-size:12px; font-weight:700; color:#006644; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Revenue</span>
+                            <span id="calcTotalText" style="font-size:24px; font-weight:900; color:#00875a;">SAR 0</span>
+                        </div>
+                        <div id="calcDainWrapper" style="flex:1; background:#ffebe6; border-radius:8px; padding:16px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.1s, box-shadow 0.1s; display:none;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 8px rgba(222,53,11,0.2)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                            <span style="font-size:12px; font-weight:700; color:#bf2600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Debt</span>
+                            <span id="calcDainText" style="font-size:18px; font-weight:900; color:#de350b;">SAR 0</span>
+                        </div>
+                    </div>
                     <button id="closeCalcModalBtn" style="width:100%; padding:12px; font-size:16px; background:#0052cc; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:background 0.2s;">Close</button>
                 `;
                 
@@ -8805,18 +8816,22 @@ function renderKanbanApp(activeBoard) {
                     }
                     totalText.textContent = `SAR ${sum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
                     const dealsText = popupBox.querySelector('#calcDealsText');
-                    if (dealsText) dealsText.textContent = `Deals: ${dealsCount}`;
+                    if (dealsText) dealsText.textContent = `${dealsCount}`;
                     const dainText = popupBox.querySelector('#calcDainText');
+                    const dainWrapper = popupBox.querySelector('#calcDainWrapper');
                     if (dainSum > 0) {
-                        dainText.textContent = `دين: SAR ${dainSum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-                        dainText.style.display = 'block';
-                        dainText.style.cursor = 'pointer';
-                        dainText.onclick = () => {
-                            openServiceCardsModal("Dain / Debt", "💸", dainCards);
-                        };
+                        dainText.textContent = `SAR ${dainSum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                        if (dainWrapper) {
+                            dainWrapper.style.display = 'flex';
+                            dainWrapper.onclick = () => {
+                                openServiceCardsModal("Dain / Debt", "💸", dainCards);
+                            };
+                        }
                     } else {
-                        dainText.style.display = 'none';
-                        dainText.onclick = null;
+                        if (dainWrapper) {
+                            dainWrapper.style.display = 'none';
+                            dainWrapper.onclick = null;
+                        }
                     }
                 };
                 
