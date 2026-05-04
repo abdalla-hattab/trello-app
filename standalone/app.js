@@ -10661,6 +10661,7 @@ if (pipedriveActionWonBtn) {
                                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
                                 title: extractedTitle,
                                 dueDate: null,
+                                dealValue: theDeal.dealValue || (theDeal.pipedriveData && theDeal.pipedriveData.value ? theDeal.pipedriveData.value : null),
                                 serviceChecklist: cloneCardChecklist(theDeal)
                             });
                             saveState();
