@@ -8547,7 +8547,8 @@ function renderKanbanApp(activeBoard) {
                         <input type="date" id="calcEndDate" style="padding:8px; border:1px solid #dfe1e6; border-radius:6px; font-size:14px; color:#172b4d; outline:none; width:140px; cursor:pointer;" onclick="this.showPicker && this.showPicker()">
                     </div>
                     
-                    <div style="display:flex; gap:8px; justify-content:center;">
+                    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                        <button id="btnLastMonth" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">Last Month</button>
                         <button id="btnThisMonth" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">This Month</button>
                         <button id="btnThisYear" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">This Year</button>
                         <button id="btnAllTime" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">All Time</button>
@@ -8564,6 +8565,7 @@ function renderKanbanApp(activeBoard) {
                 const endDateInput = popupBox.querySelector('#calcEndDate');
                 const totalText = popupBox.querySelector('#calcTotalText');
                 
+                const btnLastMonth = popupBox.querySelector('#btnLastMonth');
                 const btnThisMonth = popupBox.querySelector('#btnThisMonth');
                 const btnThisYear = popupBox.querySelector('#btnThisYear');
                 const btnAllTime = popupBox.querySelector('#btnAllTime');
@@ -8580,6 +8582,10 @@ function renderKanbanApp(activeBoard) {
                     startDateInput.value = formatDate(start);
                     endDateInput.value = formatDate(end);
                     updateSum();
+                };
+                
+                btnLastMonth.onclick = () => {
+                    setDates(new Date(now.getFullYear(), now.getMonth() - 1, 1), new Date(now.getFullYear(), now.getMonth(), 0));
                 };
                 
                 btnThisMonth.onclick = () => {
