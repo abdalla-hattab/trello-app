@@ -4665,9 +4665,33 @@ function renderKanbanApp(activeBoard) {
         
         if(titleH2) titleH2.onclick = (e) => {
             if (list.trelloListId && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
-                navigator.clipboard.writeText(list.title || titleH2.textContent).then(() => {
-                    showToast("Title copied to clipboard!");
-                }).catch(() => {});
+                const textToCopy = list.title || titleH2.textContent;
+                
+                const fallbackCopy = (text) => {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-999999px";
+                    textArea.style.top = "-999999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast("Title copied to clipboard!");
+                    } catch (err) {
+                        console.error('Fallback copy failed', err);
+                    }
+                    document.body.removeChild(textArea);
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showToast("Title copied to clipboard!");
+                    }).catch(() => fallbackCopy(textToCopy));
+                } else {
+                    fallbackCopy(textToCopy);
+                }
                 return;
             }
 
