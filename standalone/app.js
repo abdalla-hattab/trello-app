@@ -8724,6 +8724,7 @@ function renderKanbanApp(activeBoard) {
                     </div>
                     
                     <p id="calcTotalText" style="margin:10px 0 0 0; font-size:32px; font-weight:900; color:#00875a;">SAR 0</p>
+                    <p id="calcDealsText" style="margin:4px 0 10px 0; font-size:16px; font-weight:600; color:#5e6c84;">Deals: 0</p>
                     <p id="calcDainText" style="margin:0 0 10px 0; font-size:18px; font-weight:700; color:#DC2626; display:none;">دين: SAR 0</p>
                     <button id="closeCalcModalBtn" style="width:100%; padding:12px; font-size:16px; background:#0052cc; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:background 0.2s;">Close</button>
                 `;
@@ -8780,6 +8781,7 @@ function renderKanbanApp(activeBoard) {
                     let sum = 0;
                     let dainSum = 0;
                     let dainCards = [];
+                    let dealsCount = 0;
                     if (list.cards) {
                         list.cards.forEach(c => {
                             let ts = c.customCreationTimestamp || c.creationTimestamp;
@@ -8790,6 +8792,7 @@ function renderKanbanApp(activeBoard) {
                             if (!ts || isNaN(ts) || ts < 1000000000000 || ts > 2500000000000) ts = Date.now();
                             
                             if (ts >= startTs && ts <= endTs) {
+                                dealsCount++;
                                 if (c.dealValue) sum += Number(c.dealValue);
                                 else if (c.pipedriveData && c.pipedriveData.value) sum += Number(c.pipedriveData.value);
                                 
@@ -8801,6 +8804,8 @@ function renderKanbanApp(activeBoard) {
                         });
                     }
                     totalText.textContent = `SAR ${sum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                    const dealsText = popupBox.querySelector('#calcDealsText');
+                    if (dealsText) dealsText.textContent = `Deals: ${dealsCount}`;
                     const dainText = popupBox.querySelector('#calcDainText');
                     if (dainSum > 0) {
                         dainText.textContent = `دين: SAR ${dainSum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
