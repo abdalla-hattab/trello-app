@@ -8704,6 +8704,7 @@ function renderKanbanApp(activeBoard) {
                     
                     let sum = 0;
                     let dainSum = 0;
+                    let dainCards = [];
                     if (list.cards) {
                         list.cards.forEach(c => {
                             let ts = c.customCreationTimestamp || c.creationTimestamp;
@@ -8717,7 +8718,10 @@ function renderKanbanApp(activeBoard) {
                                 if (c.dealValue) sum += Number(c.dealValue);
                                 else if (c.pipedriveData && c.pipedriveData.value) sum += Number(c.pipedriveData.value);
                                 
-                                if (c.dain) dainSum += Number(c.dain);
+                                if (c.dain) {
+                                    dainSum += Number(c.dain);
+                                    dainCards.push(c);
+                                }
                             }
                         });
                     }
@@ -8726,8 +8730,13 @@ function renderKanbanApp(activeBoard) {
                     if (dainSum > 0) {
                         dainText.textContent = `دين: SAR ${dainSum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
                         dainText.style.display = 'block';
+                        dainText.style.cursor = 'pointer';
+                        dainText.onclick = () => {
+                            openServiceCardsModal("Dain / Debt", "💸", dainCards);
+                        };
                     } else {
                         dainText.style.display = 'none';
+                        dainText.onclick = null;
                     }
                 };
                 
