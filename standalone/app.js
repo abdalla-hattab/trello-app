@@ -8505,6 +8505,72 @@ function renderKanbanApp(activeBoard) {
             footerRow.appendChild(listCheckBtn);
         }
 
+        if (list.isNewClients) {
+            const listCalcBtn = document.createElement('div');
+            listCalcBtn.style.cursor = 'pointer';
+            listCalcBtn.style.display = 'flex';
+            listCalcBtn.style.alignItems = 'center';
+            listCalcBtn.style.justifyContent = 'center';
+            listCalcBtn.style.width = '28px';
+            listCalcBtn.style.height = '28px';
+            listCalcBtn.style.marginLeft = '4px';
+            listCalcBtn.style.borderRadius = '50%';
+            listCalcBtn.style.background = '#091e420f';
+            listCalcBtn.style.color = '#5e6c84';
+            listCalcBtn.style.transition = 'all 0.2s';
+            listCalcBtn.style.flexShrink = '0';
+            listCalcBtn.title = "Calculate List Totals";
+            
+            listCalcBtn.onmouseover = () => { listCalcBtn.style.background = '#091e4224'; };
+            listCalcBtn.onmouseout = () => { listCalcBtn.style.background = '#091e420f'; };
+
+            listCalcBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14"></line><line x1="16" y1="18" x2="16" y2="18"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="8" y1="18" x2="8" y2="18"></line><line x1="12" y1="18" x2="12" y2="18"></line></svg>`;
+            
+            listCalcBtn.onclick = (e) => {
+                e.stopPropagation();
+                let sum = 0;
+                if (list.cards) {
+                    list.cards.forEach(c => {
+                        if (c.dealValue) sum += Number(c.dealValue);
+                        else if (c.pipedriveData && c.pipedriveData.value) sum += Number(c.pipedriveData.value);
+                    });
+                }
+                const formattedSum = sum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                
+                const popupWrap = document.createElement('div');
+                popupWrap.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);';
+                
+                const popupBox = document.createElement('div');
+                popupBox.style.cssText = 'background:#fff; border-radius:12px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.2); width:320px; text-align:center; transform:translateY(20px); opacity:0; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);';
+                
+                popupBox.innerHTML = `
+                    <div style="width:48px; height:48px; border-radius:50%; background:#e3fcef; color:#00875a; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    </div>
+                    <h3 style="margin:0 0 8px; font-size:18px; color:#172b4d;">Total Payments</h3>
+                    <p style="margin:0 0 24px; font-size:24px; font-weight:800; color:#00875a;">SAR ${formattedSum}</p>
+                    <button id="closeCalcModalBtn" style="width:100%; padding:10px; background:#0052cc; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>
+                `;
+                
+                popupWrap.appendChild(popupBox);
+                document.body.appendChild(popupWrap);
+                
+                setTimeout(() => {
+                    popupBox.style.transform = 'translateY(0)';
+                    popupBox.style.opacity = '1';
+                }, 10);
+                
+                const closeBtn = popupBox.querySelector('#closeCalcModalBtn');
+                closeBtn.onclick = () => {
+                    popupBox.style.transform = 'translateY(-20px)';
+                    popupBox.style.opacity = '0';
+                    setTimeout(() => popupWrap.remove(), 300);
+                };
+            };
+            
+            footerRow.appendChild(listCalcBtn);
+        }
+
         listContainer.appendChild(footerRow);
 
         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
