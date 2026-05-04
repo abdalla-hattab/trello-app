@@ -8533,20 +8533,28 @@ function renderKanbanApp(activeBoard) {
                 popupWrap.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);';
                 
                 const popupBox = document.createElement('div');
-                popupBox.style.cssText = 'background:#fff; border-radius:12px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.2); width:320px; text-align:center; transform:translateY(20px); opacity:0; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);';
+                popupBox.style.cssText = 'background:#fff; border-radius:12px; padding:32px; box-shadow:0 10px 40px rgba(0,0,0,0.25); width:460px; text-align:center; transform:translateY(20px); opacity:0; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display:flex; flex-direction:column; gap:20px;';
                 
                 popupBox.innerHTML = `
-                    <div style="width:48px; height:48px; border-radius:50%; background:#e3fcef; color:#00875a; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <div style="width:56px; height:56px; border-radius:50%; background:#e3fcef; color:#00875a; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                     </div>
-                    <div style="margin-bottom: 16px; display: flex; gap: 8px; justify-content: center; align-items: center;">
-                        <input type="date" id="calcStartDate" style="padding:6px; border:1px solid #dfe1e6; border-radius:4px; font-size:12px; color:#172b4d; outline:none; width:125px; cursor:pointer;">
-                        <span style="font-size:12px; color:#5e6c84;">to</span>
-                        <input type="date" id="calcEndDate" style="padding:6px; border:1px solid #dfe1e6; border-radius:4px; font-size:12px; color:#172b4d; outline:none; width:125px; cursor:pointer;">
+                    <h3 style="margin:0; font-size:22px; color:#172b4d;">Total Payments</h3>
+                    
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center; background:#f4f5f7; padding:12px; border-radius:8px;">
+                        <input type="date" id="calcStartDate" style="padding:8px; border:1px solid #dfe1e6; border-radius:6px; font-size:14px; color:#172b4d; outline:none; width:140px; cursor:pointer;" onclick="this.showPicker && this.showPicker()">
+                        <span style="font-size:14px; color:#5e6c84; font-weight:600;">to</span>
+                        <input type="date" id="calcEndDate" style="padding:8px; border:1px solid #dfe1e6; border-radius:6px; font-size:14px; color:#172b4d; outline:none; width:140px; cursor:pointer;" onclick="this.showPicker && this.showPicker()">
                     </div>
-                    <h3 style="margin:0 0 8px; font-size:18px; color:#172b4d;">Total Payments</h3>
-                    <p id="calcTotalText" style="margin:0 0 24px; font-size:24px; font-weight:800; color:#00875a;">SAR 0</p>
-                    <button id="closeCalcModalBtn" style="width:100%; padding:10px; background:#0052cc; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>
+                    
+                    <div style="display:flex; gap:8px; justify-content:center;">
+                        <button id="btnThisMonth" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">This Month</button>
+                        <button id="btnThisYear" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">This Year</button>
+                        <button id="btnAllTime" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">All Time</button>
+                    </div>
+                    
+                    <p id="calcTotalText" style="margin:10px 0; font-size:32px; font-weight:900; color:#00875a;">SAR 0</p>
+                    <button id="closeCalcModalBtn" style="width:100%; padding:12px; font-size:16px; background:#0052cc; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:background 0.2s;">Close</button>
                 `;
                 
                 popupWrap.appendChild(popupBox);
@@ -8556,9 +8564,11 @@ function renderKanbanApp(activeBoard) {
                 const endDateInput = popupBox.querySelector('#calcEndDate');
                 const totalText = popupBox.querySelector('#calcTotalText');
                 
+                const btnThisMonth = popupBox.querySelector('#btnThisMonth');
+                const btnThisYear = popupBox.querySelector('#btnThisYear');
+                const btnAllTime = popupBox.querySelector('#btnAllTime');
+                
                 const now = new Date();
-                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                 
                 const formatDate = (d) => {
                     const month = (d.getMonth() + 1).toString().padStart(2, '0');
@@ -8566,8 +8576,26 @@ function renderKanbanApp(activeBoard) {
                     return `${d.getFullYear()}-${month}-${day}`;
                 };
                 
-                startDateInput.value = formatDate(firstDay);
-                endDateInput.value = formatDate(lastDay);
+                const setDates = (start, end) => {
+                    startDateInput.value = formatDate(start);
+                    endDateInput.value = formatDate(end);
+                    updateSum();
+                };
+                
+                btnThisMonth.onclick = () => {
+                    setDates(new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getFullYear(), now.getMonth() + 1, 0));
+                };
+                
+                btnThisYear.onclick = () => {
+                    setDates(new Date(now.getFullYear(), 0, 1), new Date(now.getFullYear(), 11, 31));
+                };
+                
+                btnAllTime.onclick = () => {
+                    setDates(new Date(2000, 0, 1), new Date(2100, 11, 31));
+                };
+                
+                startDateInput.value = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                endDateInput.value = formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
                 
                 const updateSum = () => {
                     const startTs = new Date(startDateInput.value + 'T00:00:00').getTime();
