@@ -7811,9 +7811,20 @@ function renderKanbanApp(activeBoard) {
                     showAgeBadge = true;
                 }
             } else if (list.isClientHappiness || list.isMoneySmelling || !card.isTrello) {
-                creationTimestamp = card.customCreationTimestamp || parseInt(String(card.id).replace('loc_', ''), 10);
-                if (!isNaN(creationTimestamp) && creationTimestamp > 1000000000000) {
+                creationTimestamp = card.customCreationTimestamp;
+                if (!creationTimestamp) {
+                    const match = String(card.id).replace('loc_', '').match(/^\d{13}/);
+                    if (match) {
+                        creationTimestamp = parseInt(match[0], 10);
+                    } else {
+                        creationTimestamp = parseInt(String(card.id).replace('loc_', ''), 10);
+                    }
+                }
+                
+                if (!isNaN(creationTimestamp) && creationTimestamp > 1000000000000 && creationTimestamp < 2500000000000) {
                     showAgeBadge = true;
+                } else {
+                    creationTimestamp = 0;
                 }
             }
 
@@ -8318,7 +8329,7 @@ function renderKanbanApp(activeBoard) {
                 addedDateWrap.style.alignItems = 'center';
                 addedDateWrap.style.gap = '4px';
                 
-                const d = new Date(creationTimestamp);
+                const d = new Date(creationTimestamp && creationTimestamp > 1000000000000 ? creationTimestamp : Date.now());
                 const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const formattedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                 
@@ -8612,10 +8623,10 @@ function renderKanbanApp(activeBoard) {
                         list.cards.forEach(c => {
                             let ts = c.customCreationTimestamp || c.creationTimestamp;
                             if (!ts && c.id && c.id.length >= 13) {
-                                const parsed = parseInt(c.id.substring(0, 13));
-                                if (!isNaN(parsed) && parsed > 1600000000000 && parsed < 2000000000000) ts = parsed;
+                                const match = String(c.id).replace('loc_', '').match(/^\d{13}/);
+                                if (match) ts = parseInt(match[0], 10);
                             }
-                            if (!ts) ts = Date.now();
+                            if (!ts || isNaN(ts) || ts < 1000000000000 || ts > 2500000000000) ts = Date.now();
                             
                             if (ts >= startTs && ts <= endTs) {
                                 if (c.dealValue) sum += Number(c.dealValue);
