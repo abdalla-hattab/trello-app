@@ -6186,54 +6186,137 @@ function renderKanbanApp(activeBoard) {
                     displayValStr = "Add Value";
                 }
 
-                if (displayValStr) {
-                    globalValWrap = document.createElement('span');
-                    let displayVal = displayValStr;
-                    if (displayVal.includes('SAR')) {
-                        const sarSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" style="width: 1.2em; height: 1.2em; margin-right: 4px; display: inline-block; flex-shrink: 0;"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"></path><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"></path></svg>`;
-                        displayVal = displayVal.replace('SAR', sarSvg).trim();
+                if (displayValStr || card.dain) {
+                    const valsContainer = document.createElement('div');
+                    valsContainer.style.display = 'flex';
+                    valsContainer.style.alignItems = 'center';
+                    valsContainer.style.gap = '6px';
+                    valsContainer.style.flexWrap = 'wrap';
+                    
+                    if (displayValStr) {
+                        globalValWrap = document.createElement('span');
+                        let displayVal = displayValStr;
+                        if (displayVal.includes('SAR')) {
+                            const sarSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124.14 1256.39" style="width: 1.2em; height: 1.2em; margin-right: 4px; display: inline-block; flex-shrink: 0;"><path fill="currentColor" d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"></path><path fill="currentColor" d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"></path></svg>`;
+                            displayVal = displayVal.replace('SAR', sarSvg).trim();
+                        }
+                        globalValWrap.innerHTML = displayVal;
+                        globalValWrap.style.fontSize = "16px";
+                        globalValWrap.style.fontWeight = "800";
+                        if (displayVal === "Add Value") {
+                            globalValWrap.style.color = "#7A869A";
+                            globalValWrap.style.fontSize = "12px";
+                            globalValWrap.style.borderBottom = "1px dashed #7A869A";
+                            globalValWrap.style.cursor = "pointer";
+                            globalValWrap.style.fontWeight = "600";
+                        } else if (list.isMoneySmelling) {
+                            globalValWrap.style.color = "#DC2626"; 
+                            globalValWrap.style.textShadow = "0px 1px 2px rgba(220, 38, 38, 0.2)";
+                        } else {
+                            globalValWrap.style.color = "#00875A"; 
+                        }
+                        globalValWrap.style.letterSpacing = "0.3px";
+                        globalValWrap.style.display = "flex";
+                        globalValWrap.style.alignItems = "center";
+                        valsContainer.appendChild(globalValWrap);
                     }
-                    globalValWrap.innerHTML = displayVal;
-                    globalValWrap.style.fontSize = "16px";
-                    globalValWrap.style.fontWeight = "800";
-                    if (displayVal === "Add Value") {
-                        globalValWrap.style.color = "#7A869A";
-                        globalValWrap.style.fontSize = "12px";
-                        globalValWrap.style.borderBottom = "1px dashed #7A869A";
-                        globalValWrap.style.cursor = "pointer";
-                        globalValWrap.style.fontWeight = "600";
-                    } else if (list.isMoneySmelling) {
-                        globalValWrap.style.color = "#DC2626"; 
-                        globalValWrap.style.textShadow = "0px 1px 2px rgba(220, 38, 38, 0.2)";
-                    } else {
-                        globalValWrap.style.color = "#00875A"; 
+                    
+                    if (card.dain) {
+                        const dainWrap = document.createElement('span');
+                        dainWrap.style.color = '#DC2626';
+                        dainWrap.style.fontSize = '12px';
+                        dainWrap.style.fontWeight = '700';
+                        dainWrap.style.background = '#FEE2E2';
+                        dainWrap.style.padding = '2px 6px';
+                        dainWrap.style.borderRadius = '4px';
+                        dainWrap.innerHTML = `دين: ${card.dain.toLocaleString()}`;
+                        valsContainer.appendChild(dainWrap);
                     }
-                    globalValWrap.style.letterSpacing = "0.3px";
-                    globalValWrap.style.display = "flex";
-                    globalValWrap.style.alignItems = "center";
-                    globalValWrap.style.position = "relative";
                     
                     if (!card.isPipedrive && (list.isMoneySmelling || list.isNewClients)) {
-                        globalValWrap.style.cursor = "pointer";
-                        globalValWrap.title = "Click to edit deal value";
-                        globalValWrap.onclick = (e) => {
+                        valsContainer.style.cursor = "pointer";
+                        valsContainer.title = "Click to edit financials";
+                        valsContainer.onclick = (e) => {
                             e.stopPropagation();
-                            const currentVal = card.dealValue || "";
-                            const newV = prompt("Enter deal value in SAR:", currentVal);
-                            if (newV !== null) {
-                                const parsed = parseFloat(newV);
-                                if (!isNaN(parsed)) {
-                                    card.dealValue = parsed;
-                                    saveState();
-                                    render();
-                                } else if (newV.trim() === "") {
-                                    delete card.dealValue;
+                            const popupWrap = document.createElement('div');
+                            popupWrap.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:999999; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);';
+                            
+                            const popupBox = document.createElement('div');
+                            popupBox.style.cssText = 'background:#fff; border-radius:12px; padding:24px; box-shadow:0 10px 40px rgba(0,0,0,0.25); width:360px; transform:translateY(20px); opacity:0; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display:flex; flex-direction:column; gap:16px;';
+                            
+                            popupBox.innerHTML = `
+                                <h3 style="margin:0; font-size:18px; color:#172b4d;">Edit Deal Financials</h3>
+                                
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <label style="font-size:12px; font-weight:600; color:#5e6c84;">Deal Value (SAR)</label>
+                                    <input type="number" id="modalDealVal" value="${card.dealValue || ''}" placeholder="e.g. 1000" style="padding:10px; border:1px solid #dfe1e6; border-radius:6px; font-size:14px; outline:none; transition:border 0.2s;">
+                                </div>
+                                
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <label style="font-size:12px; font-weight:600; color:#DC2626;">Dain / Debt (SAR)</label>
+                                    <input type="number" id="modalDainVal" value="${card.dain || ''}" placeholder="e.g. 500" style="padding:10px; border:1px solid #ffcccc; background:#fff5f5; border-radius:6px; font-size:14px; outline:none; transition:border 0.2s;">
+                                </div>
+                                
+                                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+                                    <button id="modalCancelBtn" style="padding:8px 16px; font-size:14px; background:#f4f5f7; color:#172b4d; border:none; border-radius:6px; cursor:pointer; font-weight:600; transition:background 0.2s;">Cancel</button>
+                                    <button id="modalSaveBtn" style="padding:8px 16px; font-size:14px; background:#0052cc; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; transition:background 0.2s;">Save</button>
+                                </div>
+                            `;
+                            
+                            popupWrap.appendChild(popupBox);
+                            document.body.appendChild(popupWrap);
+                            
+                            requestAnimationFrame(() => {
+                                popupBox.style.transform = 'translateY(0)';
+                                popupBox.style.opacity = '1';
+                            });
+                            
+                            const closePopup = () => {
+                                popupBox.style.transform = 'translateY(20px)';
+                                popupBox.style.opacity = '0';
+                                setTimeout(() => popupWrap.remove(), 300);
+                            };
+                            
+                            popupBox.querySelector('#modalCancelBtn').onclick = closePopup;
+                            popupWrap.onclick = (e) => { if(e.target === popupWrap) closePopup(); };
+                            
+                            const saveBtn = popupBox.querySelector('#modalSaveBtn');
+                            const dealInput = popupBox.querySelector('#modalDealVal');
+                            const dainInput = popupBox.querySelector('#modalDainVal');
+                            
+                            dealInput.focus();
+                            
+                            saveBtn.onclick = () => {
+                                const val = parseFloat(dealInput.value);
+                                const dainVal = parseFloat(dainInput.value);
+                                
+                                let changed = false;
+                                if (!isNaN(val)) {
+                                    if (card.dealValue !== val) { card.dealValue = val; changed = true; }
+                                } else if (dealInput.value.trim() === "") {
+                                    if (card.dealValue !== undefined) { delete card.dealValue; changed = true; }
+                                }
+                                
+                                if (!isNaN(dainVal)) {
+                                    if (card.dain !== dainVal) { card.dain = dainVal; changed = true; }
+                                } else if (dainInput.value.trim() === "") {
+                                    if (card.dain !== undefined) { delete card.dain; changed = true; }
+                                }
+                                
+                                if (changed) {
                                     saveState();
                                     render();
                                 }
-                            }
+                                closePopup();
+                            };
+                            
+                            const handleEnter = (e) => { if(e.key === 'Enter') saveBtn.click(); };
+                            dealInput.onkeydown = handleEnter;
+                            dainInput.onkeydown = handleEnter;
                         };
                     }
+                    
+                    leftCol.appendChild(valsContainer);
                 }
                 
                 const spacer = document.createElement('span');
@@ -8565,7 +8648,8 @@ function renderKanbanApp(activeBoard) {
                         <button id="btnAllTime" style="padding:6px 12px; font-size:12px; background:#e4f0f6; color:#0052cc; border:none; border-radius:4px; cursor:pointer; font-weight:600;">All Time</button>
                     </div>
                     
-                    <p id="calcTotalText" style="margin:10px 0; font-size:32px; font-weight:900; color:#00875a;">SAR 0</p>
+                    <p id="calcTotalText" style="margin:10px 0 0 0; font-size:32px; font-weight:900; color:#00875a;">SAR 0</p>
+                    <p id="calcDainText" style="margin:0 0 10px 0; font-size:18px; font-weight:700; color:#DC2626; display:none;">دين: SAR 0</p>
                     <button id="closeCalcModalBtn" style="width:100%; padding:12px; font-size:16px; background:#0052cc; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:background 0.2s;">Close</button>
                 `;
                 
@@ -8619,6 +8703,7 @@ function renderKanbanApp(activeBoard) {
                     const endTs = new Date(endDateInput.value + 'T23:59:59').getTime();
                     
                     let sum = 0;
+                    let dainSum = 0;
                     if (list.cards) {
                         list.cards.forEach(c => {
                             let ts = c.customCreationTimestamp || c.creationTimestamp;
@@ -8631,10 +8716,19 @@ function renderKanbanApp(activeBoard) {
                             if (ts >= startTs && ts <= endTs) {
                                 if (c.dealValue) sum += Number(c.dealValue);
                                 else if (c.pipedriveData && c.pipedriveData.value) sum += Number(c.pipedriveData.value);
+                                
+                                if (c.dain) dainSum += Number(c.dain);
                             }
                         });
                     }
                     totalText.textContent = `SAR ${sum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                    const dainText = popupBox.querySelector('#calcDainText');
+                    if (dainSum > 0) {
+                        dainText.textContent = `دين: SAR ${dainSum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                        dainText.style.display = 'block';
+                    } else {
+                        dainText.style.display = 'none';
+                    }
                 };
                 
                 startDateInput.onchange = updateSum;
