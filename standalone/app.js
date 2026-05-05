@@ -4661,10 +4661,14 @@ function renderKanbanApp(activeBoard) {
         const titleH2 = document.createElement('h2');
         titleH2.textContent = list.title;
         titleH2.className = 'editable-board-title';
-        titleH2.title = 'Click to rename';
+        if ((list.trelloListId || list.trelloTasksListId || list.trackerType === 'trello') && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
+            titleH2.title = 'Click to copy';
+        } else {
+            titleH2.title = 'Click to rename';
+        }
         
         if(titleH2) titleH2.onclick = (e) => {
-            if ((list.trelloListId || list.trelloTasksListId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
+            if ((list.trelloListId || list.trelloTasksListId || list.trackerType === 'trello') && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
                 const textToCopy = list.title || titleH2.textContent;
                 
                 let fallbackSuccess = false;
