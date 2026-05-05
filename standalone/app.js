@@ -4667,31 +4667,31 @@ function renderKanbanApp(activeBoard) {
             if ((list.trelloListId || list.trelloTasksListId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
                 const textToCopy = list.title || titleH2.textContent;
                 
-                const fallbackCopy = (text) => {
+                let fallbackSuccess = false;
+                try {
                     const textArea = document.createElement("textarea");
-                    textArea.value = text;
+                    textArea.value = textToCopy;
                     textArea.style.position = "fixed";
-                    textArea.style.opacity = "0"; // Invisible but in viewport
+                    textArea.style.opacity = "0";
                     textArea.style.left = "0";
                     textArea.style.top = "0";
                     document.body.appendChild(textArea);
                     textArea.focus();
                     textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        showToast("Title copied to clipboard!");
-                    } catch (err) {
-                        console.error('Fallback copy failed', err);
-                    }
+                    fallbackSuccess = document.execCommand('copy');
                     document.body.removeChild(textArea);
-                };
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
 
-                if (navigator.clipboard && navigator.clipboard.writeText) {
+                if (fallbackSuccess) {
+                    showToast("Title copied to clipboard!");
+                } else if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(textToCopy).then(() => {
                         showToast("Title copied to clipboard!");
-                    }).catch(() => fallbackCopy(textToCopy));
-                } else {
-                    fallbackCopy(textToCopy);
+                    }).catch(err => {
+                        console.error('All copy methods failed', err);
+                    });
                 }
                 return;
             }
