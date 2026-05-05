@@ -5850,7 +5850,6 @@ function renderKanbanApp(activeBoard) {
                 const isTask2 = taskIndex === 2;
                 const showBtn = document.createElement('button');
                 showBtn.className = 'add-card-btn';
-                showBtn.style.margin = '0';
                 showBtn.style.flex = isTask2 ? '0.95' : '1.05';
                 showBtn.style.display = 'flex';
                 showBtn.style.justifyContent = 'flex-start';
