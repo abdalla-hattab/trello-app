@@ -5843,7 +5843,7 @@ function renderKanbanApp(activeBoard) {
             trelloTasksBtnsContainer.style.display = 'flex';
             trelloTasksBtnsContainer.style.flexDirection = 'row';
             trelloTasksBtnsContainer.style.gap = '2px';
-            trelloTasksBtnsContainer.style.margin = '4px 4px 8px 4px';
+            trelloTasksBtnsContainer.style.margin = '10px 4px 8px 4px';
             trelloTasksBtnsContainer.style.width = 'calc(100% - 8px)';
             
             const createToggleBtn = (taskIndex) => {
