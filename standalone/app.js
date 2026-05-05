@@ -5857,7 +5857,7 @@ function renderKanbanApp(activeBoard) {
                 showBtn.style.backgroundColor = 'transparent';
                 showBtn.style.color = '#5e6c84';
                 showBtn.style.fontWeight = '500';
-                showBtn.style.fontSize = '13px';
+                showBtn.style.fontSize = '14px';
                 showBtn.style.padding = '8px 2px';
                 showBtn.style.borderRadius = '8px';
                 showBtn.style.transition = 'background-color 0.2s ease, color 0.2s ease';
