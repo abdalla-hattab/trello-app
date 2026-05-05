@@ -5841,7 +5841,8 @@ function renderKanbanApp(activeBoard) {
         if (list.trelloTasksListId || list.trelloTasks2ListId) {
             trelloTasksBtnsContainer = document.createElement('div');
             trelloTasksBtnsContainer.style.display = 'flex';
-            trelloTasksBtnsContainer.style.gap = '2px';
+            trelloTasksBtnsContainer.style.flexDirection = 'column';
+            trelloTasksBtnsContainer.style.gap = '4px';
             trelloTasksBtnsContainer.style.margin = '4px 4px 8px 4px';
             trelloTasksBtnsContainer.style.width = 'calc(100% - 8px)';
             
@@ -5874,9 +5875,9 @@ function renderKanbanApp(activeBoard) {
                 const updateInner = () => {
                     const isExpanded = window.expandedTrelloLists.has(keyId);
                     if (isExpanded) {
-                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px;flex-shrink:0;"><path d="M18 15l-6-6-6 6"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hide ${label} (${count})</span>`;
+                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:-2px;flex-shrink:0;"><path d="M18 15l-6-6-6 6"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hide ${label} (${count})</span>`;
                     } else {
-                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px;flex-shrink:0;"><path d="M6 9l6 6 6-6"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Show ${label} (${count})</span>`;
+                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:-2px;flex-shrink:0;"><path d="M6 9l6 6 6-6"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Show ${label} (${count})</span>`;
                     }
                 };
                 showBtn._updateInner = updateInner;
