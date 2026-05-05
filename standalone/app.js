@@ -5933,12 +5933,7 @@ function renderKanbanApp(activeBoard) {
             });
         }
         
-        if (list.isPremium) {
-            cardsToRender = cardsToRender.filter(card => {
-                return card.labels && card.labels.some(lbl => lbl.name && lbl.name.toLowerCase().startsWith('skip'));
-            });
-        }
-        
+        // Removed the filter that hides non-skip cards from Premium Lists, allowing all cards to show.
         cardsToRender.forEach(card => {
             const cardEl = document.createElement('div');
             cardEl.className = 'card';
@@ -6013,7 +6008,7 @@ function renderKanbanApp(activeBoard) {
             const titleTextWrap = document.createElement('span');
             
             if (list.isPremium && card.labels && card.labels.length > 0) {
-                const labelsToShow = card.labels.filter(lbl => lbl.name && lbl.name.toLowerCase().startsWith('skip'));
+                const labelsToShow = card.labels; // Show all labels, not just 'skip'
                 
                 if (labelsToShow.length > 0) {
                     const labelsContainer = document.createElement('div');
