@@ -5293,30 +5293,10 @@ function renderKanbanApp(activeBoard) {
             rightControls.appendChild(tBadge);
         }
         
-        if (list.trelloTasksListId) {
+        if (list.trelloTasksListId || list.trelloTasks2ListId) {
             const tBadge = document.createElement('span');
-            tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; margin-bottom:-1px;"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Trello Tasks 1`;
+            tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; margin-bottom:-1px;"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Trello Tasks`;
             tBadge.title = "Connected as a Trello Tasks list";
-            tBadge.style.background = 'rgba(9, 30, 66, 0.08)';
-            tBadge.style.color = '#5e6c84';
-            tBadge.style.border = '1px solid rgba(9, 30, 66, 0.2)';
-            tBadge.style.fontSize = '10px';
-            tBadge.style.textTransform = 'uppercase';
-            tBadge.style.letterSpacing = '0.5px';
-            tBadge.style.fontWeight = '700';
-            tBadge.style.padding = '4px 8px';
-            tBadge.style.borderRadius = '12px';
-            tBadge.style.marginTop = '2px';
-            tBadge.style.display = 'inline-flex';
-            tBadge.style.alignItems = 'center';
-            tBadge.style.alignSelf = 'center';
-            rightControls.appendChild(tBadge);
-        }
-        
-        if (list.trelloTasks2ListId) {
-            const tBadge = document.createElement('span');
-            tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; margin-bottom:-1px;"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Trello Tasks 2`;
-            tBadge.title = "Connected as a Trello Tasks 2 list";
             tBadge.style.background = 'rgba(9, 30, 66, 0.08)';
             tBadge.style.color = '#5e6c84';
             tBadge.style.border = '1px solid rgba(9, 30, 66, 0.2)';
@@ -5877,7 +5857,7 @@ function renderKanbanApp(activeBoard) {
                 showBtn.style.color = '#5e6c84';
                 showBtn.style.fontWeight = '500';
                 showBtn.style.fontSize = '14px';
-                showBtn.style.padding = '8px 10px';
+                showBtn.style.padding = '8px 6px';
                 showBtn.style.borderRadius = '8px';
                 showBtn.style.transition = 'background-color 0.2s ease, color 0.2s ease';
                 showBtn.style.minWidth = '0';
@@ -5894,9 +5874,9 @@ function renderKanbanApp(activeBoard) {
                 const updateInner = () => {
                     const isExpanded = window.expandedTrelloLists.has(keyId);
                     if (isExpanded) {
-                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;flex-shrink:0;"><path d="M18 15l-6-6-6 6"></path></svg> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hide ${label} (${count})</span>`;
+                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:3px;flex-shrink:0;"><path d="M18 15l-6-6-6 6"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hide ${label} (${count})</span>`;
                     } else {
-                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;flex-shrink:0;"><path d="M6 9l6 6 6-6"></path></svg> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Show ${label} (${count})</span>`;
+                        showBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:3px;flex-shrink:0;"><path d="M6 9l6 6 6-6"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Show ${label} (${count})</span>`;
                     }
                 };
                 showBtn._updateInner = updateInner;
