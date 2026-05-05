@@ -4664,15 +4664,16 @@ function renderKanbanApp(activeBoard) {
         titleH2.title = 'Click to rename';
         
         if(titleH2) titleH2.onclick = (e) => {
-            if (list.trelloListId && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
+            if ((list.trelloListId || list.trelloTasksListId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2') {
                 const textToCopy = list.title || titleH2.textContent;
                 
                 const fallbackCopy = (text) => {
                     const textArea = document.createElement("textarea");
                     textArea.value = text;
                     textArea.style.position = "fixed";
-                    textArea.style.left = "-999999px";
-                    textArea.style.top = "-999999px";
+                    textArea.style.opacity = "0"; // Invisible but in viewport
+                    textArea.style.left = "0";
+                    textArea.style.top = "0";
                     document.body.appendChild(textArea);
                     textArea.focus();
                     textArea.select();
