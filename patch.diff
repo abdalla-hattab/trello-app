@@ -1,0 +1,394 @@
+--- standalone/app.js	2026-04-28 04:22:00
++++ standalone/app.js.new	2026-04-28 04:29:03
+@@ -598,7 +598,7 @@
+     if (!list) return;
+     
+     list.edgeOrder = list.edgeOrder || {};
+-    let curOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
++    let curOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads', 'ads2'];
+     
+     const oldIdx = curOrder.indexOf(sourceTracker);
+     const newIdx = curOrder.indexOf(targetType);
+@@ -654,7 +654,7 @@
+     
+     const targetLocalCard = activeBoard.lists.flatMap(l => l.cards).find(c => c.id === cardId);
+     const targetLocalList = activeBoard.lists.find(l => l.id === listId);
+-    const isAdsTracker = targetLocalList && targetLocalList.trackerType === 'ads';
++    const isAdsTracker = targetLocalList && (targetLocalList.trackerType === 'ads' || targetLocalList.trackerType === 'ads2');
+     
+     if (adsMetricsSection) {
+         if (isAdsTracker) {
+@@ -3545,7 +3545,7 @@
+     if (!activeBoard || !activeBoard.lists) return;
+     activeBoard.lists.forEach(list => {
+         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
+-        const isAdsTracker = list.trackerType === 'ads';
++        const isAdsTracker = (list.trackerType === 'ads' || list.trackerType === 'ads2');
+         const isTrelloTracker = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && !list.isClientHappiness && !list.isMoneySmelling;
+ 
+         if (hasOutgoing || isAdsTracker || isTrelloTracker) {
+@@ -3598,15 +3598,17 @@
+                     if (!htmlStr) htmlStr = `<div style="display:flex; align-items:center; background:rgba(9,30,66,0.06); color:#5E6C84; padding:4px 8px; border-radius:6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap:4px;">⚪ 0</div>`;
+                     const pdLogo = `<div draggable="true" ondragstart="event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="display:inline-flex; align-items:center; justify-content:center; background:#2a2f35; color:#fff; width:24px; height:24px; border-radius:6px; font-weight:800; font-size:14px; font-family:system-ui,-apple-system,sans-serif; margin-bottom:4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor:grab;" title="Drag to transfer Pipedrive Integration">P</div>`;
+                     summaryEl.innerHTML = `<div style="display:flex; flex-direction:column; gap:4px; font-size: 12px; font-weight: 600;">${pdLogo}<div style="display:flex; align-items:center; gap: 8px;">${htmlStr}</div></div>`;
+-                } else if (list.trackerType === 'ads' || list.trackerType === 'trelloSpeech' || list.trelloListId || list.trelloTasksListId) {
++                } else if ((list.trackerType === 'ads' || list.trackerType === 'ads2') || list.trackerType === 'ads2' || list.trackerType === 'trelloSpeech' || list.trelloListId || list.trelloTasksListId) {
+                     let hasTrello = false;
+                     let hasAds = false;
++                    let hasAds2 = false;
+                     let hasTs = false;
+                     let hasCH = false;
+                     let hasMS = false;
+                     let hasNC = false;
+                     let tCards = 0; let tCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+                     let aCards = 0; let aCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
++                    let a2Cards = 0; let a2Col = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+                     let tsCards = 0; let tsCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+                     let chCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+                     let msCol = { green: 0, yellow: 0, orange: 0, red: 0, default: 0 };
+@@ -3616,12 +3618,14 @@
+                         const tList = activeBoard.lists.find(l => l.id === tid);
+                         if (tList && tList.cards) {
+                             const isAds = tList.trackerType === 'ads';
++                            const isAds2 = tList.trackerType === 'ads2';
+                             const isTs = tList.trackerType === 'trelloSpeech';
+                             const isCH = tList.isClientHappiness;
+                             const isMS = tList.isMoneySmelling;
+                             const isNC = tList.isNewClients;
+                             
+                             if (isAds) hasAds = true;
++                            else if (isAds2) hasAds2 = true;
+                             else if (isTs) hasTs = true;
+                             else if (isCH) hasCH = true;
+                             else if (isMS) hasMS = true;
+@@ -3635,6 +3639,8 @@
+                                     
+                                     if (isAds) {
+                                         aCards++; aCol[msColValue]++;
++                                    } else if (isAds2) {
++                                        a2Cards++; a2Col[msColValue]++;
+                                     } else if (isTs) {
+                                         tsCards++; tsCol[msColValue]++;
+                                     } else {
+@@ -3874,8 +3880,22 @@
+                             if (targList.trackerType === 'trelloSpeech') hasTrelloSpeech = true;
+                             if ((targList.trelloTasksListId || targList.trelloBoardId || targList.trelloListId) && targList.trackerType !== 'ads' && targList.trackerType !== 'trelloSpeech') hasTrello = true;
+                             if (targList.trackerType === 'ads') hasAds = true;
++                            if (targList.trackerType === 'ads2') hasAds2 = true;
+                         }
+                     }
++                    
++                    if (hasAds2) {
++                        const aText = a2Cards === 1 ? '1 Ad' : `${a2Cards} Ads`;
++                        finalHtml += `
++                            <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
++                                <div data-clicker="true" data-pid="${list.id}" data-ptype="ads2" data-pcolor="null" style="display:flex; align-items:center; gap: 4px; background: rgba(0, 188, 212, 0.15); color: #00838F; padding: 4px 10px; border-radius: 6px; cursor:pointer;">
++                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
++                                    <span>${aText} (2)</span>
++                                </div>
++                                ${buildTally(a2Col, list.id, 'ads2') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(a2Col, list.id, 'ads2')}</div>` : ''}
++                            </div>
++                        `;
++                    }
+                 });
+                 
+                 const targetList = activeBoard.lists.find(l => l.id === conn.target);
+@@ -3885,7 +3905,8 @@
+                     else if (targetList.isMoneySmelling) myType = 'moneySmelling';
+                     else if (targetList.isNewClients) myType = 'newClients';
+                     else if (targetList.pipedriveStageId) myType = 'pipedrive';
+-                    else if (targetList.trackerType === 'ads') myType = 'ads';
++                    else if ((targetList.trackerType === 'ads' || targetList.trackerType === 'ads2')) myType = 'ads';
++                    else if (targetList.trackerType === 'ads2') myType = 'ads2';
+                     else if (targetList.trackerType === 'trelloSpeech') myType = 'trelloSpeech';
+                 }
+                 
+@@ -3898,9 +3919,10 @@
+                 if (hasTrello) activeTypes.push('trello');
+                 if (hasTrelloSpeech) activeTypes.push('trelloSpeech');
+                 if (hasAds) activeTypes.push('ads');
++                if (hasAds2) activeTypes.push('ads2');
+                 
+                 const sList = activeBoard.lists.find(l => l.id === conn.source);
+-                const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
++                const curOrder = sList && sList.edgeOrder && sList.edgeOrder[sourceEdge] ? sList.edgeOrder[sourceEdge] : ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads', 'ads2'];
+                 activeTypes.sort((a, b) => {
+                     let iA = curOrder.indexOf(a);
+                     let iB = curOrder.indexOf(b);
+@@ -4137,6 +4159,7 @@
+                         if (tType === 'trelloSpeech' && tl.trackerType === 'trelloSpeech') matches = true;
+                         if (tType === 'trello' && (tl.trelloTasksListId || tl.trelloBoardId || tl.trelloListId) && tl.trackerType !== 'ads' && tl.trackerType !== 'trelloSpeech') matches = true;
+                         if (tType === 'ads' && tl.trackerType === 'ads') matches = true;
++                            if (tType === 'ads2' && tl.trackerType === 'ads2') matches = true;
+                     }
+                 }
+                 
+@@ -4180,7 +4203,7 @@
+                 if (cl && cl.id !== pId) {
+                     if (pType === 'trello' && (cl.trelloTasksListId || cl.trelloBoardId || cl.trelloListId) && cl.trackerType !== 'ads') {
+                         effectiveFilters[childId] = { value: color, type: pType };
+-                    } else if (pType === 'ads' && cl.trackerType === 'ads') {
++                    } else if ((pType === 'ads' && cl.trackerType === 'ads') || (pType === 'ads2' && cl.trackerType === 'ads2')) {
+                         effectiveFilters[childId] = { value: color, type: pType };
+                     } else if (pType === 'clientHappiness' && cl.isClientHappiness) {
+                         effectiveFilters[childId] = { value: color, type: pType };
+@@ -4235,7 +4258,7 @@
+         if (list.theme === 'pipedrive' || (!list.theme && list.pipedriveStageId)) {
+             listContainer.classList.add('pipedrive-box');
+         }
+-        if (list.pipedriveStageId || list.trackerType === 'ads') listContainer.classList.add('auto-height-list');
++        if (list.pipedriveStageId || (list.trackerType === 'ads' || list.trackerType === 'ads2')) listContainer.classList.add('auto-height-list');
+         
+         const isHiddenOrAnimating = hiddenListIds.has(list.id) || (typeof animatingOutIds !== 'undefined' && animatingOutIds.has(list.id)) || isFilteredOut;
+         if (isHiddenOrAnimating) {
+@@ -4273,8 +4296,8 @@
+                 const sourceId = e.dataTransfer.getData(transferTypeObj);
+                 
+                 if (sourceId && sourceId !== list.id) {
+-                    const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : (trackerType === 'nc' ? 'newClients' : (trackerType === 'trello-speech' ? 'trelloSpeech' : trackerType))));
+-                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads', 'trelloSpeech': 'Trello Tracker 2' };
++                    const mappedType = trackerType === 'pd' ? 'pipedrive' : (trackerType === 'ch' ? 'clientHappiness' : (trackerType === 'ms' ? 'moneySmelling' : (trackerType === 'nc' ? 'newClients' : (trackerType === 'trello-speech' ? 'trelloSpeech' : (trackerType === 'ads2' ? 'ads2' : trackerType)))));
++                    const formatNameMap = { 'pipedrive': 'Pipedrive', 'clientHappiness': 'Client Happiness', 'moneySmelling': 'Money Smelling', 'newClients': 'New Clients', 'trello': 'Trello', 'ads': 'Ads', 'ads2': 'Ads Tracker 2', 'trelloSpeech': 'Trello Tracker 2' };
+                     const formatName = formatNameMap[mappedType];
+                     
+                     const checkMatch = (t) => {
+@@ -4284,6 +4307,7 @@
+                         if (mappedType === 'moneySmelling') return t.isMoneySmelling;
+                         if (mappedType === 'newClients') return t.isNewClients;
+                         if (mappedType === 'ads') return t.trackerType === 'ads';
++                        if (mappedType === 'ads2') return t.trackerType === 'ads2';
+                         if (mappedType === 'trelloSpeech') return t.trackerType === 'trelloSpeech';
+                         if (mappedType === 'trello') return (t.trelloListId || t.trelloTasksListId) && t.trackerType !== 'ads' && t.trackerType !== 'trelloSpeech' && !t.isClientHappiness && !t.isMoneySmelling && !t.isNewClients;
+                         return false;
+@@ -4333,7 +4357,7 @@
+                                     if (srcList.trelloBoardId) { list.trelloBoardId = srcList.trelloBoardId; delete srcList.trelloBoardId; }
+                                 } else if (mappedType === 'ads') {
+                                     list.trackerType = 'ads';
+-                                    if (srcList.trackerType === 'ads') delete srcList.trackerType;
++                                    if (srcList.trackerType === 'ads' || srcList.trackerType === 'ads2') delete srcList.trackerType;
+                                     if (srcList.trelloListId) {
+                                         list.trelloListId = srcList.trelloListId;
+                                         delete srcList.trelloListId;
+@@ -4411,6 +4435,7 @@
+             const getGroupType = (l) => {
+                 if (l.trackerType === 'trelloSpeech') return 'trelloSpeech';
+                 if (l.trackerType === 'ads') return 'ads';
++                if (l.trackerType === 'ads2') return 'ads2';
+                 if (l.trelloTasksListId) return null; // Explicitly decouple Trello Tasks from cluster grouping
+                 if ((l.trelloListId || l.trelloBoardId) && !l.isClientHappiness && !l.isMoneySmelling) return 'trello';
+                 if (l.isClientHappiness) return 'ch';
+@@ -4605,8 +4630,8 @@
+             optionsMenu.appendChild(opt);
+         }
+ 
+-        if (activeBoard.trelloBoardId && (list.trackerType === 'ads' || !list.trelloListId)) {
+-            const isUnlink = list.trelloListId && list.trackerType === 'ads';
++        if (activeBoard.trelloBoardId && ((list.trackerType === 'ads' || list.trackerType === 'ads2') || !list.trelloListId)) {
++            const isUnlink = list.trelloListId && (list.trackerType === 'ads' || list.trackerType === 'ads2');
+             const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>`;
+             const text = isUnlink ? 'Unlink Ads Tracker' : 'Ads Tracker';
+             
+@@ -4615,7 +4640,7 @@
+             opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
+             if(opt) opt.onclick = (e) => {
+                 e.stopPropagation();
+-                if (list.trelloListId && list.trackerType === 'ads') {
++                if (list.trelloListId && (list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                     if(confirm("Unlink this Ads tracker layout?")) {
+                         list.trelloListId = null;
+                         list.trackerType = null;
+@@ -4629,6 +4654,30 @@
+             optionsMenu.appendChild(opt);
+         }
+ 
++        if (activeBoard.trelloBoardId && (list.trackerType === 'ads2' || !list.trelloListId)) {
++            const isUnlink = list.trelloListId && list.trackerType === 'ads2';
++            const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline>`;
++            const text = isUnlink ? 'Unlink Ads Tracker' : 'Ads Tracker 2';
++            
++            const opt = document.createElement('div');
++            opt.className = 'list-option-item';
++            opt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><span>${text}</span>`;
++            if(opt) opt.onclick = (e) => {
++                e.stopPropagation();
++                if (list.trelloListId && list.trackerType === 'ads2') {
++                    if(confirm("Unlink this Ads tracker layout?")) {
++                        list.trelloListId = null;
++                        list.trackerType = null;
++                        list.cards = list.cards.filter(c => !c.isTrello);
++                        saveState();
++                        render();
++                    }
++                } else openTrelloMappingGenerator(list, 'ads2');
++                optionsMenu.style.display = 'none';
++            };
++            optionsMenu.appendChild(opt);
++        }
++
+         if (activeBoard.trelloBoardId && (list.trackerType === 'trelloSpeech' || !list.trelloListId)) {
+             const isUnlink = list.trelloListId && list.trackerType === 'trelloSpeech';
+             const icon = isUnlink ? `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>` : `<line x1="12" y1="4" x2="12" y2="20"></line><line x1="4" y1="4" x2="20" y2="4"></line>`;
+@@ -5022,10 +5071,17 @@
+         
+         if (list.trelloListId) {
+             const tBadge = document.createElement('span');
+-            if (list.trackerType === 'ads') {
++            if ((list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                 const cardCount = list.cards ? list.cards.length : 0;
+                 tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Ads Tracker (${cardCount})`;
+                 tBadge.title = "Connected as an Ads Tracker";
++                tBadge.style.background = 'rgba(0, 188, 212, 0.15)';
++                tBadge.style.color = '#00838F';
++                tBadge.style.border = '1px solid rgba(0, 188, 212, 0.3)';
++            } } else if (list.trackerType === 'ads2') {
++                const cardCount = list.cards ? list.cards.length : 0;
++                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Ads Tracker 2 (${cardCount})`;
++                tBadge.title = "Connected as an Ads Tracker 2";
+                 tBadge.style.background = 'rgba(0, 188, 212, 0.15)';
+                 tBadge.style.color = '#00838F';
+                 tBadge.style.border = '1px solid rgba(0, 188, 212, 0.3)';
+@@ -5197,6 +5253,7 @@
+             const hasAdsTrackers = activeBoard.connections && activeBoard.connections.some(c => 
+                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType === 'ads')
+             );
++            const hasAds2Trackers = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.trelloListId && l.trackerType === 'ads2'));
+             const hasPipedriveTrackers = activeBoard.connections && activeBoard.connections.some(c => 
+                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.pipedriveStageId)
+             );
+@@ -5210,7 +5267,7 @@
+                 c.source === list.id && c.sourcePort === edge && activeBoard.lists.find(l => l.id === c.target && l.isNewClients)
+             );
+             
+-            const hasTrackersOnEdge = hasTrelloTrackers || hasTrelloSpeechTrackers || hasAdsTrackers || hasPipedriveTrackers || hasClientHappinessTrackers || hasMoneySmellingTrackers || hasNewClientsTrackers;
++            const hasTrackersOnEdge = hasTrelloTrackers || hasTrelloSpeechTrackers || hasAdsTrackers || hasAds2Trackers || hasPipedriveTrackers || hasClientHappinessTrackers || hasMoneySmellingTrackers || hasNewClientsTrackers;
+             
+             if (hasTrackersOnEdge) {
+                 const toggleBtn = document.createElement('div');
+@@ -5234,7 +5291,7 @@
+                 }
+                 
+                 list.edgeOrder = list.edgeOrder || {};
+-                const userOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads'];
++                const userOrder = list.edgeOrder[edge] || ['clientHappiness', 'moneySmelling', 'newClients', 'pipedrive', 'trello', 'trelloSpeech', 'ads', 'ads2'];
+                 const edgeDict = {};
+                 
+                 if (hasClientHappinessTrackers) {
+@@ -5408,6 +5465,34 @@
+                     } else {
+                         edgeDict['ads'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
+                             <svg data-tracker-type="ads" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 8px rgba(0, 229, 255, 0.7)); transform: scale(1.1);">
++                                <circle cx="12" cy="12" r="11" fill="none" stroke="#00E5FF" stroke-width="1" stroke-dasharray="2 2" opacity="0.8"/>
++                                <circle cx="12" cy="12" r="9" fill="#006064" stroke="#00251A" stroke-width="1.5"/>
++                                <path d="M7 14 L11 10 L14 13 L18 8" fill="none" stroke="#18FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++                                <polyline points="15 8 18 8 18 11" fill="none" stroke="#18FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++                                <circle cx="18" cy="8" r="1.5" fill="#FFFFFF"/>
++                            </svg>
++                        </div>`;
++                    }
++                }
++                
++                if (hasAds2Trackers) {
++                    const isAdsCollapsed = list.collapsedEdges.includes(`${edge}:ads2`);
++                    const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'ads');"`;
++                    if (isAdsCollapsed) {
++                        edgeDict['ads2'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads2', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
++                            <svg data-tracker-type="ads2" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform: scale(1.1);">
++                                <circle cx="12" cy="12" r="10" fill="#00838F" stroke="#004D40" stroke-width="1.5"/>
++                                <path d="M7 15 L11 11 L14 14 L18 10" fill="none" stroke="#18FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++                                <polyline points="15 10 18 10 18 13" fill="none" stroke="#18FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++                                <circle cx="7" cy="15" r="1.5" fill="#FFFFFF"/>
++                                <circle cx="11" cy="11" r="1.5" fill="#FFFFFF"/>
++                                <circle cx="14" cy="14" r="1.5" fill="#FFFFFF"/>
++                                <circle cx="18" cy="10" r="1.5" fill="#FFFFFF"/>
++                            </svg>
++                        </div>`;
++                    } else {
++                        edgeDict['ads2'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-ads2', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
++                            <svg data-tracker-type="ads2" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 8px rgba(0, 229, 255, 0.7)); transform: scale(1.1);">
+                                 <circle cx="12" cy="12" r="11" fill="none" stroke="#00E5FF" stroke-width="1" stroke-dasharray="2 2" opacity="0.8"/>
+                                 <circle cx="12" cy="12" r="9" fill="#006064" stroke="#00251A" stroke-width="1.5"/>
+                                 <path d="M7 14 L11 10 L14 13 L18 8" fill="none" stroke="#18FFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+@@ -5730,7 +5815,7 @@
+                 } else {
+                     if(cardEl) cardEl.onclick = () => openTimerModal(card.id, list.id);
+                 }
+-            } else if (list.trackerType === 'ads') {
++            } else if ((list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                 if (!card.color || card.color === 'default') cardEl.style.borderLeft = '3px solid #0c66e4';
+                 cardEl.style.cursor = 'pointer';
+                 if(cardEl) cardEl.onclick = (e) => {
+@@ -5846,7 +5931,7 @@
+             leftCol.appendChild(titleTextWrap);
+             
+             let subtitleTextWrap = null;
+-            if (list.trackerType === 'ads' || card.isPipedrive || list.pipedriveStageId) {
++            if ((list.trackerType === 'ads' || list.trackerType === 'ads2') || card.isPipedrive || list.pipedriveStageId) {
+                 if (!activeBoard.cardSubtitles) activeBoard.cardSubtitles = {};
+                 subtitleTextWrap = document.createElement('span');
+             subtitleTextWrap.innerText = activeBoard.cardSubtitles[card.id] || 'Add subtitle...';
+@@ -6059,7 +6144,7 @@
+                 titleEl.appendChild(cardCheckWrap);
+             }
+             
+-            if (list.trackerType === 'ads') {
++            if ((list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                 const hasIssue = activeBoard.adCardIssues && activeBoard.adCardIssues[card.id];
+                 const isWhatsappActive = activeBoard.adCardWhatsapp && activeBoard.adCardWhatsapp[card.id];
+                 const hasTax = activeBoard.adCardTax && activeBoard.adCardTax[card.id];
+@@ -6584,7 +6669,7 @@
+                 }
+             }
+             
+-            if (list.trackerType === 'ads') {
++            if ((list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                 const hud = document.createElement('div');
+                 hud.style.marginTop = '10px';
+                 hud.style.marginBottom = '2px';
+@@ -6615,7 +6700,7 @@
+             
+             let badgeWrap = null;
+             let calculatorBadge = null;
+-            if (card.isTrello || card.isTrelloTask || list.isClientHappiness || list.isMoneySmelling || list.pipedriveStageId || list.trackerType === 'ads') {
++            if (card.isTrello || card.isTrelloTask || list.isClientHappiness || list.isMoneySmelling || list.pipedriveStageId || (list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                 badgeWrap = document.createElement('div');
+                 badgeWrap.className = 'card-badges';
+                 badgeWrap.style.marginTop = '8px';
+@@ -6624,7 +6709,7 @@
+                 badgeWrap.style.alignItems = 'center';
+                 badgeWrap.style.flexWrap = 'nowrap';
+                 
+-                if (list.trackerType === 'ads') {
++                if ((list.trackerType === 'ads' || list.trackerType === 'ads2')) {
+                     const m = card.adsMetrics || {};
+                     let activePlatforms = Array.isArray(m.platforms) ? m.platforms : (m.platform ? [m.platform] : []);
+                     const spendsObj = m.spends || {};
+@@ -8524,7 +8609,7 @@
+         renderTrackerStats('moneySmelling', l => l.isMoneySmelling, staticSvgMS, 'application/x-transfer-ms');
+         renderTrackerStats('clientHappiness', l => l.isClientHappiness, staticSvgCH, 'application/x-transfer-ch');
+ 
+-        const isAdsTrackerNode = list.trackerType === 'ads';
++        const isAdsTrackerNode = (list.trackerType === 'ads' || list.trackerType === 'ads2');
+         const isTrelloTrackerNode = (list.trelloListId || list.trelloTasksListId || list.trelloBoardId) && list.trackerType !== 'ads' && !list.isClientHappiness && !list.isMoneySmelling;
+ 
+         if (hasOutgoing || isAdsTrackerNode || isTrelloTrackerNode) {
+@@ -11018,7 +11103,7 @@
+                     const alignType = (sourceList.trelloAlignType || 'top');
+ 
+                     sortedLists.forEach((list, index) => {
+-                        const isAds = list.trackerType === 'ads';
++                        const isAds = (list.trackerType === 'ads' || list.trackerType === 'ads2');
+                         const isTs = list.trackerType === 'trelloSpeech';
+                         const offsetX = isAds ? (sourceList.adsOffsetX !== undefined ? sourceList.adsOffsetX : 0) : (isTs ? (sourceList.trelloSpeechOffsetX !== undefined ? sourceList.trelloSpeechOffsetX : 800) : (sourceList.trelloOffsetX !== undefined ? sourceList.trelloOffsetX : 0));
+                         const spacingY = isAds ? (sourceList.adsSpacingY !== undefined ? sourceList.adsSpacingY : 60) : (isTs ? (sourceList.trelloSpeechSpacingY !== undefined ? sourceList.trelloSpeechSpacingY : 60) : (sourceList.trelloSpacingY !== undefined ? sourceList.trelloSpacingY : 60));
+@@ -11085,9 +11170,9 @@
+             };
+             
+             if (allTargets.length > 0) {
+-                const trelloTargets = allTargets.filter(t => t.list.trackerType !== 'trelloSpeech' && t.list.trackerType !== 'ads');
++                const trelloTargets = allTargets.filter(t => t.list.trackerType !== 'trelloSpeech' && t.list.trackerType !== 'ads' && t.list.trackerType !== 'ads2');
+                 const speechTargets = allTargets.filter(t => t.list.trackerType === 'trelloSpeech');
+-                const adsTargets = allTargets.filter(t => t.list.trackerType === 'ads');
++                const adsTargets = allTargets.filter(t => t.(list.trackerType === 'ads' || list.trackerType === 'ads2'));
+ 
+                 if (trelloTargets.length > 0) packTargets(trelloTargets);
+                 if (speechTargets.length > 0) packTargets(speechTargets);
