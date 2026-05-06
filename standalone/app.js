@@ -4030,7 +4030,7 @@ function renderKanbanApp(activeBoard) {
             let offsetPx = 0;
             const toggleEl = sourceEl.querySelector(`.port-toggle-${sourceEdge}`);
             if (toggleEl) {
-                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasTrelloSpeech = false, hasAds = false, hasAds2 = false;
+                let hasClientHappiness = false, hasMoneySmelling = false, hasNewClients = false, hasPipedrive = false, hasTrello = false, hasTrelloSpeech = false, hasTrello3 = false, hasAds = false, hasAds2 = false;
                 activeBoard.connections.forEach(c => {
                     if (c.source === conn.source && c.sourcePort === sourceEdge) {
                         const targList = activeBoard.lists.find(l => l.id === c.target);
