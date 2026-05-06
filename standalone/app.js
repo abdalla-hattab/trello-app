@@ -3850,11 +3850,11 @@ function updateAllTrackersSummaries(activeBoard) {
                     }
                     
                     if (hasT3) {
-                        const t3Text = t3Cards === 1 ? '1 Task' : `${t3Cards} Tasks`;
+                        const t3Text = t3Cards === 1 ? '1 Card' : `${t3Cards} Cards`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
                                 <div data-clicker="true" data-pid="${list.id}" data-ptype="trello3" data-pcolor="null" style="display:flex; align-items:center; gap: 4px; background: rgba(0, 188, 212, 0.15); color: #00838F; padding: 4px 10px; border-radius: 6px; cursor:pointer;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3ZM10 17C10 17.5523 9.55228 18 9 18H7C6.44772 18 6 17.5523 6 17V7C6 6.44772 6.44772 6 7 6H9C9.55228 6 10 6.44772 10 7V17ZM18 13C18 13.5523 17.5523 14 17 14H15C14.4477 14 14 13.5523 14 13V7C14 6.44772 14.4477 6 15 6H17C17.5523 6 18 6.44772 18 7V13Z"/></svg>
                                     <span>${t3Text}</span>
                                 </div>
                                 ${buildTally(t3Col, list.id, 'trello3') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(t3Col, list.id, 'trello3')}</div>` : ''}
@@ -5351,7 +5351,7 @@ function renderKanbanApp(activeBoard) {
                 tBadge.style.color = '#7B1FA2';
                 tBadge.style.border = '1px solid rgba(156, 39, 176, 0.3)';
             } else if (list.trackerType === 'trello3') {
-                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; margin-bottom:-1px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Trello Tracker 3`;
+                tBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-right:4px; margin-bottom:-1px;"><path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3ZM10 17C10 17.5523 9.55228 18 9 18H7C6.44772 18 6 17.5523 6 17V7C6 6.44772 6.44772 6 7 6H9C9.55228 6 10 6.44772 10 7V17ZM18 13C18 13.5523 17.5523 14 17 14H15C14.4477 14 14 13.5523 14 13V7C14 6.44772 14.4477 6 15 6H17C17.5523 6 18 6.44772 18 7V13Z"/></svg>Trello Tracker 3`;
                 tBadge.title = "Connected to track Trello Tracker 3";
                 tBadge.style.background = 'rgba(0, 188, 212, 0.15)';
                 tBadge.style.color = '#00838F';
