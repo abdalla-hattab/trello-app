@@ -5693,6 +5693,48 @@ function renderKanbanApp(activeBoard) {
                     }
                 }
                 
+                if (hasTrello3Trackers) {
+                    const isT3Collapsed = list.collapsedEdges.includes(`${edge}:trello3`);
+                    const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'trello3');"`;
+                    const chestId = `clip-${list.id}-${edge}-t3`;
+                    
+                    if (isT3Collapsed) {
+                        edgeDict['trello3'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello3', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
+                            <svg data-tracker-type="trello3" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform: scale(1.1);">
+                                <defs><clipPath id="${chestId}"><path d="M3 10 C3 3 21 3 21 10 Z"/></clipPath></defs>
+                                <path d="M3 10 L21 10 L21 20 C21 21.1 20.1 22 19 22 L5 22 C3.9 22 3 21.1 3 20 Z" fill="#6D4C41" stroke="#3E2723" stroke-width="1.5" stroke-linejoin="round"/>
+                                <rect x="5.5" y="10" width="3.5" height="12" fill="#FFC107" stroke="#FF8F00" stroke-width="1"/>
+                                <rect x="15" y="10" width="3.5" height="12" fill="#FFC107" stroke="#FF8F00" stroke-width="1"/>
+                                <path d="M3 10 C3 3 21 3 21 10 Z" fill="#795548"/>
+                                <rect x="5.5" y="3" width="3.5" height="7" fill="#FFC107" stroke="#FF8F00" stroke-width="1" clip-path="url(#${chestId})"/>
+                                <rect x="15" y="3" width="3.5" height="7" fill="#FFC107" stroke="#FF8F00" stroke-width="1" clip-path="url(#${chestId})"/>
+                                <path d="M3 10 C3 3 21 3 21 10 Z" fill="none" stroke="#3E2723" stroke-width="1.5"/>
+                                <path d="M4 7 Q12 5 20 7" fill="none" stroke="#5D4037" stroke-width="1.5" clip-path="url(#${chestId})"/>
+                                <rect x="10" y="8" width="4" height="5" rx="1.5" fill="#FFD54F" stroke="#F57F17" stroke-width="1.5"/>
+                                <circle cx="12" cy="10" r="1" fill="#3E2723"/>
+                                <path d="M11.5 10 L11.5 11.5 L12.5 11.5 L12.5 10 Z" fill="#3E2723"/>
+                            </svg>
+                        </div>`;
+                    } else {
+                        edgeDict['trello3'] = `<div ${dropAttr} draggable="true" ondragstart="event.stopPropagation(); event.dataTransfer.setData('application/x-transfer-trello3', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="cursor:inherit; display:inline-flex; align-items:center; justify-content:center;">
+                            <svg data-tracker-type="trello3" width="32" height="32" viewBox="0 0 24 24" style="filter: drop-shadow(0 2px 8px rgba(255,215,0,0.7)); transform: scale(1.1);">
+                                <path d="M3 12 L21 12 L21 20 C21 21.1 20.1 22 19 22 L5 22 C3.9 22 3 21.1 3 20 Z" fill="#6D4C41" stroke="#3E2723" stroke-width="1.5" stroke-linejoin="round"/>
+                                <rect x="5.5" y="12" width="3.5" height="10" fill="#FFC107" stroke="#FF8F00" stroke-width="1"/>
+                                <rect x="15" y="12" width="3.5" height="10" fill="#FFC107" stroke="#FF8F00" stroke-width="1"/>
+                                <ellipse cx="12" cy="12" rx="9" ry="3" fill="#3E2723"/>
+                                <ellipse cx="12" cy="11.5" rx="7" ry="2" fill="#FFE082" />
+                                <path d="M5 11.5 Q12 -5 19 11.5 Z" fill="#FFF59D" opacity="0.6"/>
+                                <path d="M8 11.5 Q12 -2 16 11.5 Z" fill="#FFFFFF" opacity="0.8"/>
+                                <path d="M3 11 C3 8 21 8 21 11 L19 5 C19 1 5 1 5 5 Z" fill="#795548" stroke="#3E2723" stroke-width="1.5" stroke-linejoin="round"/>
+                                <path d="M3 11 C3 8 21 8 21 11" fill="none" stroke="#5D4037" stroke-width="1"/>
+                                <path d="M6 10.5 L6.5 5.5" fill="none" stroke="#FFC107" stroke-width="3"/>
+                                <path d="M18 10.5 L17.5 5.5" fill="none" stroke="#FFC107" stroke-width="3"/>
+                                <rect x="10" y="12" width="4" height="3" rx="1.5" fill="#FFD54F" stroke="#F57F17" stroke-width="1.5"/>
+                            </svg>
+                        </div>`;
+                    }
+                }
+                
                 if (hasTrelloSpeechTrackers) {
                     const isTsCollapsed = list.collapsedEdges.includes(`${edge}:trelloSpeech`);
                     const dropAttr = `ondragover="event.preventDefault();" ondrop="if(window.handleToggleReorder) window.handleToggleReorder(event, '${list.id}', '${edge}', 'trelloSpeech');"`;
