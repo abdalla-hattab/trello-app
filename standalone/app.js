@@ -3819,24 +3819,29 @@ function updateAllTrackersSummaries(activeBoard) {
 
                     let finalHtml = `<div style="display:flex; flex-direction:column; gap:6px;">`;
                     
-                    if (hasTrello || hasCH || hasMS || hasNC || (!hasTrello && !hasAds && !hasCH && !hasMS && !hasNC)) {
+                    const chHtml = hasCH ? buildTally(chCol, list.id, 'clientHappiness') : '';
+                    const msHtml = hasMS ? buildTally(msCol, list.id, 'moneySmelling') : '';
+                    const ncHtml = hasNC ? buildTally(ncCol, list.id, 'newClients') : '';
+                    const tHtml = hasTrello ? buildTally(tCol, list.id, 'trello') : '';
+                    
+                    if (tCards > 0 || chHtml !== '' || msHtml !== '' || ncHtml !== '' || tHtml !== '') {
                         const tText = tCards === 1 ? '1 Card' : `${tCards} Cards`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
+                                ${tCards > 0 ? `
                                 <div data-clicker="true" data-pid="${list.id}" data-ptype="trello" data-pcolor="null" style="display:flex; align-items:center; gap: 4px; background: rgba(12, 102, 228, 0.08); color: #0c66e4; padding: 4px 10px; border-radius: 6px; cursor:pointer;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="1.8"><circle cx="10" cy="10" r="9.5"></circle><line x1="16.7" y1="16.7" x2="22.5" y2="22.5"></line></g><g transform="translate(10, 10) scale(0.65) translate(-12, -12)" stroke-width="2.77"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></g></svg>
                                     <span>${tText}</span>
-                                </div>
-                                ${hasCH && buildTally(chCol, list.id, 'clientHappiness') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(chCol, list.id, 'clientHappiness')}</div>` : ''}
-                                ${hasMS && buildTally(msCol, list.id, 'moneySmelling') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(msCol, list.id, 'moneySmelling')}</div>` : ''}
-                                ${hasNC && buildTally(ncCol, list.id, 'newClients') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(ncCol, list.id, 'newClients')}</div>` : ''}
-                                ${hasTrello && buildTally(tCol, list.id, 'trello') !== '' ? `<div style="display:flex; gap:6px;">${buildTally(tCol, list.id, 'trello')}</div>` : ''}
+                                </div>` : ''}
+                                ${chHtml !== '' ? `<div style="display:flex; gap:6px;">${chHtml}</div>` : ''}
+                                ${msHtml !== '' ? `<div style="display:flex; gap:6px;">${msHtml}</div>` : ''}
+                                ${ncHtml !== '' ? `<div style="display:flex; gap:6px;">${ncHtml}</div>` : ''}
+                                ${tHtml !== '' ? `<div style="display:flex; gap:6px;">${tHtml}</div>` : ''}
                             </div>
                         `;
                     }
                     
-                    
-                    if (hasTs) {
+                    if (hasTs && tsCards > 0) {
                         const tsText = tsCards === 1 ? '1 Task' : `${tsCards} Tasks`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
@@ -3849,7 +3854,7 @@ function updateAllTrackersSummaries(activeBoard) {
                         `;
                     }
                     
-                    if (hasT3) {
+                    if (hasT3 && t3Cards > 0) {
                         const t3Text = t3Cards === 1 ? '1 Card' : `${t3Cards} Cards`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
@@ -3862,7 +3867,7 @@ function updateAllTrackersSummaries(activeBoard) {
                         `;
                     }
                     
-                    if (hasAds) {
+                    if (hasAds && aCards > 0) {
                         const aText = aCards === 1 ? '1 Ad' : `${aCards} Ads`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
@@ -3875,7 +3880,7 @@ function updateAllTrackersSummaries(activeBoard) {
                         `;
                     }
                     
-                    if (hasAds2) {
+                    if (hasAds2 && a2Cards > 0) {
                         const aText = a2Cards === 1 ? '1 Ad' : `${a2Cards} Ads`;
                         finalHtml += `
                             <div style="display:flex; align-items:center; gap: 8px; font-size: 12px; font-weight: 600;">
