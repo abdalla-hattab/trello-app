@@ -8489,6 +8489,80 @@ function renderKanbanApp(activeBoard) {
                     
                     rightBadgeGroup.appendChild(ageBadge);
                     
+                    if (list.trelloTasksListId && list.trelloTasks2ListId && (card.isTrelloTask || card.isTrelloTask2)) {
+                        const moveTaskBtn = document.createElement('div');
+                        moveTaskBtn.className = 'move-task-btn';
+                        moveTaskBtn.style.display = 'flex';
+                        moveTaskBtn.style.alignItems = 'center';
+                        moveTaskBtn.style.justifyContent = 'center';
+                        moveTaskBtn.style.marginLeft = '4px';
+                        moveTaskBtn.style.padding = '4px';
+                        moveTaskBtn.style.borderRadius = '6px';
+                        moveTaskBtn.style.cursor = 'pointer';
+                        moveTaskBtn.style.color = '#5e6c84';
+                        moveTaskBtn.style.background = 'rgba(9, 30, 66, 0.04)';
+                        moveTaskBtn.style.transition = 'all 0.2s';
+                        moveTaskBtn.style.opacity = '0';
+                        moveTaskBtn.style.pointerEvents = 'none';
+                        
+                        cardEl.addEventListener('mouseenter', () => {
+                            moveTaskBtn.style.opacity = '1';
+                            moveTaskBtn.style.pointerEvents = 'auto';
+                        });
+                        cardEl.addEventListener('mouseleave', () => {
+                            moveTaskBtn.style.opacity = '0';
+                            moveTaskBtn.style.pointerEvents = 'none';
+                        });
+                        
+                        moveTaskBtn.onmouseenter = () => {
+                            moveTaskBtn.style.background = 'rgba(9, 30, 66, 0.08)';
+                            moveTaskBtn.style.color = '#172b4d';
+                        };
+                        moveTaskBtn.onmouseleave = () => {
+                            moveTaskBtn.style.background = 'rgba(9, 30, 66, 0.04)';
+                            moveTaskBtn.style.color = '#5e6c84';
+                        };
+
+                        if (card.isTrelloTask) {
+                            moveTaskBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>';
+                            moveTaskBtn.title = 'Move to Tasks 2';
+                            moveTaskBtn.onclick = async (e) => {
+                                e.stopPropagation();
+                                card.isTrelloTask = false;
+                                card.isTrelloTask2 = true;
+                                saveState();
+                                render();
+                                try {
+                                    const trKey = localStorage.getItem('trelloKey');
+                                    const trToken = localStorage.getItem('trelloToken');
+                                    await fetch(`https://api.trello.com/1/cards/${card.id}?idList=${list.trelloTasks2ListId}&key=${trKey}&token=${trToken}`, { method: 'PUT' });
+                                } catch (err) {
+                                    console.error('Failed to move task to Tasks 2', err);
+                                    if (typeof showToast === 'function') showToast('Failed to move task in Trello');
+                                }
+                            };
+                        } else {
+                            moveTaskBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>';
+                            moveTaskBtn.title = 'Move to Tasks 1';
+                            moveTaskBtn.onclick = async (e) => {
+                                e.stopPropagation();
+                                card.isTrelloTask2 = false;
+                                card.isTrelloTask = true;
+                                saveState();
+                                render();
+                                try {
+                                    const trKey = localStorage.getItem('trelloKey');
+                                    const trToken = localStorage.getItem('trelloToken');
+                                    await fetch(`https://api.trello.com/1/cards/${card.id}?idList=${list.trelloTasksListId}&key=${trKey}&token=${trToken}`, { method: 'PUT' });
+                                } catch (err) {
+                                    console.error('Failed to move task to Tasks 1', err);
+                                    if (typeof showToast === 'function') showToast('Failed to move task in Trello');
+                                }
+                            };
+                        }
+                        rightBadgeGroup.appendChild(moveTaskBtn);
+                    }
+
                     if (list.isClientHappiness || list.isMoneySmelling) {
                         const happinessWrap = document.createElement('div');
                         happinessWrap.style.display = 'flex';
