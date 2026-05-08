@@ -8487,8 +8487,6 @@ function renderKanbanApp(activeBoard) {
                         setTimeout(() => document.addEventListener('click', closePicker), 10);
                     };
                     
-                    rightBadgeGroup.appendChild(ageBadge);
-                    
                     if (list.trelloTasksListId && list.trelloTasks2ListId && (card.isTrelloTask || card.isTrelloTask2)) {
                         const moveTaskBtn = document.createElement('div');
                         moveTaskBtn.className = 'move-task-btn';
@@ -8562,6 +8560,8 @@ function renderKanbanApp(activeBoard) {
                         }
                         rightBadgeGroup.appendChild(moveTaskBtn);
                     }
+                    
+                    rightBadgeGroup.appendChild(ageBadge);
 
                     if (list.isClientHappiness || list.isMoneySmelling) {
                         const happinessWrap = document.createElement('div');
