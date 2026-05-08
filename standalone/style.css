@@ -927,26 +927,24 @@ input[type=number] {
 }
 
 /* Inline Task Card Animations */
+@keyframes taskFadeIn {
+    0% { opacity: 0; transform: translateY(4px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
 .trello-task-card, .trello-task2-card {
-    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s, opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
     opacity: 1;
-    max-height: 300px; /* Big enough for standard cards */
     margin-bottom: 8px; /* Should match the gap in .card-list */
     border: 1px solid #dfe1e6 !important;
     border-left: 1px solid #dfe1e6 !important;
     box-shadow: 0 1px 2px rgba(9,30,66,0.08) !important;
     padding: 12px 14px !important;
+    animation: taskFadeIn 0.25s ease-out;
 }
 
 .trello-task-card.collapsed, .trello-task2-card.collapsed {
-    opacity: 0 !important;
-    max-height: 0 !important;
-    margin-bottom: 0px !important;
-    padding: 0px !important;
-    border-width: 0px !important;
-    border-color: transparent !important;
-    pointer-events: none !important;
-    overflow: hidden !important;
+    display: none !important;
 }
 
 /* Age Color Picker Menu */
