@@ -11832,8 +11832,6 @@ async function syncTrello() {
             
             const targetTrackerLists = curBoard.lists.filter(l => l.trelloListId === tCard.idList);
             targetTrackerLists.forEach(targetList => {
-                if (targetList.title && targetList.title.toLowerCase() === 'me') return;
-                
                 targetList.cards.push({
                     id: tCard.id,
                     title: tCard.name,
@@ -11849,8 +11847,6 @@ async function syncTrello() {
             
             const targetTasksLists = curBoard.lists.filter(l => l.trelloTasksListId === tCard.idList);
             targetTasksLists.forEach(targetList => {
-                if (targetList.title && targetList.title.toLowerCase() === 'me') return;
-                
                 const prevTask = existingTrelloTasks.find(t => t.card.id === tCard.id);
                 targetList.cards.push({
                     id: tCard.id,
@@ -11866,8 +11862,6 @@ async function syncTrello() {
             });
             const targetTasks2Lists = curBoard.lists.filter(l => l.trelloTasks2ListId === tCard.idList);
             targetTasks2Lists.forEach(targetList => {
-                if (targetList.title && targetList.title.toLowerCase() === 'me') return;
-                
                 const prevTask = existingTrelloTasks2.find(t => t.card.id === tCard.id);
                 targetList.cards.push({
                     id: tCard.id,
