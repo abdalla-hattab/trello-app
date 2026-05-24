@@ -3676,7 +3676,7 @@ function updateAllTrackersSummaries(activeBoard) {
     activeBoard.lists.forEach(list => {
         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
         const isAdsTracker = list.trackerType === 'ads' || list.trackerType === 'ads2';
-        const isTrelloTracker = (list.trelloListId || list.trelloTasksListId || list.trelloTasks2ListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
+        const isTrelloTracker = (list.trelloListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
 
         if (hasOutgoing || isAdsTracker || isTrelloTracker) {
             let allDescendants = new Set();
@@ -9420,7 +9420,7 @@ function renderKanbanApp(activeBoard) {
         renderTrackerStats('clientHappiness', l => l.isClientHappiness, staticSvgCH, 'application/x-transfer-ch');
 
         const isAdsTrackerNode = list.trackerType === 'ads' || list.trackerType === 'ads2';
-        const isTrelloTrackerNode = (list.trelloListId || list.trelloTasksListId || list.trelloTasks2ListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
+        const isTrelloTrackerNode = (list.trelloListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
 
         if (hasOutgoing || isAdsTrackerNode || isTrelloTrackerNode) {
             const summaryEl = document.createElement('div');
