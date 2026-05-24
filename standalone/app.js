@@ -3676,7 +3676,7 @@ function updateAllTrackersSummaries(activeBoard) {
     activeBoard.lists.forEach(list => {
         const hasOutgoing = activeBoard.connections && activeBoard.connections.some(c => c.source === list.id);
         const isAdsTracker = list.trackerType === 'ads' || list.trackerType === 'ads2';
-        const isTrelloTracker = (list.trelloListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
+        const isTrelloTracker = (list.trelloListId || list.trelloTasksListId || list.trelloTasks2ListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
 
         if (hasOutgoing || isAdsTracker || isTrelloTracker) {
             let allDescendants = new Set();
@@ -3728,7 +3728,7 @@ function updateAllTrackersSummaries(activeBoard) {
                     if (!htmlStr) htmlStr = `<div style="display:flex; align-items:center; background:rgba(9,30,66,0.06); color:#5E6C84; padding:4px 8px; border-radius:6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); gap:4px;">⚪ 0</div>`;
                     const pdLogo = `<div draggable="true" ondragstart="event.dataTransfer.setData('application/x-transfer-pd', '${list.id}'); event.dataTransfer.effectAllowed='move';" style="display:inline-flex; align-items:center; justify-content:center; background:#2a2f35; color:#fff; width:24px; height:24px; border-radius:6px; font-weight:800; font-size:14px; font-family:system-ui,-apple-system,sans-serif; margin-bottom:4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor:grab;" title="Drag to transfer Pipedrive Integration">P</div>`;
                     summaryEl.innerHTML = `<div style="display:flex; flex-direction:column; gap:4px; font-size: 12px; font-weight: 600;">${pdLogo}<div style="display:flex; align-items:center; gap: 8px;">${htmlStr}</div></div>`;
-                } else if (list.trackerType === 'ads' || list.trackerType === 'ads2' || list.trackerType === 'trelloSpeech' || list.trackerType === 'trello3' || list.trelloListId || list.trelloBoardId) {
+                } else if (list.trackerType === 'ads' || list.trackerType === 'ads2' || list.trackerType === 'trelloSpeech' || list.trackerType === 'trello3' || list.trelloListId || list.trelloTasksListId || list.trelloTasks2ListId) {
                     let hasTrello = false;
                     let hasAds = false;
                     let hasAds2 = false;
@@ -9420,7 +9420,7 @@ function renderKanbanApp(activeBoard) {
         renderTrackerStats('clientHappiness', l => l.isClientHappiness, staticSvgCH, 'application/x-transfer-ch');
 
         const isAdsTrackerNode = list.trackerType === 'ads' || list.trackerType === 'ads2';
-        const isTrelloTrackerNode = (list.trelloListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
+        const isTrelloTrackerNode = (list.trelloListId || list.trelloTasksListId || list.trelloTasks2ListId || list.trelloBoardId) && list.trackerType !== 'ads' && list.trackerType !== 'ads2' && !list.isClientHappiness && !list.isMoneySmelling;
 
         if (hasOutgoing || isAdsTrackerNode || isTrelloTrackerNode) {
             const summaryEl = document.createElement('div');
