@@ -6244,14 +6244,21 @@ function renderKanbanApp(activeBoard) {
                 titleTextWrap.style.background = '';
                 titleTextWrap.style.cursor = 'pointer';
                 const newTitle = titleTextWrap.textContent.trim();
-                if (newTitle && newTitle !== card.title) {
-                    const oldTitle = card.title;
-                    card.title = newTitle;
+                
+                let targetCard = card;
+                activeBoard.lists.forEach(l => {
+                    const found = l.cards.find(c => String(c.id) === String(card.id));
+                    if (found) targetCard = found;
+                });
+                
+                if (newTitle && newTitle !== targetCard.title) {
+                    const oldTitle = targetCard.title;
+                    targetCard.title = newTitle;
                     saveState();
                     render();
                     
-                    if (card.isPipedrive) {
-                        const pId = String(card.id).replace('pd_', '');
+                    if (targetCard.isPipedrive) {
+                        const pId = String(targetCard.id).replace('pd_', '');
                         try {
                             const res = await fetch(`https://${pipedriveDomain}.pipedrive.com/api/v1/deals/${pId}?api_token=${pipedriveToken}`, {
                                 method: 'PUT',
@@ -6259,7 +6266,7 @@ function renderKanbanApp(activeBoard) {
                                 body: JSON.stringify({ title: newTitle })
                             });
                             if (!res.ok) throw new Error("Failed");
-                            if (card.pipedriveData) card.pipedriveData.title = newTitle;
+                            if (targetCard.pipedriveData) targetCard.pipedriveData.title = newTitle;
                             syncPipedrive();
                             const modalInput = document.getElementById('pipedriveActionDealTitleInput');
                             if (modalInput && typeof activePipedriveDealId !== 'undefined' && activePipedriveDealId === pId) {
@@ -6267,15 +6274,15 @@ function renderKanbanApp(activeBoard) {
                             }
                         } catch (e) {
                             showToast("Failed to rename Pipedrive deal");
-                            card.title = oldTitle;
+                            targetCard.title = oldTitle;
                             saveState();
                             render();
                         }
-                    } else if (card.isTrello || card.isTrelloTask) {
+                    } else if (targetCard.isTrello || targetCard.isTrelloTask || targetCard.isTrelloTask2) {
                         try {
                             const trKey = localStorage.getItem('trelloKey');
                             const trToken = localStorage.getItem('trelloToken');
-                            const res = await fetch(`https://api.trello.com/1/cards/${card.id}?key=${trKey}&token=${trToken}`, {
+                            const res = await fetch(`https://api.trello.com/1/cards/${targetCard.id}?key=${trKey}&token=${trToken}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ name: newTitle })
@@ -6284,13 +6291,13 @@ function renderKanbanApp(activeBoard) {
                             // sync should happen naturally in background, no need to trigger explicit sync
                         } catch (e) {
                             showToast("Failed to rename Trello task");
-                            card.title = oldTitle;
+                            targetCard.title = oldTitle;
                             saveState();
                             render();
                         }
                     }
                 } else {
-                    titleTextWrap.textContent = card.title;
+                    titleTextWrap.textContent = targetCard.title;
                 }
             };
             titleTextWrap.onkeydown = (e) => {
