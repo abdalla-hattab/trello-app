@@ -9624,8 +9624,10 @@ function renderKanbanApp(activeBoard) {
                         let url = `https://api.trello.com/1/cards/${movedItem.id}?pos=${newPos}&key=${trelloKey}&token=${trelloToken}`;
                         
                         const targetTrelloListId = toList.trelloListId || toList.trelloTasksListId || toList.trelloTasks2ListId;
+                        const targetTrelloBoardId = toList.trelloBoardId || toList.trelloTasksBoardId || toList.trelloTasks2BoardId;
                         if (fromId !== toId && targetTrelloListId) {
                             url += `&idList=${targetTrelloListId}`;
+                            if (targetTrelloBoardId) url += `&idBoard=${targetTrelloBoardId}`;
                         } else if (fromId !== toId && !targetTrelloListId) {
                             fetch(`https://api.trello.com/1/cards/${movedItem.id}?key=${trelloKey}&token=${trelloToken}`, {
                                 method: 'DELETE'
