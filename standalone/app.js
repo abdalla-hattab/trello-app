@@ -3591,7 +3591,7 @@ function render() {
         if (id) {
             const cardList = listEl.querySelector('.card-list');
             if (cardList) window.listScrolls[id] = cardList.scrollTop;
-            window.lastDOMPositions[id] = { left: listEl.style.left, top: listEl.style.top };
+            window.lastDOMPositions[id] = { left: listEl.style.left, top: listEl.style.top, zIndex: listEl.style.zIndex };
         }
     });
 
@@ -4568,6 +4568,9 @@ function renderKanbanApp(activeBoard) {
         if (window.lastDOMPositions && window.lastDOMPositions[list.id]) {
             listContainer.style.left = window.lastDOMPositions[list.id].left;
             listContainer.style.top = window.lastDOMPositions[list.id].top;
+            if (window.lastDOMPositions[list.id].zIndex) {
+                listContainer.style.zIndex = window.lastDOMPositions[list.id].zIndex;
+            }
         } else {
             listContainer.style.left = `${cx}px`;
             listContainer.style.top = `${cy}px`;
