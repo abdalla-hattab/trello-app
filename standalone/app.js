@@ -9752,6 +9752,17 @@ function renderKanbanApp(activeBoard) {
         }, 50);
     };
     canvas.appendChild(addListBtn);
+    
+    const agentPreviewBtn = document.createElement('button');
+    agentPreviewBtn.className = 'agent-preview-btn';
+    agentPreviewBtn.innerHTML = `🤖`;
+    agentPreviewBtn.title = 'Agent Preview';
+    agentPreviewBtn.onclick = () => {
+        const modal = document.getElementById('agentPreviewModal');
+        if (modal) modal.classList.add('active');
+    };
+    canvas.appendChild(agentPreviewBtn);
+    
     appContainer.appendChild(canvas);
 
     if (typeof animatingOutIds !== 'undefined' && animatingOutIds.size > 0) {

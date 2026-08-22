@@ -1559,5 +1559,17 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="agentPreviewModal">
+        <div class="modal-content" style="max-width: 800px; width: 90%; height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3>Agent Preview</h3>
+                <span class="close-modal" onclick="document.getElementById('agentPreviewModal').classList.remove('active')">&times;</span>
+            </div>
+            <div class="modal-body" style="flex: 1; overflow-y: auto; display: flex; align-items: center; justify-content: center;">
+                <p style="color: #64748b; font-size: 16px;">Active stores and orders preview will appear here.</p>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
