@@ -13151,7 +13151,9 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
     }
 
     const cardsToDisplay = [];
-    activeBoard.lists.forEach(list => {
+    const sortedLists = [...activeBoard.lists].sort((a, b) => (a.trelloListPos || Number.MAX_VALUE) - (b.trelloListPos || Number.MAX_VALUE));
+    
+    sortedLists.forEach(list => {
         const type = list.trackerType;
         if (!type) return;
 
@@ -13225,7 +13227,8 @@ window.openAgentPreviewFilter = function(e, type) {
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if (!activeBoard || !activeBoard.lists) return;
     
-    const matchedLists = activeBoard.lists.filter(l => l.trackerType === type);
+    let matchedLists = activeBoard.lists.filter(l => l.trackerType === type);
+    matchedLists.sort((a, b) => (a.trelloListPos || Number.MAX_VALUE) - (b.trelloListPos || Number.MAX_VALUE));
     
     if (matchedLists.length === 0) {
         container.innerHTML = '<p style="color: #64748b;">No lists found.</p>';
