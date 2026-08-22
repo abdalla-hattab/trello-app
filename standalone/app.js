@@ -13125,14 +13125,19 @@ setInterval(() => {
     }
 }, 60000);
 
-window.renderAgentPreview = function(filter = 'all') {
+window.agentPreviewHiddenLists = window.agentPreviewHiddenLists || [];
+window.agentPreviewCurrentFilter = 'all';
+
+window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) {
+    window.agentPreviewCurrentFilter = filter;
     // Update active tab styling
     document.querySelectorAll('.agent-filter-btn').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.innerText.toLowerCase().includes('all') && filter === 'all') btn.classList.add('active');
-        if (btn.innerText === 'Trello Tracker' && filter === 'trello') btn.classList.add('active');
-        if (btn.innerText === 'Trello Tracker 3' && filter === 'trello3') btn.classList.add('active');
-        if (btn.innerText === 'Ads Tracker' && filter === 'ads') btn.classList.add('active');
+        const text = btn.innerText.replace('⚙️', '').trim();
+        if (text.toLowerCase() === 'all' && filter === 'all') btn.classList.add('active');
+        if (text === 'Trello Tracker' && filter === 'trello') btn.classList.add('active');
+        if (text === 'Trello Tracker 3' && filter === 'trello3') btn.classList.add('active');
+        if (text === 'Ads Tracker' && filter === 'ads') btn.classList.add('active');
     });
 
     const container = document.getElementById('agentPreviewCardsContainer');
@@ -13162,6 +13167,9 @@ window.renderAgentPreview = function(filter = 'all') {
         }
 
         if (shouldInclude && list.cards) {
+            if (window.agentPreviewHiddenLists.includes(list.id)) {
+                return; // Skip hidden list
+            }
             list.cards.forEach(card => {
                 cardsToDisplay.push({
                     card: card,
@@ -13204,6 +13212,54 @@ window.renderAgentPreview = function(filter = 'all') {
         
         container.appendChild(cardDiv);
     });
+};
+
+window.openAgentPreviewFilter = function(e, type) {
+    e.stopPropagation(); // Prevent tab switch
+    const modal = document.getElementById('agentPreviewListFilterModal');
+    if (!modal) return;
+    
+    const container = document.getElementById('agentPreviewFilterListContainer');
+    container.innerHTML = '';
+    
+    const activeBoard = boards.find(b => b.id === activeBoardId);
+    if (!activeBoard || !activeBoard.lists) return;
+    
+    const matchedLists = activeBoard.lists.filter(l => l.trackerType === type);
+    
+    if (matchedLists.length === 0) {
+        container.innerHTML = '<p style="color: #64748b;">No lists found.</p>';
+    } else {
+        matchedLists.forEach(list => {
+            const label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.gap = '8px';
+            label.style.cursor = 'pointer';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = !window.agentPreviewHiddenLists.includes(list.id);
+            
+            checkbox.onchange = (ev) => {
+                if (ev.target.checked) {
+                    window.agentPreviewHiddenLists = window.agentPreviewHiddenLists.filter(id => id !== list.id);
+                } else {
+                    window.agentPreviewHiddenLists.push(list.id);
+                }
+                window.renderAgentPreview();
+            };
+            
+            const span = document.createElement('span');
+            span.innerText = list.title || 'Unnamed List';
+            
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            container.appendChild(label);
+        });
+    }
+    
+    modal.classList.add('active');
 };
 
 document.addEventListener('DOMContentLoaded', () => {

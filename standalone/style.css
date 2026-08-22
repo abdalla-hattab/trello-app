@@ -2246,6 +2246,9 @@ input[type=number] {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0;
 }
 .agent-filter-btn:hover {
     background: #f1f5f9;
@@ -2254,6 +2257,25 @@ input[type=number] {
     background: #3b82f6;
     color: white;
     border-color: #3b82f6;
+}
+.filter-settings-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: all 0.2s;
+    margin-left: 0;
+    font-size: 14px;
+}
+.agent-filter-btn:hover .filter-settings-icon {
+    opacity: 1;
+    width: 16px;
+    margin-left: 6px;
+}
+.filter-settings-icon:hover {
+    transform: scale(1.1);
 }
 
 .agent-preview-card {
