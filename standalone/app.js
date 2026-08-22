@@ -13169,7 +13169,7 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         }
 
         if (shouldInclude && list.cards) {
-            if (window.agentPreviewHiddenLists.includes(list.id)) {
+            if (activeBoard.agentPreviewHiddenLists && activeBoard.agentPreviewHiddenLists.includes(list.id)) {
                 return; // Skip hidden list
             }
             list.cards.forEach(card => {
@@ -13227,6 +13227,10 @@ window.openAgentPreviewFilter = function(e, type) {
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if (!activeBoard || !activeBoard.lists) return;
     
+    if (!activeBoard.agentPreviewHiddenLists) {
+        activeBoard.agentPreviewHiddenLists = [];
+    }
+    
     let matchedLists = activeBoard.lists.filter(l => l.trackerType === type);
     matchedLists.sort((a, b) => (a.trelloListPos || Number.MAX_VALUE) - (b.trelloListPos || Number.MAX_VALUE));
     
@@ -13242,14 +13246,17 @@ window.openAgentPreviewFilter = function(e, type) {
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.checked = !window.agentPreviewHiddenLists.includes(list.id);
+            checkbox.checked = !activeBoard.agentPreviewHiddenLists.includes(list.id);
             
             checkbox.onchange = (ev) => {
                 if (ev.target.checked) {
-                    window.agentPreviewHiddenLists = window.agentPreviewHiddenLists.filter(id => id !== list.id);
+                    activeBoard.agentPreviewHiddenLists = activeBoard.agentPreviewHiddenLists.filter(id => id !== list.id);
                 } else {
-                    window.agentPreviewHiddenLists.push(list.id);
+                    if (!activeBoard.agentPreviewHiddenLists.includes(list.id)) {
+                        activeBoard.agentPreviewHiddenLists.push(list.id);
+                    }
                 }
+                saveState();
                 window.renderAgentPreview();
             };
             
@@ -13260,6 +13267,21 @@ window.openAgentPreviewFilter = function(e, type) {
             label.appendChild(span);
             container.appendChild(label);
         });
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.innerText = 'Save & Close';
+        saveBtn.style.marginTop = '16px';
+        saveBtn.style.padding = '8px 16px';
+        saveBtn.style.background = '#3b82f6';
+        saveBtn.style.color = 'white';
+        saveBtn.style.border = 'none';
+        saveBtn.style.borderRadius = '6px';
+        saveBtn.style.cursor = 'pointer';
+        saveBtn.style.fontWeight = '500';
+        saveBtn.onclick = () => {
+            modal.classList.remove('active');
+        };
+        container.appendChild(saveBtn);
     }
     
     modal.classList.add('active');
