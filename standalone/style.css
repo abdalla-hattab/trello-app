@@ -2235,3 +2235,55 @@ input[type=number] {
     font-size: 13px;
     color: #3b82f6;
 }
+
+.agent-filter-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.agent-filter-btn:hover {
+    background: #f1f5f9;
+}
+.agent-filter-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.agent-preview-card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.agent-preview-card-title {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 15px;
+    margin: 0;
+}
+.agent-preview-card-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+.agent-preview-card-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #475569;
+    width: fit-content;
+}

@@ -9759,7 +9759,10 @@ function renderKanbanApp(activeBoard) {
     agentPreviewBtn.title = 'Agent Preview';
     agentPreviewBtn.onclick = () => {
         const modal = document.getElementById('agentPreviewModal');
-        if (modal) modal.classList.add('active');
+        if (modal) {
+            modal.classList.add('active');
+            window.renderAgentPreview('all');
+        }
     };
     canvas.appendChild(agentPreviewBtn);
     
@@ -13121,6 +13124,87 @@ setInterval(() => {
         }
     }
 }, 60000);
+
+window.renderAgentPreview = function(filter = 'all') {
+    // Update active tab styling
+    document.querySelectorAll('.agent-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.innerText.toLowerCase().includes('all') && filter === 'all') btn.classList.add('active');
+        if (btn.innerText === 'Trello Tracker' && filter === 'trello') btn.classList.add('active');
+        if (btn.innerText === 'Trello Tracker 3' && filter === 'trello3') btn.classList.add('active');
+        if (btn.innerText === 'Ads Tracker' && filter === 'ads') btn.classList.add('active');
+    });
+
+    const container = document.getElementById('agentPreviewCardsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const activeBoard = boards.find(b => b.id === activeBoardId);
+    if (!activeBoard || !activeBoard.lists) {
+        container.innerHTML = '<p style="color: #64748b;">No board found.</p>';
+        return;
+    }
+
+    const cardsToDisplay = [];
+    activeBoard.lists.forEach(list => {
+        const type = list.trackerType;
+        if (!type) return;
+
+        let shouldInclude = false;
+        if (filter === 'all' && (type === 'trello' || type === 'trello3' || type === 'ads')) {
+            shouldInclude = true;
+        } else if (filter === 'trello' && type === 'trello') {
+            shouldInclude = true;
+        } else if (filter === 'trello3' && type === 'trello3') {
+            shouldInclude = true;
+        } else if (filter === 'ads' && type === 'ads') {
+            shouldInclude = true;
+        }
+
+        if (shouldInclude && list.cards) {
+            list.cards.forEach(card => {
+                cardsToDisplay.push({
+                    card: card,
+                    listName: list.title,
+                    type: type
+                });
+            });
+        }
+    });
+
+    if (cardsToDisplay.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 16px;">No stores found for this filter.</p>';
+        return;
+    }
+
+    cardsToDisplay.forEach(item => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'agent-preview-card';
+        
+        const titleEl = document.createElement('p');
+        titleEl.className = 'agent-preview-card-title';
+        titleEl.innerText = item.card.name || 'Unnamed Store';
+        
+        const listNameEl = document.createElement('p');
+        listNameEl.className = 'agent-preview-card-subtitle';
+        listNameEl.innerText = `List: ${item.listName}`;
+        
+        let typeText = '';
+        if (item.type === 'trello') typeText = 'Trello Tracker';
+        if (item.type === 'trello3') typeText = 'Trello Tracker 3';
+        if (item.type === 'ads') typeText = 'Ads Tracker';
+        
+        const badgeEl = document.createElement('span');
+        badgeEl.className = 'agent-preview-card-badge';
+        badgeEl.innerText = typeText;
+        
+        cardDiv.appendChild(titleEl);
+        cardDiv.appendChild(listNameEl);
+        cardDiv.appendChild(badgeEl);
+        
+        container.appendChild(cardDiv);
+    });
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     initFirebaseSync();
