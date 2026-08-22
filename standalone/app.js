@@ -13183,7 +13183,7 @@ window.renderAgentPreview = function(filter = 'all') {
         
         const titleEl = document.createElement('p');
         titleEl.className = 'agent-preview-card-title';
-        titleEl.innerText = item.card.name || 'Unnamed Store';
+        titleEl.innerText = item.card.title || 'Unnamed Store';
         
         const listNameEl = document.createElement('p');
         listNameEl.className = 'agent-preview-card-subtitle';
