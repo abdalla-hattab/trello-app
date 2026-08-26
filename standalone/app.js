@@ -13258,42 +13258,39 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         badgeEl.className = 'agent-preview-card-badge';
         badgeEl.innerText = typeText;
         
-        const websiteBtn = document.createElement('button');
-        websiteBtn.className = 'icon-btn';
-        websiteBtn.style.padding = '4px 8px';
-        websiteBtn.style.fontSize = '12px';
-        websiteBtn.style.borderRadius = '4px';
-        websiteBtn.style.transition = 'all 0.2s';
+        const websiteInput = document.createElement('input');
+        websiteInput.type = 'text';
+        websiteInput.placeholder = 'Assign website...';
+        websiteInput.value = item.card.agentWebsite || '';
+        websiteInput.style.flex = '1';
+        websiteInput.style.marginLeft = '12px';
+        websiteInput.style.padding = '4px 8px';
+        websiteInput.style.fontSize = '12px';
+        websiteInput.style.borderRadius = '4px';
+        websiteInput.style.border = '1px solid #cbd5e1';
+        websiteInput.style.outline = 'none';
+        websiteInput.style.background = '#f8fafc';
+        websiteInput.style.color = '#334155';
         
-        const updateWebsiteBtn = () => {
-            if (item.card.agentWebsite) {
-                websiteBtn.innerHTML = '🔗 Website';
-                websiteBtn.style.color = '#3b82f6';
-                websiteBtn.style.border = '1px solid transparent';
-                websiteBtn.style.background = '#eff6ff';
-                websiteBtn.title = item.card.agentWebsite;
-            } else {
-                websiteBtn.innerHTML = '➕ Add Website';
-                websiteBtn.style.color = '#64748b';
-                websiteBtn.style.border = '1px dashed #cbd5e1';
-                websiteBtn.style.background = 'transparent';
-                websiteBtn.title = 'Assign a website';
+        websiteInput.onfocus = () => {
+            websiteInput.style.borderColor = '#3b82f6';
+            websiteInput.style.background = '#ffffff';
+        };
+        websiteInput.onblur = () => {
+            websiteInput.style.borderColor = '#cbd5e1';
+            websiteInput.style.background = '#f8fafc';
+            const val = websiteInput.value.trim();
+            if (item.card.agentWebsite !== val) {
+                item.card.agentWebsite = val;
+                saveState();
             }
         };
-        updateWebsiteBtn();
-        
-        websiteBtn.onclick = (e) => {
-            e.stopPropagation();
-            const url = prompt("Enter website URL for " + (item.card.title || 'this store') + ":", item.card.agentWebsite || '');
-            if (url !== null) {
-                item.card.agentWebsite = url.trim();
-                saveState();
-                updateWebsiteBtn();
-            }
+        websiteInput.onkeydown = (e) => {
+            if (e.key === 'Enter') websiteInput.blur();
         };
         
         bottomRow.appendChild(badgeEl);
-        bottomRow.appendChild(websiteBtn);
+        bottomRow.appendChild(websiteInput);
         
         cardDiv.appendChild(titleEl);
         cardDiv.appendChild(bottomRow);
