@@ -13330,6 +13330,82 @@ window.openAgentPreviewFilter = function(e, type) {
     modal.classList.add('active');
 };
 
+window.openAgentRules = function() {
+    const modal = document.getElementById('agentRulesModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    window.renderAgentRules();
+};
+
+window.renderAgentRules = function(focusIndex = -1) {
+    const container = document.getElementById('agentRulesContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const activeBoard = boards.find(b => b.id === activeBoardId);
+    if (!activeBoard) return;
+    
+    if (!activeBoard.agentRules) activeBoard.agentRules = [];
+    
+    const renderInput = (rule, index, isNew) => {
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.gap = '8px';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = rule || '';
+        input.placeholder = isNew ? 'Add a new rule...' : 'e.g. Check if "Add to Cart" is visible';
+        input.style.flex = '1';
+        input.style.padding = '10px';
+        input.style.borderRadius = '6px';
+        input.style.border = '1px solid #cbd5e1';
+        input.style.outline = 'none';
+        
+        input.onfocus = () => {
+            input.style.borderColor = '#3b82f6';
+            input.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.1)';
+        };
+        input.onblur = (e) => {
+            input.style.borderColor = '#cbd5e1';
+            input.style.boxShadow = 'none';
+            if (!isNew && !e.target.value.trim()) {
+                activeBoard.agentRules.splice(index, 1);
+                saveState();
+                window.renderAgentRules();
+            }
+        };
+        
+        input.oninput = (e) => {
+            if (isNew) {
+                if (e.target.value.trim()) {
+                    activeBoard.agentRules.push(e.target.value);
+                    saveState();
+                    window.renderAgentRules(activeBoard.agentRules.length - 1);
+                }
+            } else {
+                activeBoard.agentRules[index] = e.target.value;
+                saveState();
+            }
+        };
+        
+        wrap.appendChild(input);
+        container.appendChild(wrap);
+        
+        if (focusIndex === index && !isNew) {
+            setTimeout(() => {
+                input.focus();
+                const val = input.value;
+                input.value = '';
+                input.value = val;
+            }, 10);
+        }
+    };
+    
+    activeBoard.agentRules.forEach((rule, index) => renderInput(rule, index, false));
+    renderInput('', -1, true); // Always render one empty box at the end
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     initFirebaseSync();
 });

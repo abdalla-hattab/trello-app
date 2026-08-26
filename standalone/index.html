@@ -1563,9 +1563,11 @@
         <div class="modal-content" style="max-width: 900px; width: 90%; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 0;">
                 <h3>Agent Preview</h3>
-                <span class="close-modal" onclick="document.getElementById('agentPreviewModal').classList.remove('active')">&times;</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button id="agentRulesBtn" class="icon-btn" style="font-size: 14px; padding: 6px 12px; background: #f1f5f9; color: #475569; font-weight: 500; border-radius: 6px;" onclick="window.openAgentRules()">Agent Rules</button>
+                    <span class="close-modal" onclick="document.getElementById('agentPreviewModal').classList.remove('active')">&times;</span>
+                </div>
             </div>
-            
             <div style="display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid rgba(0,0,0,0.05); background: #f8fafc;">
                 <button class="agent-filter-btn active" onclick="window.renderAgentPreview('all')">All</button>
                 <button class="agent-filter-btn" onclick="window.renderAgentPreview('trello')">
@@ -1599,6 +1601,19 @@
             </div>
             <div class="modal-body" id="agentPreviewFilterListContainer" style="display: flex; flex-direction: column; gap: 12px; max-height: 50vh; overflow-y: auto;">
                 <!-- Checkboxes injected here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="agentRulesModal">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3>Agent Rules</h3>
+                <span class="close-modal" onclick="document.getElementById('agentRulesModal').classList.remove('active')">&times;</span>
+            </div>
+            <p style="color: #64748b; margin-bottom: 16px; font-size: 14px;">Define the rules for the agent to follow when checking these websites.</p>
+            <div id="agentRulesContainer" style="display: flex; flex-direction: column; gap: 12px; max-height: 50vh; overflow-y: auto; padding-right: 8px;">
+                <!-- Dynamically populated inputs -->
             </div>
         </div>
     </div>
