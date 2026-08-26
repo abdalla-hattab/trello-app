@@ -5302,13 +5302,23 @@ function renderKanbanApp(activeBoard) {
         buttonsSet.style.gap = '8px'; // Increased gap for spacing
 
         if (list.robotCheck) {
-            const robotIcon = document.createElement('div');
+            const robotIcon = document.createElement('button');
+            robotIcon.className = 'icon-btn';
             robotIcon.innerHTML = '🤖';
-            robotIcon.style.fontSize = '18px';
-            robotIcon.title = 'Robot check active';
-            robotIcon.style.cursor = 'default';
+            robotIcon.style.fontSize = '16px';
+            robotIcon.title = 'Agent Preview';
             robotIcon.style.display = 'flex';
             robotIcon.style.alignItems = 'center';
+            robotIcon.style.justifyContent = 'center';
+            robotIcon.style.padding = '4px';
+            robotIcon.onclick = (e) => {
+                e.stopPropagation();
+                const modal = document.getElementById('agentPreviewModal');
+                if (modal) {
+                    modal.classList.add('active');
+                    window.renderAgentPreview('all');
+                }
+            };
             buttonsSet.appendChild(robotIcon);
         }
 
