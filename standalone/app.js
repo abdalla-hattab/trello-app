@@ -13406,6 +13406,11 @@ window.renderAgentRules = function(focusIndex = -1) {
     renderInput('', -1, true); // Always render one empty box at the end
 };
 
+window.startAgent = function() {
+    // Placeholder logic for starting the agent
+    alert("The Agent has started! It will begin checking the websites based on your rules.");
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     initFirebaseSync();
 });
