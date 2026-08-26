@@ -2247,10 +2247,23 @@ input[type=number] {
     margin-left: 0;
     font-size: 14px;
 }
+.tracker-master-toggle {
+    opacity: 0;
+    width: 0;
+    margin-left: 0;
+    padding: 0;
+    transition: all 0.2s;
+    cursor: pointer;
+}
 .agent-filter-btn:hover .filter-settings-icon {
     opacity: 1;
     width: 16px;
     margin-left: 6px;
+}
+.agent-filter-btn:hover .tracker-master-toggle {
+    opacity: 1;
+    width: 14px;
+    margin-left: 4px;
 }
 .filter-settings-icon:hover {
     transform: scale(1.1);

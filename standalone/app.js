@@ -13145,6 +13145,24 @@ setInterval(() => {
 window.agentPreviewHiddenLists = window.agentPreviewHiddenLists || [];
 window.agentPreviewCurrentFilter = 'all';
 
+window.toggleTrackerMaster = function(event, type) {
+    const activeBoard = boards.find(b => b.id === activeBoardId);
+    if (!activeBoard) return;
+    
+    if (!activeBoard.agentPreviewHiddenTrackers) activeBoard.agentPreviewHiddenTrackers = [];
+    
+    if (event.target.checked) {
+        activeBoard.agentPreviewHiddenTrackers = activeBoard.agentPreviewHiddenTrackers.filter(t => t !== type);
+    } else {
+        if (!activeBoard.agentPreviewHiddenTrackers.includes(type)) {
+            activeBoard.agentPreviewHiddenTrackers.push(type);
+        }
+    }
+    
+    saveState();
+    window.renderAgentPreview();
+};
+
 window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) {
     window.agentPreviewCurrentFilter = filter;
     // Update active tab styling
@@ -13157,11 +13175,20 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         if (text === 'Ads Tracker' && filter === 'ads') btn.classList.add('active');
     });
 
+    const activeBoard = boards.find(b => b.id === activeBoardId);
+    if (activeBoard) {
+        ['trello', 'trello3', 'ads'].forEach(t => {
+            const cb = document.getElementById('trackerToggle-' + t);
+            if (cb) {
+                cb.checked = !(activeBoard.agentPreviewHiddenTrackers && activeBoard.agentPreviewHiddenTrackers.includes(t));
+            }
+        });
+    }
+
     const container = document.getElementById('agentPreviewCardsContainer');
     if (!container) return;
     container.innerHTML = '';
 
-    const activeBoard = boards.find(b => b.id === activeBoardId);
     if (!activeBoard || !activeBoard.lists) {
         container.innerHTML = '<p style="color: #64748b;">No board found.</p>';
         return;
@@ -13173,6 +13200,10 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
     sortedLists.forEach(list => {
         const type = list.trackerType;
         if (!type) return;
+
+        if (activeBoard.agentPreviewHiddenTrackers && activeBoard.agentPreviewHiddenTrackers.includes(type)) {
+            return;
+        }
 
         let shouldInclude = false;
         if (filter === 'all' && (type === 'trello' || type === 'trello3' || type === 'ads')) {

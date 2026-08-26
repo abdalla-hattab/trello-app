@@ -1569,13 +1569,19 @@
             <div style="display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid rgba(0,0,0,0.05); background: #f8fafc;">
                 <button class="agent-filter-btn active" onclick="window.renderAgentPreview('all')">All</button>
                 <button class="agent-filter-btn" onclick="window.renderAgentPreview('trello')">
-                    Trello Tracker <span class="filter-settings-icon" onclick="window.openAgentPreviewFilter(event, 'trello')">⚙️</span>
+                    Trello Tracker 
+                    <span class="filter-settings-icon" onclick="window.openAgentPreviewFilter(event, 'trello')">⚙️</span>
+                    <input type="checkbox" id="trackerToggle-trello" class="tracker-master-toggle" onchange="window.toggleTrackerMaster(event, 'trello')" onclick="event.stopPropagation()">
                 </button>
                 <button class="agent-filter-btn" onclick="window.renderAgentPreview('trello3')">
-                    Trello Tracker 3 <span class="filter-settings-icon" onclick="window.openAgentPreviewFilter(event, 'trello3')">⚙️</span>
+                    Trello Tracker 3 
+                    <span class="filter-settings-icon" onclick="window.openAgentPreviewFilter(event, 'trello3')">⚙️</span>
+                    <input type="checkbox" id="trackerToggle-trello3" class="tracker-master-toggle" onchange="window.toggleTrackerMaster(event, 'trello3')" onclick="event.stopPropagation()">
                 </button>
                 <button class="agent-filter-btn" onclick="window.renderAgentPreview('ads')">
-                    Ads Tracker <span class="filter-settings-icon" onclick="window.openAgentPreviewFilter(event, 'ads')">⚙️</span>
+                    Ads Tracker 
+                    <span class="filter-settings-icon" onclick="window.openAgentPreviewFilter(event, 'ads')">⚙️</span>
+                    <input type="checkbox" id="trackerToggle-ads" class="tracker-master-toggle" onchange="window.toggleTrackerMaster(event, 'ads')" onclick="event.stopPropagation()">
                 </button>
             </div>
 
