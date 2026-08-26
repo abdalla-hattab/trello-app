@@ -13258,39 +13258,62 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         badgeEl.className = 'agent-preview-card-badge';
         badgeEl.innerText = typeText;
         
-        const websiteInput = document.createElement('input');
-        websiteInput.type = 'text';
-        websiteInput.placeholder = 'Assign website...';
-        websiteInput.value = item.card.agentWebsite || '';
-        websiteInput.style.flex = '1';
-        websiteInput.style.marginLeft = '12px';
-        websiteInput.style.padding = '4px 8px';
-        websiteInput.style.fontSize = '12px';
-        websiteInput.style.borderRadius = '4px';
-        websiteInput.style.border = '1px solid #cbd5e1';
-        websiteInput.style.outline = 'none';
-        websiteInput.style.background = '#f8fafc';
-        websiteInput.style.color = '#334155';
+        const websiteBtn = document.createElement('button');
+        websiteBtn.className = 'icon-btn';
+        websiteBtn.style.padding = '4px 8px';
+        websiteBtn.style.fontSize = '12px';
+        websiteBtn.style.borderRadius = '4px';
+        websiteBtn.style.transition = 'all 0.2s';
         
-        websiteInput.onfocus = () => {
-            websiteInput.style.borderColor = '#3b82f6';
-            websiteInput.style.background = '#ffffff';
-        };
-        websiteInput.onblur = () => {
-            websiteInput.style.borderColor = '#cbd5e1';
-            websiteInput.style.background = '#f8fafc';
-            const val = websiteInput.value.trim();
-            if (item.card.agentWebsite !== val) {
-                item.card.agentWebsite = val;
-                saveState();
+        const updateWebsiteBtn = () => {
+            if (item.card.agentWebsite) {
+                websiteBtn.innerHTML = '🔗 Website';
+                websiteBtn.style.color = '#3b82f6';
+                websiteBtn.style.border = '1px solid transparent';
+                websiteBtn.style.background = '#eff6ff';
+                websiteBtn.title = item.card.agentWebsite;
+            } else {
+                websiteBtn.innerHTML = '➕ Add Website';
+                websiteBtn.style.color = '#64748b';
+                websiteBtn.style.border = '1px dashed #cbd5e1';
+                websiteBtn.style.background = 'transparent';
+                websiteBtn.title = 'Assign a website';
             }
         };
-        websiteInput.onkeydown = (e) => {
-            if (e.key === 'Enter') websiteInput.blur();
+        updateWebsiteBtn();
+        
+        websiteBtn.onclick = (e) => {
+            e.stopPropagation();
+            const modal = document.getElementById('websitePromptModal');
+            const input = document.getElementById('websitePromptInput');
+            const title = document.getElementById('websitePromptTitle');
+            const saveBtn = document.getElementById('websitePromptSaveBtn');
+            
+            title.innerText = item.card.title || 'Assign Website';
+            input.value = item.card.agentWebsite || '';
+            
+            // Clean up old listeners
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+            
+            newSaveBtn.onclick = () => {
+                const url = input.value.trim();
+                item.card.agentWebsite = url;
+                saveState();
+                updateWebsiteBtn();
+                modal.classList.remove('active');
+            };
+            
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') newSaveBtn.click();
+            };
+            
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 100);
         };
         
         bottomRow.appendChild(badgeEl);
-        bottomRow.appendChild(websiteInput);
+        bottomRow.appendChild(websiteBtn);
         
         cardDiv.appendChild(titleEl);
         cardDiv.appendChild(bottomRow);
