@@ -5307,10 +5307,6 @@ function renderKanbanApp(activeBoard) {
             robotIcon.innerHTML = '🤖';
             robotIcon.style.fontSize = '16px';
             robotIcon.title = 'Agent Preview';
-            robotIcon.style.display = 'flex';
-            robotIcon.style.alignItems = 'center';
-            robotIcon.style.justifyContent = 'center';
-            robotIcon.style.padding = '4px';
             robotIcon.onclick = (e) => {
                 e.stopPropagation();
                 const modal = document.getElementById('agentPreviewModal');
