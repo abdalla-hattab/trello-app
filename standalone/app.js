@@ -13298,6 +13298,14 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
             
             newSaveBtn.onclick = () => {
                 const url = input.value.trim();
+                if (url) {
+                    let domainToCheck = url.replace(/^https?:\/\//, '').split('/')[0];
+                    if (!domainToCheck.includes('.') || domainToCheck.includes(' ') || !/\.[a-zA-Z]{2,}$/.test(domainToCheck)) {
+                        alert("Please enter a valid website domain (e.g., store.com)");
+                        return;
+                    }
+                }
+                
                 item.card.agentWebsite = url;
                 saveState();
                 updateWebsiteBtn();

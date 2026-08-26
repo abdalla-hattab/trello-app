@@ -1631,8 +1631,8 @@
             <div class="modal-body">
                 <input type="text" id="websitePromptInput" placeholder="https://example.com" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; margin-bottom: 16px;">
                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                    <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer;" onclick="document.getElementById('websitePromptModal').classList.remove('active')">Cancel</button>
-                    <button id="websitePromptSaveBtn" style="padding: 8px 16px; border-radius: 6px; border: none; background: #3b82f6; color: white; font-weight: 500; cursor: pointer;">Save</button>
+                    <button style="padding: 8px 16px; min-width: 80px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #475569; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('websitePromptModal').classList.remove('active')">Cancel</button>
+                    <button id="websitePromptSaveBtn" style="padding: 8px 16px; min-width: 80px; font-size: 14px; border-radius: 6px; border: none; background: #3b82f6; color: white; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">Save</button>
                 </div>
             </div>
         </div>
