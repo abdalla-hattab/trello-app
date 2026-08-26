@@ -1623,16 +1623,16 @@
     </div>
 
     <div class="modal-overlay" id="websitePromptModal">
-        <div class="modal-content" style="max-width: 400px; width: 90%;">
+        <div class="modal-content" style="max-width: 500px; width: 90%;">
             <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; margin-bottom: 16px;">
-                <h3 id="websitePromptTitle">Assign Website</h3>
+                <h3 id="websitePromptTitle" style="font-size: 18px;">Assign Website</h3>
                 <span class="close-modal" onclick="document.getElementById('websitePromptModal').classList.remove('active')">&times;</span>
             </div>
-            <div class="modal-body">
-                <input type="text" id="websitePromptInput" placeholder="https://example.com" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; margin-bottom: 16px;">
+            <div style="display: flex; flex-direction: column;">
+                <input type="text" id="websitePromptInput" placeholder="example.com" style="width: 100%; padding: 12px; font-size: 15px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; margin-bottom: 20px;">
                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                    <button style="padding: 8px 16px; min-width: 80px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #475569; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('websitePromptModal').classList.remove('active')">Cancel</button>
-                    <button id="websitePromptSaveBtn" style="padding: 8px 16px; min-width: 80px; font-size: 14px; border-radius: 6px; border: none; background: #3b82f6; color: white; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">Save</button>
+                    <button style="padding: 6px 16px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #475569; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="document.getElementById('websitePromptModal').classList.remove('active')">Cancel</button>
+                    <button id="websitePromptSaveBtn" style="padding: 6px 16px; font-size: 14px; border-radius: 6px; border: none; background: #3b82f6; color: white; font-weight: 500; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">Save</button>
                 </div>
             </div>
         </div>
