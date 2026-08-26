@@ -13243,10 +13243,6 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         titleEl.className = 'agent-preview-card-title';
         titleEl.innerText = item.card.title || 'Unnamed Store';
         
-        const listNameEl = document.createElement('p');
-        listNameEl.className = 'agent-preview-card-subtitle';
-        listNameEl.innerText = `List: ${item.listName}`;
-        
         let typeText = '';
         if (item.type === 'trello') typeText = 'Trello Tracker';
         if (item.type === 'trello3') typeText = 'Trello Tracker 3';
@@ -13257,7 +13253,6 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         badgeEl.innerText = typeText;
         
         cardDiv.appendChild(titleEl);
-        cardDiv.appendChild(listNameEl);
         cardDiv.appendChild(badgeEl);
         
         container.appendChild(cardDiv);
