@@ -5197,6 +5197,18 @@ function renderKanbanApp(activeBoard) {
         };
         optionsMenu.appendChild(cardsCheckOption);
 
+        const robotCheckOption = document.createElement('div');
+        robotCheckOption.className = 'list-option-item';
+        robotCheckOption.innerHTML = `<span style="font-size: 16px; margin-right: 8px; width: 16px; display: inline-block; text-align: center;">🤖</span><span>Robot check</span>${list.robotCheck ? '<svg style="margin-left: auto;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}`;
+        if (robotCheckOption) robotCheckOption.onclick = (e) => {
+            e.stopPropagation();
+            list.robotCheck = !list.robotCheck;
+            saveState();
+            render();
+            optionsMenu.style.display = 'none';
+        };
+        optionsMenu.appendChild(robotCheckOption);
+
         if (list.pipedriveStageId) {
             addDiv();
             let isShowingQual = list.showQualification;
@@ -5287,7 +5299,18 @@ function renderKanbanApp(activeBoard) {
         const buttonsSet = document.createElement('div');
         buttonsSet.style.display = 'flex';
         buttonsSet.style.alignItems = 'center';
-        buttonsSet.style.gap = '2px';
+        buttonsSet.style.gap = '8px'; // Increased gap for spacing
+
+        if (list.robotCheck) {
+            const robotIcon = document.createElement('div');
+            robotIcon.innerHTML = '🤖';
+            robotIcon.style.fontSize = '18px';
+            robotIcon.title = 'Robot check active';
+            robotIcon.style.cursor = 'default';
+            robotIcon.style.display = 'flex';
+            robotIcon.style.alignItems = 'center';
+            buttonsSet.appendChild(robotIcon);
+        }
 
         buttonsSet.appendChild(optionsBtn);
         optionsWrap.appendChild(buttonsSet);
