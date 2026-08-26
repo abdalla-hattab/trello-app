@@ -13248,12 +13248,55 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         if (item.type === 'trello3') typeText = 'Trello Tracker 3';
         if (item.type === 'ads') typeText = 'Ads Tracker';
         
+        const bottomRow = document.createElement('div');
+        bottomRow.style.display = 'flex';
+        bottomRow.style.justifyContent = 'space-between';
+        bottomRow.style.alignItems = 'center';
+        bottomRow.style.marginTop = '12px';
+        
         const badgeEl = document.createElement('span');
         badgeEl.className = 'agent-preview-card-badge';
         badgeEl.innerText = typeText;
         
+        const websiteBtn = document.createElement('button');
+        websiteBtn.className = 'icon-btn';
+        websiteBtn.style.padding = '4px 8px';
+        websiteBtn.style.fontSize = '12px';
+        websiteBtn.style.borderRadius = '4px';
+        websiteBtn.style.transition = 'all 0.2s';
+        
+        const updateWebsiteBtn = () => {
+            if (item.card.agentWebsite) {
+                websiteBtn.innerHTML = '🔗 Website';
+                websiteBtn.style.color = '#3b82f6';
+                websiteBtn.style.border = '1px solid transparent';
+                websiteBtn.style.background = '#eff6ff';
+                websiteBtn.title = item.card.agentWebsite;
+            } else {
+                websiteBtn.innerHTML = '➕ Add Website';
+                websiteBtn.style.color = '#64748b';
+                websiteBtn.style.border = '1px dashed #cbd5e1';
+                websiteBtn.style.background = 'transparent';
+                websiteBtn.title = 'Assign a website';
+            }
+        };
+        updateWebsiteBtn();
+        
+        websiteBtn.onclick = (e) => {
+            e.stopPropagation();
+            const url = prompt("Enter website URL for " + (item.card.title || 'this store') + ":", item.card.agentWebsite || '');
+            if (url !== null) {
+                item.card.agentWebsite = url.trim();
+                saveState();
+                updateWebsiteBtn();
+            }
+        };
+        
+        bottomRow.appendChild(badgeEl);
+        bottomRow.appendChild(websiteBtn);
+        
         cardDiv.appendChild(titleEl);
-        cardDiv.appendChild(badgeEl);
+        cardDiv.appendChild(bottomRow);
         
         container.appendChild(cardDiv);
     });
