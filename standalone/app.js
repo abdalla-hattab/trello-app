@@ -13416,6 +13416,18 @@ window.renderAgentRules = function(focusIndex = -1) {
     const activeBoard = boards.find(b => b.id === activeBoardId);
     if (!activeBoard) return;
     
+    const descInput = document.getElementById('agentDescriptionInput');
+    if (descInput) {
+        // Only update value if it's not currently focused, to prevent cursor jumping
+        if (document.activeElement !== descInput) {
+            descInput.value = activeBoard.agentDescription || '';
+        }
+        descInput.oninput = (e) => {
+            activeBoard.agentDescription = e.target.value;
+            saveState();
+        };
+    }
+    
     if (!activeBoard.agentRules) activeBoard.agentRules = [];
     
     const renderInput = (rule, index, isNew) => {
