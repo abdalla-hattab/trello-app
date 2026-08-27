@@ -13350,6 +13350,17 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
                     }
                 }
                 
+                const currentBoard = boards.find(b => b.id === activeBoardId);
+                if (currentBoard) {
+                    for (const l of currentBoard.lists) {
+                        const liveCard = l.cards.find(c => c.id === item.card.id);
+                        if (liveCard) {
+                            liveCard.agentWebsite = url;
+                            break;
+                        }
+                    }
+                }
+                
                 item.card.agentWebsite = url;
                 saveState();
                 updateWebsiteBtn();
