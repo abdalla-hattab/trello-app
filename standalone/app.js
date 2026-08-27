@@ -11811,6 +11811,7 @@ async function syncTrello() {
         const colorMemory = {};
         const adsMetricsMemory = {};
         const pinnedMemory = {};
+        const agentWebsiteMemory = {};
         const existingTrelloTasks = [];
         const existingTrelloTasks2 = [];
         curBoard.lists.forEach(l => {
@@ -11823,6 +11824,9 @@ async function syncTrello() {
                 }
                 if (c.isPinned && (c.isTrello || c.isTrelloTask || c.isTrelloTask2)) {
                     pinnedMemory[c.id] = c.isPinned;
+                }
+                if (c.agentWebsite && (c.isTrello || c.isTrelloTask || c.isTrelloTask2)) {
+                    agentWebsiteMemory[c.id] = c.agentWebsite;
                 }
                 if (c.isTrelloTask) {
                     existingTrelloTasks.push({ card: JSON.parse(JSON.stringify(c)), listId: l.id });
@@ -11883,6 +11887,7 @@ async function syncTrello() {
                     color: colorMemory[tCard.id],
                     adsMetrics: adsMetricsMemory[tCard.id],
                     isPinned: pinnedMemory[tCard.id],
+                    agentWebsite: agentWebsiteMemory[tCard.id],
                     labels: tCard.labels,
                     startTime: record ? record.startTime : Date.now()
                 });
@@ -11899,6 +11904,7 @@ async function syncTrello() {
                     color: colorMemory[tCard.id],
                     adsMetrics: adsMetricsMemory[tCard.id],
                     isPinned: pinnedMemory[tCard.id],
+                    agentWebsite: agentWebsiteMemory[tCard.id],
                     labels: tCard.labels,
                     startTime: prevTask ? prevTask.card.startTime : Date.now()
                 });
@@ -11914,6 +11920,7 @@ async function syncTrello() {
                     color: colorMemory[tCard.id],
                     adsMetrics: adsMetricsMemory[tCard.id],
                     isPinned: pinnedMemory[tCard.id],
+                    agentWebsite: agentWebsiteMemory[tCard.id],
                     labels: tCard.labels,
                     startTime: prevTask ? prevTask.card.startTime : Date.now()
                 });
