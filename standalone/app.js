@@ -13246,9 +13246,44 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         const cardDiv = document.createElement('div');
         cardDiv.className = 'agent-preview-card';
         
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.justifyContent = 'space-between';
+        topRow.style.alignItems = 'flex-start';
+        topRow.style.gap = '8px';
+        
         const titleEl = document.createElement('p');
         titleEl.className = 'agent-preview-card-title';
+        titleEl.style.margin = '0';
         titleEl.innerText = item.card.title || 'Unnamed Store';
+        
+        const playBtn = document.createElement('button');
+        playBtn.className = 'icon-btn';
+        playBtn.innerHTML = '▶';
+        playBtn.style.background = '#10b981';
+        playBtn.style.color = 'white';
+        playBtn.style.border = 'none';
+        playBtn.style.borderRadius = '50%';
+        playBtn.style.width = '24px';
+        playBtn.style.height = '24px';
+        playBtn.style.display = 'none'; // hidden by default
+        playBtn.style.alignItems = 'center';
+        playBtn.style.justifyContent = 'center';
+        playBtn.style.cursor = 'pointer';
+        playBtn.style.fontSize = '10px';
+        playBtn.style.flexShrink = '0';
+        playBtn.style.transition = 'transform 0.2s, background 0.2s';
+        playBtn.title = 'Start Agent';
+        
+        playBtn.onmouseover = () => playBtn.style.transform = 'scale(1.1)';
+        playBtn.onmouseout = () => playBtn.style.transform = 'scale(1)';
+        playBtn.onclick = (e) => {
+            e.stopPropagation();
+            alert("Starting Agent for: " + (item.card.title || 'Unnamed Store') + "\nWebsite: " + item.card.agentWebsite);
+        };
+        
+        topRow.appendChild(titleEl);
+        topRow.appendChild(playBtn);
         
         let typeText = '';
         if (item.type === 'trello') typeText = 'Trello Tracker';
@@ -13279,12 +13314,14 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
                 websiteBtn.style.border = '1px solid transparent';
                 websiteBtn.style.background = '#eff6ff';
                 websiteBtn.title = item.card.agentWebsite;
+                playBtn.style.display = 'flex';
             } else {
                 websiteBtn.innerHTML = '➕ Add Website';
                 websiteBtn.style.color = '#64748b';
                 websiteBtn.style.border = '1px dashed #cbd5e1';
                 websiteBtn.style.background = 'transparent';
                 websiteBtn.title = 'Assign a website';
+                playBtn.style.display = 'none';
             }
         };
         updateWebsiteBtn();
@@ -13329,8 +13366,7 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         
         bottomRow.appendChild(badgeEl);
         bottomRow.appendChild(websiteBtn);
-        
-        cardDiv.appendChild(titleEl);
+        cardDiv.appendChild(topRow);
         cardDiv.appendChild(bottomRow);
         
         container.appendChild(cardDiv);
