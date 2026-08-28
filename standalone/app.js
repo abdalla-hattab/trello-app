@@ -13279,7 +13279,12 @@ window.renderAgentPreview = function(filter = window.agentPreviewCurrentFilter) 
         playBtn.onmouseout = () => playBtn.style.transform = 'scale(1)';
         playBtn.onclick = (e) => {
             e.stopPropagation();
-            alert("Starting Agent for: " + (item.card.title || 'Unnamed Store') + "\nWebsite: " + item.card.agentWebsite);
+            if (window.startAgentExecution) {
+                const activeBoard = boards.find(b => b.id === activeBoardId) || {};
+                window.startAgentExecution(item.card, activeBoard.agentDescription || '', activeBoard.agentRules || []);
+            } else {
+                alert("Agent executor is not loaded yet.");
+            }
         };
         
         topRow.appendChild(titleEl);
