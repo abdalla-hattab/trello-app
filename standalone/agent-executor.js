@@ -3,13 +3,16 @@
  * app.js calls window.startAgentExecution(cardData, agentDescription, agentRules).
  * Markup/styles live in a shadow root; the native dialog handles modal focus.
  *
- * SETUP: replace WEBHOOK_URL below with your production n8n webhook URL.
- * Optional override: window.AGENT_EXECUTOR_CONFIG = { webhookUrl, timeoutMs }.
+ * SETUP: point AGENT_API_URL at the authenticated agent-worker API.
+ * Optional runtime override:
+ * window.AGENT_EXECUTOR_CONFIG = { apiUrl, timeoutMs, getAccessToken: async () => "short-lived-token" }.
  * Never put AI keys or permanent authentication secrets in this frontend file.
  *
  * POST application/json (only these fields are sent, never the full card):
  * {
  *   "requestId": "unique-run-id",
+ *   "storeId": "stable-store-id",
+ *   "storeName": "Store name",
  *   "website": "https://store.example/",
  *   "agentDescription": "You are a website QA checker...",
  *   "agentRules": ["The add-to-cart button is visible", "The checkout opens"],
@@ -34,19 +37,17 @@
  * Missing scores are shown as "No result". A plain results array is also accepted;
  * without ruleIds it MUST contain one result per rule, in the original order.
  *
- * n8n: use POST, wait for the final workflow output (e.g. Respond to Webhook with
- * JSON), and allow this app's origin plus the JSON POST/OPTIONS preflight in CORS.
- * An immediate "workflow started" acknowledgement is not a completed check.
- * The backend must actually inspect the website, validate public target URLs,
- * enforce access/rate limits, and keep model credentials on the server.
- * Aborting fetch only stops this browser waiting; it cannot cancel n8n execution.
- * Docs: https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/
+ * The production service may return a completed report immediately or a queued
+ * job with { jobId, statusUrl, status }. This UI polls the same authenticated
+ * origin until the durable worker completes. Aborting fetch only stops this
+ * browser waiting; it does not cancel a worker job. AI/database secrets belong
+ * on the worker, never in this frontend file.
  */
 (() => {
     'use strict';
 
-    const WEBHOOK_URL = 'https://YOUR-N8N-HOST/webhook/agent-checker';
-    const REQUEST_TIMEOUT_MS = 90000;
+    const AGENT_API_URL = 'https://YOUR-AGENT-HOST/v1/checks';
+    const REQUEST_TIMEOUT_MS = 300000;
     const SCORE_THRESHOLDS = { green: 97, yellow: 70 };
     let activeRun = null;
 
@@ -166,6 +167,25 @@
         .gauge-small { width: 62px; height: 62px; margin: 0; } .gauge-small .gauge-value { font-size: 18px; letter-spacing: -.7px; font-weight: 600; }
         .gauge-small .gauge-unit { font-size: 8px; margin-top: 1px; } .gauge-small .gauge-ticks { display: none; }
         .recommendation { margin: 10px 0 0; font-size: 11px; line-height: 1.6; color: #62766a; background: #f6f8f6; padding: 9px 11px; border-radius: 8px; overflow-wrap: anywhere; white-space: pre-wrap; }
+        .evidence { margin-top: 10px; color: #5e6f65; font-size: 10px; line-height: 1.6; }
+        .evidence summary { width: max-content; color: #387158; font-weight: 650; cursor: pointer; }
+        .evidence ul { margin: 8px 0 0; padding-inline-start: 18px; }
+        .evidence li { margin-top: 4px; overflow-wrap: anywhere; white-space: pre-wrap; }
+        .feedback { margin-top: 13px; padding-top: 12px; border-top: 1px solid #edf1ee; }
+        .feedback-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .feedback button, .teach-box button { border: 1px solid #dce5df; border-radius: 8px; background: #fff; color: #526158; padding: 7px 10px; font: inherit; font-size: 10px; font-weight: 600; }
+        .feedback button:hover, .teach-box button:hover { background: #f3f8f5; }
+        .feedback button:disabled, .teach-box button:disabled { cursor: wait; opacity: .55; }
+        .correction { margin-top: 10px; display: grid; grid-template-columns: minmax(0,1fr) 95px; gap: 8px; }
+        .correction textarea, .teach-box textarea { resize: vertical; min-height: 70px; width: 100%; border: 1px solid #dce5df; border-radius: 9px; padding: 9px 10px; font: inherit; font-size: 11px; color: #25332b; background: #fff; }
+        .correction input { width: 100%; border: 1px solid #dce5df; border-radius: 9px; padding: 9px; font: inherit; font-size: 11px; }
+        .correction-buttons { grid-column: 1 / -1; display: flex; gap: 8px; }
+        .feedback-status, .teach-status { margin: 8px 0 0; color: #65746b; font-size: 10px; line-height: 1.5; }
+        .teach-box { margin-top: 22px; border: 1px solid #dce9e0; border-radius: 14px; padding: 18px; background: #fafcfb; }
+        .teach-box h3 { margin: 0 0 5px; font-size: 14px; }
+        .teach-box p { color: #758178; font-size: 11px; line-height: 1.6; margin: 0 0 11px; }
+        .teach-controls { display: flex; gap: 9px; align-items: flex-end; }
+        .teach-controls textarea { flex: 1; }
         .insights-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
         .insight { border-radius: 14px; border: 1px solid #e5ebe7; padding: 18px; min-width: 0; }
         .insight h3 { font-size: 12px; font-weight: 600; margin: 0 0 11px; display: flex; align-items: center; gap: 7px; }
@@ -209,6 +229,8 @@
             ol, .insights-grid { grid-template-columns: 1fr; } .rule-top { align-items: flex-start; }
             .footer { padding: 15px 18px; flex-wrap: wrap; gap: 12px; } .actions { margin-left: auto; }
             .footnote { max-width: none; } .rule { padding: 18px; }
+            .teach-controls { display: grid; } .correction { grid-template-columns: 1fr; }
+            .correction-buttons { grid-column: 1; }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -228,26 +250,139 @@
         return url.href;
     }
 
-    function getConfig() {
+    function normalizeStoreId(title, website) {
+        const source = `${typeof title === 'string' ? title : ''}|${typeof website === 'string' ? website : ''}`;
+        let hash = 2166136261;
+        for (let index = 0; index < source.length; index += 1) {
+            hash ^= source.charCodeAt(index);
+            hash = Math.imul(hash, 16777619);
+        }
+        return `store-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+    }
+
+    function normalizeRuleIds(rules) {
+        const occurrences = new Map();
+        return rules.map(rule => {
+            let hash = 2166136261;
+            for (let index = 0; index < rule.length; index += 1) {
+                hash ^= rule.charCodeAt(index);
+                hash = Math.imul(hash, 16777619);
+            }
+            const base = `rule-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+            const count = (occurrences.get(base) || 0) + 1;
+            occurrences.set(base, count);
+            return count === 1 ? base : `${base}-${count}`;
+        });
+    }
+
+    async function getConfig() {
         const overrides = window.AGENT_EXECUTOR_CONFIG || {};
-        const endpoint = typeof overrides.webhookUrl === 'string' ? overrides.webhookUrl.trim() : WEBHOOK_URL;
-        if (!endpoint || /YOUR-N8N-HOST/i.test(endpoint)) {
-            throw new Error('Set WEBHOOK_URL at the top of agent-executor.js to your production n8n webhook URL. No request has been sent.');
+        const endpoint = typeof overrides.apiUrl === 'string'
+            ? overrides.apiUrl.trim()
+            : typeof overrides.webhookUrl === 'string'
+                ? overrides.webhookUrl.trim()
+                : AGENT_API_URL;
+        if (!endpoint || /YOUR-AGENT-HOST/i.test(endpoint)) {
+            throw new Error('The agent service has not been connected yet. Configure its authenticated API URL before running a real check. No request has been sent.');
         }
         let url;
         try { url = new URL(endpoint); }
-        catch (_) { throw new Error('The configured webhook URL is invalid. Enter its full HTTPS URL in agent-executor.js.'); }
+        catch (_) { throw new Error('The configured agent API URL is invalid. Enter its full HTTPS URL.'); }
         if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.hash) {
-            throw new Error('Use an HTTP or HTTPS webhook URL without embedded credentials or a fragment.');
+            throw new Error('Use an HTTP or HTTPS agent API URL without embedded credentials or a fragment.');
         }
         if (window.location.protocol === 'https:' && url.protocol !== 'https:') {
-            throw new Error('This app uses HTTPS, so the n8n webhook must use HTTPS too.');
+            throw new Error('This app uses HTTPS, so the agent API must use HTTPS too.');
         }
+        const getAccessToken = typeof overrides.getAccessToken === 'function' ? overrides.getAccessToken : null;
+        let accessToken = typeof overrides.accessToken === 'string' ? overrides.accessToken.trim() : '';
+        if (getAccessToken) accessToken = String(await getAccessToken() || '').trim();
+        if (!accessToken) throw new Error('Secure agent sign-in has not been connected. No request has been sent.');
         const timeout = Number(overrides.timeoutMs);
+        const pollInterval = Number(overrides.pollIntervalMs);
         return {
             url: url.href,
-            timeoutMs: Number.isFinite(timeout) && timeout >= 1000 ? Math.min(timeout, 300000) : REQUEST_TIMEOUT_MS
+            accessToken,
+            getAccessToken,
+            timeoutMs: Number.isFinite(timeout) && timeout >= 1000 ? Math.min(timeout, 900000) : REQUEST_TIMEOUT_MS,
+            pollIntervalMs: Number.isFinite(pollInterval) && pollInterval >= 100 ? Math.min(pollInterval, 10000) : 1000
         };
+    }
+
+    const delay = (milliseconds, signal) => new Promise((resolve, reject) => {
+        const onAbort = () => {
+            clearTimeout(timer);
+            signal.removeEventListener('abort', onAbort);
+            reject(signal.reason || new DOMException('Aborted', 'AbortError'));
+        };
+        const timer = setTimeout(() => {
+            signal.removeEventListener('abort', onAbort);
+            resolve();
+        }, milliseconds);
+        if (signal.aborted) return onAbort();
+        signal.addEventListener('abort', onAbort, { once: true });
+    });
+
+    async function responseJson(response, controller) {
+        let payload;
+        try { payload = await response.json(); }
+        catch (error) {
+            if (controller.signal.aborted) throw error;
+            throw new Error('The agent service did not return valid JSON.');
+        }
+        if (!response.ok) {
+            const serverMessage = typeof payload?.error?.message === 'string' ? payload.error.message.trim() : '';
+            throw new Error(serverMessage || httpError(response.status));
+        }
+        return payload;
+    }
+
+    function authenticatedHeaders(config, requestId, includeContentType = false) {
+        return {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${config.accessToken}`,
+            'Idempotency-Key': requestId,
+            ...(includeContentType ? { 'Content-Type': 'application/json' } : {})
+        };
+    }
+
+    async function refreshAccessToken(config) {
+        if (!config.getAccessToken) return false;
+        const next = String(await config.getAccessToken() || '').trim();
+        if (!next) throw new Error('Secure agent sign-in expired. Sign in again before continuing.');
+        config.accessToken = next;
+        return true;
+    }
+
+    async function authenticatedFetch(config, url, options, requestId, includeContentType = false) {
+        const send = () => fetch(url, {
+            ...options,
+            headers: authenticatedHeaders(config, requestId, includeContentType)
+        });
+        let response = await send();
+        if (response.status === 401 && await refreshAccessToken(config)) response = await send();
+        return response;
+    }
+
+    async function waitForJob(initial, config, run, controller) {
+        let payload = initial;
+        const queued = new Set(['queued', 'running', 'retry']);
+        if (!queued.has(payload?.status)) return payload;
+        if (typeof payload.statusUrl !== 'string' || !payload.statusUrl.trim()) throw new Error('The agent queued this check without returning a status URL.');
+        const statusUrl = new URL(payload.statusUrl, config.url);
+        if (statusUrl.origin !== new URL(config.url).origin) throw new Error('The agent returned an unsafe cross-origin status URL.');
+        while (queued.has(payload.status)) {
+            await delay(config.pollIntervalMs, controller.signal);
+            if (run.closed || run.cancelled || run.requestId !== payload.requestId) throw new DOMException('Cancelled', 'AbortError');
+            const response = await authenticatedFetch(config, statusUrl.href, {
+                method: 'GET',
+                credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', redirect: 'error', signal: controller.signal
+            }, run.requestId);
+            payload = await responseJson(response, controller);
+        }
+        if (payload?.status === 'failed') throw new Error(payload?.error?.message || 'The agent could not finish this check after its retry attempts.');
+        if (payload?.status === 'cancelled') throw new Error('The agent job was cancelled before it produced a report.');
+        return payload;
     }
 
     function scoreTone(score) {
@@ -320,6 +455,7 @@
                                     <section class="insight attention"><h3><i class="dot yellow"></i>What needs attention</h3><p class="insight-empty"></p><ul hidden></ul></section>
                                     <section class="insight strengths"><h3><i class="dot green"></i>What's working well</h3><p class="insight-empty"></p><ul hidden></ul></section>
                                 </div>
+                                <section class="teach-box" hidden><h3>Teach this store agent</h3><p>Add a verified instruction that should be remembered on future checks for this store.</p><div class="teach-controls"><textarea maxlength="4000" dir="auto" placeholder="Example: Payment icons in the footer are approved for this brand."></textarea><button type="button">Save lesson</button></div><p class="teach-status" role="status" aria-live="polite"></p></section>
                                 <details hidden><summary>Agent instructions</summary><p class="persona" dir="auto"></p></details>
                             </div>
                         </div>
@@ -335,7 +471,8 @@
             counts: [find('.stat-pass strong'), find('.stat-fail strong'), find('.stat-unknown strong')], rows: [],
             overallGauge: find('.gauge-large'), grade: find('.score-grade'), scoreContext: find('.score-context'), method: find('.method-note'),
             badge: find('.run-badge'), scanTitle: find('.scan-heading'), scanCopy: find('.scan-copy'), stages: [...shadow.querySelectorAll('.stage')],
-            attention: find('.attention'), strengths: find('.strengths')
+            attention: find('.attention'), strengths: find('.strengths'), teach: find('.teach-box'),
+            teachInput: find('.teach-box textarea'), teachButton: find('.teach-box button'), teachStatus: find('.teach-status')
         };
         find('#agent-title').textContent = run.storeName;
         const website = find('.website');
@@ -347,10 +484,17 @@
             const row = document.createElement('li');
             row.className = 'rule';
             row.dataset.ruleId = run.ruleIds[index];
-            row.innerHTML = `<div class="rule-top"><div class="rule-body"><div class="rule-number">CHECK ${String(index + 1).padStart(2, '0')}</div><p class="rule-name" dir="auto"></p><div class="rule-state"><span class="rule-icon" aria-hidden="true"></span><span class="rule-status"></span></div></div>${gaugeMarkup('small')}</div><p class="explanation" dir="auto" hidden></p><p class="recommendation" dir="auto" hidden></p>`;
+            row.innerHTML = `<div class="rule-top"><div class="rule-body"><div class="rule-number">CHECK ${String(index + 1).padStart(2, '0')}</div><p class="rule-name" dir="auto"></p><div class="rule-state"><span class="rule-icon" aria-hidden="true"></span><span class="rule-status"></span></div></div>${gaugeMarkup('small')}</div><p class="explanation" dir="auto" hidden></p><p class="recommendation" dir="auto" hidden></p><details class="evidence" hidden><summary>View captured evidence</summary><ul></ul></details><div class="feedback" hidden><div class="feedback-actions"><button class="confirm" type="button">Confirm finding</button><button class="correct" type="button">Correct & teach</button></div><div class="correction" hidden><textarea maxlength="4000" dir="auto" placeholder="Tell the agent what is correct and what it should remember."></textarea><input type="number" min="0" max="100" step="0.1" aria-label="Correct score" placeholder="Score 0–100"><div class="correction-buttons"><button class="save-correction" type="button">Save correction</button><button class="cancel-correction" type="button">Cancel</button></div></div><p class="feedback-status" role="status" aria-live="polite"></p></div>`;
             row.querySelector('.rule-name').textContent = rule;
             find('ol').appendChild(row);
-            ui.rows.push({ element: row, icon: row.querySelector('.rule-icon'), status: row.querySelector('.rule-status'), explanation: row.querySelector('.explanation'), gauge: row.querySelector('.gauge-small'), recommendation: row.querySelector('.recommendation') });
+            ui.rows.push({
+                element: row, icon: row.querySelector('.rule-icon'), status: row.querySelector('.rule-status'),
+                explanation: row.querySelector('.explanation'), gauge: row.querySelector('.gauge-small'), recommendation: row.querySelector('.recommendation'),
+                evidence: row.querySelector('.evidence'), evidenceList: row.querySelector('.evidence ul'),
+                feedback: row.querySelector('.feedback'), confirm: row.querySelector('.confirm'), correct: row.querySelector('.correct'),
+                correction: row.querySelector('.correction'), correctionText: row.querySelector('.correction textarea'), correctionScore: row.querySelector('.correction input'),
+                saveCorrection: row.querySelector('.save-correction'), cancelCorrection: row.querySelector('.cancel-correction'), feedbackStatus: row.querySelector('.feedback-status')
+            });
         });
         if (run.description) {
             find('details').hidden = false;
@@ -388,16 +532,42 @@
             if (!run.busy) return;
             run.cancelled = true;
             run.controller.abort();
-            finishWithoutResults(run, 'Stopped waiting', 'No final results were received. The workflow may still be running in n8n.', 'cancelled');
+            finishWithoutResults(run, 'Stopped waiting', 'No final results were received here. The durable agent job may still be running.', 'cancelled');
         });
         ui.retry.addEventListener('click', () => { if (!run.busy) execute(run); });
+        ui.rows.forEach(row => {
+            row.correct.addEventListener('click', () => {
+                row.correction.hidden = false;
+                row.correctionText.focus();
+            });
+            row.cancelCorrection.addEventListener('click', () => {
+                row.correction.hidden = true;
+                row.feedbackStatus.textContent = '';
+            });
+            row.confirm.addEventListener('click', () => saveFeedback(run, row, { action: 'confirm' }));
+            row.saveCorrection.addEventListener('click', () => {
+                const lesson = row.correctionText.value.trim();
+                const rawScore = row.correctionScore.value.trim();
+                const correctedScore = rawScore === '' ? null : Number(rawScore);
+                if (!lesson) {
+                    row.feedbackStatus.textContent = 'Explain what the agent should remember before saving.';
+                    return;
+                }
+                if (correctedScore !== null && (!Number.isFinite(correctedScore) || correctedScore < 0 || correctedScore > 100)) {
+                    row.feedbackStatus.textContent = 'The corrected score must be between 0 and 100.';
+                    return;
+                }
+                saveFeedback(run, row, { action: 'correct', lesson, correctedScore });
+            });
+        });
+        ui.teachButton.addEventListener('click', () => saveLesson(run));
         document.body.appendChild(host);
         run.ui = ui;
         ui.dialog.showModal();
         return ui;
     }
 
-    function setRule(row, state, explanation = '', score = null, recommendation = '') {
+    function setRule(row, state, explanation = '', score = null, recommendation = '', evidence = []) {
         const labels = { checking: 'Checking…', passed: 'Passed', failed: 'Failed', unknown: 'No result', waiting: 'Not started', cancelled: 'Not received' };
         const icons = { checking: '', passed: '✓', failed: '✕', unknown: '!', waiting: '·', cancelled: '—' };
         row.element.dataset.state = state;
@@ -409,6 +579,15 @@
         row.explanation.hidden = !explanation;
         row.recommendation.textContent = recommendation ? `Suggested fix: ${recommendation}` : '';
         row.recommendation.hidden = !recommendation;
+        row.evidenceList.replaceChildren();
+        evidence.forEach(item => {
+            const li = document.createElement('li');
+            li.dir = 'auto';
+            li.textContent = item;
+            row.evidenceList.appendChild(li);
+        });
+        row.evidence.hidden = evidence.length === 0;
+        row.evidence.open = false;
         setGauge(row.gauge, score, state === 'checking');
     }
 
@@ -470,6 +649,67 @@
         return overall;
     }
 
+    function apiUrl(config, suffix) {
+        const endpoint = new URL(config.url);
+        endpoint.pathname = endpoint.pathname.replace(/\/checks\/?$/, `/checks${suffix}`);
+        endpoint.search = '';
+        return endpoint;
+    }
+
+    async function postAgent(run, url, body) {
+        await refreshAccessToken(run.config);
+        const mutationId = window.crypto?.randomUUID ? window.crypto.randomUUID() : `agent-mutation-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const response = await authenticatedFetch(run.config, url, {
+            method: 'POST',
+            credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', redirect: 'error',
+            signal: run.controller?.signal,
+            body: JSON.stringify(body)
+        }, mutationId, true);
+        return responseJson(response, run.controller);
+    }
+
+    async function saveFeedback(run, row, feedback) {
+        if (!run.config || !run.jobId || run.closed) return;
+        const buttons = [row.confirm, row.correct, row.saveCorrection, row.cancelCorrection];
+        buttons.forEach(button => { button.disabled = true; });
+        row.feedbackStatus.textContent = 'Saving verified memory…';
+        try {
+            const result = await postAgent(run, apiUrl(run.config, `/${encodeURIComponent(run.jobId)}/feedback`), {
+                ruleId: row.element.dataset.ruleId,
+                ...feedback
+            });
+            row.feedbackStatus.textContent = result.verificationStatus === 'corrected'
+                ? 'Correction saved as verified memory for future checks.'
+                : 'Finding confirmed and saved as verified memory.';
+            row.correction.hidden = true;
+            row.confirm.hidden = true;
+            row.correct.hidden = true;
+        } catch (error) {
+            row.feedbackStatus.textContent = error.message || 'The memory could not be saved.';
+            buttons.forEach(button => { button.disabled = false; });
+        }
+    }
+
+    async function saveLesson(run) {
+        const content = run.ui.teachInput.value.trim();
+        if (!content) {
+            run.ui.teachStatus.textContent = 'Write the instruction you want the agent to remember.';
+            return;
+        }
+        run.ui.teachButton.disabled = true;
+        run.ui.teachStatus.textContent = 'Saving verified lesson…';
+        try {
+            const endpoint = new URL(run.config.url);
+            endpoint.pathname = endpoint.pathname.replace(/\/checks\/?$/, '/lessons');
+            endpoint.search = '';
+            await postAgent(run, endpoint, { storeId: run.storeId, content });
+            run.ui.teachInput.value = '';
+            run.ui.teachStatus.textContent = 'Lesson saved. Future checks for this store will retrieve it.';
+        } catch (error) {
+            run.ui.teachStatus.textContent = error.message || 'The lesson could not be saved.';
+        } finally { run.ui.teachButton.disabled = false; }
+    }
+
     function clearTimers(run) {
         clearTimeout(run.timeout);
         clearInterval(run.ticker);
@@ -484,7 +724,7 @@
         run.ui.stop.hidden = true;
         run.ui.retry.hidden = false;
         run.ui.retry.textContent = 'Run again';
-        run.ui.footnote.textContent = 'Results are supplied by your n8n workflow. Review the explanations before taking action.';
+        run.ui.footnote.textContent = 'Results are supplied by the website agent. Review its evidence and teach corrections before relying on a new lesson.';
     }
 
     function finishWithoutResults(run, title, message, state = 'unknown') {
@@ -496,13 +736,17 @@
         run.ui.rows.forEach(row => setRule(row, state));
         updateDashboard(run, state === 'waiting' ? 'waiting' : state === 'cancelled' ? 'cancelled' : 'error');
         run.ui.retry.textContent = 'Try again';
-        run.ui.footnote.textContent = state === 'waiting' ? 'No request has been sent. Your company data has not been changed.' : 'Retrying starts a new request. An earlier n8n workflow may still be running.';
+        run.ui.footnote.textContent = state === 'waiting' ? 'No request has been sent. Your company data has not been changed.' : 'Retrying starts a new request. An earlier durable agent job may still be running.';
     }
 
     function closeRun(run, restoreFocus = true) {
         if (run.closed) return;
         run.closed = true;
         run.controller?.abort();
+        if (run.config) {
+            run.config.accessToken = '';
+            run.config.getAccessToken = null;
+        }
         clearTimers(run);
         run.ui?.dialog.close();
         run.ui?.host.remove();
@@ -511,23 +755,23 @@
     }
 
     function readResults(payload, run) {
-        // n8n can return a singleton array containing the final JSON object.
+        // Legacy integrations can return a singleton array containing the final JSON object.
         if (Array.isArray(payload) && payload.length === 1 && Array.isArray(payload[0]?.results)) payload = payload[0];
-        if (payload?.requestId !== undefined && payload.requestId !== run.requestId) throw new Error('The webhook returned results for a different request. This checklist was not updated.');
+        if (payload?.requestId !== undefined && payload.requestId !== run.requestId) throw new Error('The agent returned results for a different request. This checklist was not updated.');
         const results = Array.isArray(payload) ? payload : payload?.results;
-        if (!Array.isArray(results)) throw new Error('The webhook did not return a results array. Configure n8n to respond with the final checks, not a workflow-started acknowledgement.');
+        if (!Array.isArray(results)) throw new Error('The agent did not return a results array. No score has been assigned.');
         const hasIds = results.some(result => result && Object.prototype.hasOwnProperty.call(result, 'ruleId'));
         if (!hasIds && results.length !== run.rules.length) throw new Error('The response cannot be matched safely to these rules. Return a ruleId for each result, or one result per rule in the original order.');
         const byId = new Map();
         results.forEach((result, index) => {
-            if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('The webhook returned an invalid result. Each rule needs a JSON object with passed and explanation fields.');
+            if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('The agent returned an invalid result object.');
             const id = hasIds ? result.ruleId : run.ruleIds[index];
             if (!run.ruleIds.includes(id) || byId.has(id)) throw new Error('The response contains missing, duplicate, or unknown rule IDs. Results were not assigned to the wrong rules.');
             byId.set(id, result);
         });
         return run.ruleIds.map(ruleId => {
             const result = byId.get(ruleId);
-            if (!result) return { ruleId, state: 'unknown', score: null, scoreSource: null, explanation: 'The workflow did not return a result for this rule.', recommendation: '' };
+            if (!result) return { ruleId, state: 'unknown', score: null, scoreSource: null, explanation: 'The workflow did not return a result for this rule.', recommendation: '', evidence: [] };
             const hasScore = Object.prototype.hasOwnProperty.call(result, 'score');
             const validScore = typeof result.score === 'number' && Number.isFinite(result.score) && result.score >= 0 && result.score <= 100;
             const validVerdict = !hasScore && typeof result.passed === 'boolean';
@@ -539,16 +783,19 @@
                 score,
                 scoreSource: validScore ? 'numeric' : validVerdict ? 'binary' : null,
                 explanation: explanation || (score !== null ? 'No explanation was supplied by the workflow.' : 'The workflow did not supply a valid score or pass/fail verdict for this rule.'),
-                recommendation: typeof result.recommendation === 'string' ? result.recommendation.trim() : ''
+                recommendation: typeof result.recommendation === 'string' ? result.recommendation.trim() : '',
+                evidence: Array.isArray(result.evidence)
+                    ? result.evidence.filter(item => typeof item === 'string' && item.trim()).slice(0, 12).map(item => item.trim().slice(0, 1000))
+                    : []
             };
         });
     }
 
     function httpError(status) {
-        if (status === 401 || status === 403) return 'The webhook denied access. Check server-side authentication and permissions; do not add private API keys to this frontend.';
-        if (status === 404) return 'The webhook was not found. Check the production webhook URL and activate the n8n workflow.';
-        if (status === 429) return 'The webhook is rate limited. Wait before trying again.';
-        return `The webhook returned HTTP ${status}. Check the n8n execution log before trying again.`;
+        if (status === 401 || status === 403) return 'The agent service denied access. Sign in again or check the server-side identity configuration.';
+        if (status === 404) return 'The agent API route was not found. Check the deployed service URL.';
+        if (status === 429) return 'The agent service is busy. Wait before trying again.';
+        return `The agent service returned HTTP ${status}.`;
     }
 
     async function execute(run) {
@@ -557,13 +804,15 @@
         try {
             if (run.inputError) throw new Error(run.inputError);
             if (!run.rules.length) throw new Error('Add at least one rule in Agent Rules, then close this checker and open the store again.');
-            config = getConfig();
+            config = await getConfig();
         } catch (error) {
             finishWithoutResults(run, 'Setup needed', error.message, 'waiting');
             return { status: 'not-started' };
         }
 
         run.busy = true;
+        run.config = config;
+        run.jobId = '';
         run.cancelled = false;
         run.timedOut = false;
         run.requestId = window.crypto?.randomUUID ? window.crypto.randomUUID() : `agent-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -572,7 +821,7 @@
         const controller = run.controller;
         const startedAt = Date.now();
         run.ui.title.textContent = 'Checking your store';
-        run.ui.detail.textContent = `Your workflow is evaluating ${run.rules.length} ${run.rules.length === 1 ? 'rule' : 'rules'}. Results appear when it responds.`;
+        run.ui.detail.textContent = `Your agent is evaluating ${run.rules.length} ${run.rules.length === 1 ? 'rule' : 'rules'}. Results appear when its evidence-backed report is ready.`;
         run.ui.notice.hidden = true;
         run.ui.progress.dataset.running = 'true';
         run.ui.fill.style.width = '';
@@ -580,9 +829,22 @@
         run.ui.stop.hidden = false;
         run.ui.retry.hidden = true;
         run.ui.counts.forEach(count => { count.textContent = '—'; });
-        run.ui.rows.forEach(row => setRule(row, 'checking'));
+        run.ui.rows.forEach(row => {
+            setRule(row, 'checking');
+            row.feedback.hidden = true;
+            row.correction.hidden = true;
+            row.feedbackStatus.textContent = '';
+            row.correctionText.value = '';
+            row.correctionScore.value = '';
+            [row.confirm, row.correct, row.saveCorrection, row.cancelCorrection].forEach(button => {
+                button.disabled = false;
+                button.hidden = false;
+            });
+        });
+        run.ui.teach.hidden = true;
+        run.ui.teachStatus.textContent = '';
         updateDashboard(run, 'checking');
-        run.ui.footnote.textContent = 'Closing or stopping ends the wait here. It does not cancel the n8n workflow.';
+        run.ui.footnote.textContent = 'Closing or stopping ends the wait here. The durable agent job may continue in the background.';
         const tick = () => {
             const seconds = Math.floor((Date.now() - startedAt) / 1000);
             run.ui.elapsed.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} elapsed`;
@@ -592,23 +854,21 @@
         run.timeout = setTimeout(() => { run.timedOut = true; controller.abort(); }, config.timeoutMs);
 
         try {
-            const response = await fetch(config.url, {
+            const response = await authenticatedFetch(config, config.url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', redirect: 'error',
                 signal: controller.signal,
-                body: JSON.stringify({ requestId, website: run.website, agentDescription: run.description, agentRules: run.rules, ruleIds: run.ruleIds })
-            });
-            if (!response.ok) throw new Error(httpError(response.status));
-            let payload;
-            try { payload = await response.json(); }
-            catch (error) {
-                if (controller.signal.aborted) throw error;
-                throw new Error('The webhook did not return valid JSON. Use a final JSON response containing a results array.');
-            }
+                body: JSON.stringify({
+                    requestId, storeId: run.storeId, storeName: run.storeName, website: run.website,
+                    agentDescription: run.description, agentRules: run.rules, ruleIds: run.ruleIds
+                })
+            }, requestId, true);
+            let payload = await responseJson(response, controller);
+            payload = await waitForJob(payload, config, run, controller);
             if (run.closed || run.cancelled || run.requestId !== requestId) return { status: 'cancelled' };
             if (controller.signal.aborted) throw new Error('The request was aborted before its results could be verified.');
             const results = readResults(payload, run);
+            run.jobId = typeof payload.jobId === 'string' ? payload.jobId : '';
             const passed = results.filter(result => result.state === 'passed').length;
             const failed = results.filter(result => result.state === 'failed').length;
             const unknown = results.length - passed - failed;
@@ -617,7 +877,11 @@
             const overallScore = updateDashboard(run, unknown ? 'incomplete' : 'complete', results);
             run.ui.fill.style.background = overallScore === null ? '#bac7be' : ({ green: '#17aa68', yellow: '#d8a00a', red: '#e15c55' }[scoreTone(overallScore)]);
             [passed, failed, unknown].forEach((count, index) => { run.ui.counts[index].textContent = String(count); });
-            results.forEach((result, index) => setRule(run.ui.rows[index], result.state, result.explanation, result.score, result.recommendation));
+            results.forEach((result, index) => setRule(run.ui.rows[index], result.state, result.explanation, result.score, result.recommendation, result.evidence));
+            if (run.jobId) {
+                run.ui.rows.forEach(row => { row.feedback.hidden = false; });
+                run.ui.teach.hidden = false;
+            }
             if (unknown) {
                 run.ui.notice.hidden = false;
                 run.ui.notice.textContent = 'Some checks have no valid score. Their rings and the overall website score stay blank until every check has been verified.';
@@ -626,9 +890,9 @@
         } catch (error) {
             if (run.closed || run.cancelled || run.requestId !== requestId) return { status: 'cancelled' };
             const message = run.timedOut
-                ? `No final response arrived within ${Math.round(config.timeoutMs / 1000)} seconds. Check the n8n execution log; its workflow may still be running.`
+                ? `No final response arrived within ${Math.round(config.timeoutMs / 1000)} seconds. The durable job may still be running; check the agent service logs.`
                 : error instanceof TypeError
-                    ? 'Could not reach the webhook. Check your connection, the webhook URL, and CORS for this app\'s origin (including the JSON POST preflight). The workflow may already have started.'
+                    ? 'Could not reach the agent service. Check its URL, HTTPS certificate, and allowed browser origins. The job may already have started.'
                     : error.message || 'The request failed before results could be verified.';
             finishWithoutResults(run, run.timedOut ? 'The check timed out' : 'Could not complete the check', message);
             return { status: run.timedOut ? 'timeout' : 'error', requestId };
@@ -645,10 +909,11 @@
         const card = cardData && typeof cardData === 'object' ? cardData : {};
         const rules = Array.isArray(agentRules) ? agentRules.filter(rule => typeof rule === 'string').map(rule => rule.trim()).filter(Boolean) : [];
         const run = {
+            storeId: typeof card.id === 'string' || typeof card.id === 'number' ? String(card.id) : normalizeStoreId(card.title, card.agentWebsite),
             storeName: typeof card.title === 'string' && card.title.trim() ? card.title.trim() : 'Unnamed store',
             rawWebsite: typeof card.agentWebsite === 'string' ? card.agentWebsite.trim() : '',
             description: typeof agentDescription === 'string' ? agentDescription.trim() : '',
-            rules, ruleIds: rules.map((_, index) => `rule-${index + 1}`), previousFocus,
+            rules, ruleIds: normalizeRuleIds(rules), previousFocus,
             closed: false, busy: false, inputError: '', website: ''
         };
         try { run.website = normalizeWebsite(run.rawWebsite); }

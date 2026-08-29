@@ -1,0 +1,23 @@
+{
+  "name": "@agencygrow/website-agent-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/main.js",
+    "dev": "node --env-file-if-exists=.env --watch src/main.js",
+    "worker": "node --env-file-if-exists=.env src/worker-main.js",
+    "migrate": "node --env-file-if-exists=.env src/migrate.js",
+    "test": "node --test",
+    "check": "node --check src/main.js && node --check src/worker-main.js",
+    "smoke:inspector": "node scripts/smoke-inspector.js"
+  },
+  "dependencies": {
+    "jose": "^6.2.10",
+    "pg": "^8.16.3",
+    "playwright": "^1.55.0"
+  }
+}
