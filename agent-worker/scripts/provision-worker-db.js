@@ -33,7 +33,10 @@ try {
   if (!existing.rowCount) {
     await owner.query(`CREATE ROLE "${workerRole}" LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION`);
   }
-  const passwordStatement = await owner.query("SELECT format('ALTER ROLE %I LOGIN PASSWORD %L', $1, $2) AS sql", [workerRole, workerPassword]);
+  const passwordStatement = await owner.query(
+    "SELECT format('ALTER ROLE %I LOGIN PASSWORD %L', $1::text, $2::text) AS sql",
+    [workerRole, workerPassword]
+  );
   await owner.query(passwordStatement.rows[0].sql);
   await owner.query(`GRANT USAGE ON SCHEMA public TO "${workerRole}"`);
   await owner.query(`GRANT SELECT, UPDATE ON agent_jobs TO "${workerRole}"`);
