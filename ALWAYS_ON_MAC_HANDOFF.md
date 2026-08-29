@@ -94,6 +94,11 @@ The `agent-worker` package now includes:
 - AWS RDS/Supabase PostgreSQL CA handling;
 - tests for the Codex client and configuration.
 
+Compatibility update: on macOS Ventura 13 the Playwright installer no longer
+provides a compatible bundled Chromium. The macOS installer now detects and
+uses the installed Google Chrome executable instead. Do not downgrade TLS or
+Playwright to work around this limitation.
+
 Verification already completed on the original Mac:
 
 - focused tests: 16/16 passed;

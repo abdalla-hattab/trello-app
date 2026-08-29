@@ -53,7 +53,8 @@ npm run install:macos
 ```
 
 The installer verifies Node.js 24+, the signed-in Codex app, and PostgreSQL TLS;
-installs Chromium; applies migrations; creates a restricted database role;
+uses an installed Google Chrome when available (required on macOS 13), otherwise
+installs Playwright Chromium; applies migrations; creates a restricted database role;
 stores its generated password in macOS Keychain; and registers a LaunchAgent
 that restarts after failures and user login. The Supabase owner password is read
 once with hidden input and is never written to disk.

@@ -55,6 +55,18 @@ test('OpenAI worker configuration still requires its API key', () => {
   }, { requireAI: true, requireAuth: false }), /OPENAI_API_KEY/);
 });
 
+test('worker accepts only an absolute external browser executable path', () => {
+  const config = loadConfig({
+    ...base,
+    BROWSER_EXECUTABLE_PATH: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  }, { requireAuth: false });
+  assert.equal(config.browserExecutablePath, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
+  assert.throws(() => loadConfig({
+    ...base,
+    BROWSER_EXECUTABLE_PATH: 'Google Chrome'
+  }, { requireAuth: false }), /absolute path/);
+});
+
 test('PostgreSQL accepts separate connection settings without URL-encoding the password', () => {
   const config = loadConfig({
     ALLOWED_ORIGINS: 'https://app.example',

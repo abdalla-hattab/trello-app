@@ -22,7 +22,9 @@ export class SiteInspector {
     try { ({ chromium } = await import('playwright')); }
     catch { throw new AppError('Playwright is not installed. Run npm install and install Chromium.', { code: 'BROWSER_NOT_INSTALLED' }); }
 
-    const browser = await chromium.launch({ headless: true, chromiumSandbox: true });
+    const launchOptions = { headless: true, chromiumSandbox: true };
+    if (this.config.browserExecutablePath) launchOptions.executablePath = this.config.browserExecutablePath;
+    const browser = await chromium.launch(launchOptions);
     const context = await browser.newContext({
       viewport: { width: 1440, height: 900 },
       deviceScaleFactor: 1,

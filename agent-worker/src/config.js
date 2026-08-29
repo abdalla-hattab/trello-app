@@ -130,6 +130,10 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
   if (!['none', 'low', 'medium', 'high', 'xhigh', 'max'].includes(reasoningEffort)) {
     throw new AppError('OPENAI_REASONING_EFFORT is invalid.', { code: 'CONFIG_INVALID' });
   }
+  const browserExecutablePath = String(env.BROWSER_EXECUTABLE_PATH || '').trim();
+  if (browserExecutablePath && (!path.isAbsolute(browserExecutablePath) || browserExecutablePath.includes('\0'))) {
+    throw new AppError('BROWSER_EXECUTABLE_PATH must be an absolute path.', { code: 'CONFIG_INVALID' });
+  }
   const embeddingDimensions = integer(env.OPENAI_EMBEDDING_DIMENSIONS, 1536, { min: 256, max: 4096 });
   if (database && embeddingDimensions !== 1536) {
     throw new AppError('The current PostgreSQL schema requires OPENAI_EMBEDDING_DIMENSIONS=1536.', { code: 'CONFIG_INVALID' });
@@ -159,6 +163,7 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     codexModel,
     codexWorkdir,
     codexTimeoutMs: integer(env.CODEX_TIMEOUT_MS, 900_000, { min: 30_000, max: 1_800_000 }),
+    browserExecutablePath,
     browserTimeoutMs: integer(env.BROWSER_TIMEOUT_MS, 30_000, { min: 5_000, max: 120_000 }),
     maxAuditPages: integer(env.MAX_AUDIT_PAGES, 4, { min: 1, max: 12 }),
     maxNetworkHosts: integer(env.MAX_NETWORK_HOSTS, 40, { min: 1, max: 200 }),

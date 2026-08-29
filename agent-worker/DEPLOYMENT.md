@@ -60,7 +60,10 @@ approved.
 ## Release sequence
 
 1. Build one immutable release from a reviewed commit and run `npm ci`.
-2. Install the matching Chromium runtime with `npx playwright install chromium`.
+2. Set `BROWSER_EXECUTABLE_PATH` to an installed Google Chrome/Chromium binary,
+   or install the matching runtime with `npx playwright install chromium`. Use
+   installed Google Chrome on macOS 13, where current Playwright releases no
+   longer distribute a compatible bundled Chromium.
 3. Run `npm test` and `npm run check`.
 4. Back up PostgreSQL, then run `npm run migrate`. Migration files are applied in
    order, checksummed, and protected by a PostgreSQL advisory lock.

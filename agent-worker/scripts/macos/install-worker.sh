@@ -60,8 +60,25 @@ chmod 700 "$APP_ROOT" "$LOG_DIR"
 tar -C "$SOURCE_DIR" --exclude='./node_modules' --exclude='./.env' --exclude='./data' -cf - . | tar -C "$APP_DIR" -xf -
 chmod 700 "$APP_DIR/scripts/macos/"*.sh
 cd "$APP_DIR"
-"$NPM_COMMAND" ci --omit=dev
-"$NODE_COMMAND" node_modules/playwright/cli.js install chromium
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 "$NPM_COMMAND" ci --omit=dev
+
+BROWSER_EXECUTABLE_PATH="${BROWSER_EXECUTABLE_PATH:-}"
+if [[ -z "$BROWSER_EXECUTABLE_PATH" ]]; then
+  for candidate in \
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    "$HOME/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; do
+    if [[ -x "$candidate" ]]; then BROWSER_EXECUTABLE_PATH="$candidate"; break; fi
+  done
+fi
+if [[ -z "$BROWSER_EXECUTABLE_PATH" ]]; then
+  MACOS_MAJOR="$(/usr/bin/sw_vers -productVersion | /usr/bin/cut -d. -f1)"
+  if [[ "$MACOS_MAJOR" -lt 14 ]]; then
+    fail "Google Chrome is required on macOS 13 because Playwright no longer provides a compatible bundled Chromium. Install Chrome, then retry."
+  fi
+  "$NODE_COMMAND" node_modules/playwright/cli.js install chromium
+elif [[ ! -x "$BROWSER_EXECUTABLE_PATH" ]]; then
+  fail "BROWSER_EXECUTABLE_PATH is not executable: $BROWSER_EXECUTABLE_PATH"
+fi
 
 CA_FILE="$APP_ROOT/aws-rds-global-bundle.pem"
 /usr/bin/curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
@@ -95,6 +112,7 @@ write_setting CODEX_COMMAND "$CODEX_COMMAND"
 write_setting CODEX_MODEL gpt-5.6-sol
 write_setting CODEX_TIMEOUT_MS 1200000
 write_setting CODEX_WORKDIR "$APP_DIR"
+write_setting BROWSER_EXECUTABLE_PATH "$BROWSER_EXECUTABLE_PATH"
 write_setting DB_HOST "$DB_HOST"
 write_setting DB_PORT "$DB_PORT"
 write_setting DB_NAME "$DB_NAME"
