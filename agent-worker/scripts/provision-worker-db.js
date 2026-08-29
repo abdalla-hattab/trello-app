@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import { Client } from 'pg';
 
 const required = name => {
@@ -17,7 +16,9 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('DB_POR
 if (!/^[a-z][a-z0-9_]{2,62}$/.test(workerRole)) throw new Error('WORKER_DB_ROLE is invalid.');
 if (!/^[a-z0-9]{8,40}$/.test(projectRef)) throw new Error('SUPABASE_PROJECT_REF is invalid.');
 
-const input = await fs.readFile(0, 'utf8');
+process.stdin.setEncoding('utf8');
+let input = '';
+for await (const chunk of process.stdin) input += chunk;
 const separator = input.indexOf('\n');
 if (separator < 1) throw new Error('Expected the owner and worker database passwords on standard input.');
 const ownerPassword = input.slice(0, separator).replace(/\r$/, '');

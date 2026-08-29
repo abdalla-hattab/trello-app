@@ -103,6 +103,9 @@ The Supabase shared pooler presents Supabase's own certificate chain, not the
 AWS RDS chain. The installer pins the public Supabase Root 2021 CA and keeps
 certificate verification enabled.
 
+The restricted-role provisioner reads the two generated password values from
+the standard-input stream so it remains compatible with Node.js 24.
+
 Verification already completed on the original Mac:
 
 - focused tests: 16/16 passed;
