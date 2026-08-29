@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { loadConfig } from '../src/config.js';
 
 const base = {
@@ -65,6 +66,16 @@ test('worker accepts only an absolute external browser executable path', () => {
     ...base,
     BROWSER_EXECUTABLE_PATH: 'Google Chrome'
   }, { requireAuth: false }), /absolute path/);
+});
+
+test('macOS worker startup accepts every setting written by the installer', () => {
+  const installer = readFileSync(new URL('../scripts/macos/install-worker.sh', import.meta.url), 'utf8');
+  const runner = readFileSync(new URL('../scripts/macos/run-worker.sh', import.meta.url), 'utf8');
+  const writtenSettings = [...installer.matchAll(/^write_setting ([A-Z0-9_]+) /gm)].map(match => match[1]);
+  const allowlist = runner.match(/^\s+([A-Z0-9_|]+)\)$/m)?.[1]?.split('|') || [];
+
+  assert.ok(writtenSettings.length > 0, 'installer settings were not detected');
+  assert.deepEqual(writtenSettings.filter(setting => !allowlist.includes(setting)), []);
 });
 
 test('PostgreSQL accepts separate connection settings without URL-encoding the password', () => {
