@@ -27,9 +27,36 @@ One codebase supports two processes:
 1. `npm start` runs the authenticated HTTP API.
 2. `npm run worker` claims durable jobs and performs browser/AI work.
 
-They may run together on one computer for development. In production they can be
-deployed independently and scaled horizontally against PostgreSQL. A database
-lease prevents two workers from completing the same job.
+They may run together on one computer for development. The API can remain on a
+small hosted service while the browser worker runs on an always-on Mac. A
+database lease prevents two workers from completing the same job.
+
+## $0 API-cost Mac worker
+
+The worker supports two reasoning providers:
+
+- `AI_PROVIDER=openai` uses the OpenAI API and requires `OPENAI_API_KEY`.
+- `AI_PROVIDER=codex` runs the local signed-in Codex CLI. The macOS installer
+  pins `gpt-5.6-sol`, uses ephemeral read-only executions, and never asks for an
+  OpenAI API key.
+
+The Codex route uses the ChatGPT/Codex plan allowance of the user signed in on
+that Mac. It does not create per-token API charges, but it is not unlimited and
+may pause when plan limits are reached. Start with a measured pilot before
+increasing daily volume.
+
+On the always-on Mac, clone this public repository, check out the production
+branch, then run from `agent-worker`:
+
+```bash
+npm run install:macos
+```
+
+The installer verifies Node.js 24+, the signed-in Codex app, and PostgreSQL TLS;
+installs Chromium; applies migrations; creates a restricted database role;
+stores its generated password in macOS Keychain; and registers a LaunchAgent
+that restarts after failures and user login. The Supabase owner password is read
+once with hidden input and is never written to disk.
 
 ## Data stores
 
@@ -45,7 +72,8 @@ lease prevents two workers from completing the same job.
   OIDC/JWT access tokens against an allowlisted issuer, audience, algorithm, and
   JWKS endpoint. Static bearer tokens are a development bridge and production
   rejects them unless the operator explicitly accepts that risk.
-- OpenAI keys are read only from server environment variables.
+- OpenAI keys, when the API provider is selected, are read only from server
+  environment variables. The Codex provider requires no OpenAI API key.
 - Website URLs are resolved and rejected when they target private, loopback,
   link-local, or otherwise unsafe addresses.
 - Browser network hosts and retained screenshot bytes are capped. Production

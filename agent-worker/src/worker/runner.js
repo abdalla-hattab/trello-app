@@ -33,17 +33,39 @@ export class WorkerRunner {
   }
 
   async start() {
-    log('info', 'worker.started', { workerId: this.config.workerId, concurrency: this.config.workerConcurrency });
-    while (!this.stopping) {
-      while (!this.stopping && this.tasks.size < this.config.workerConcurrency) {
-        const job = await this.store.claimJob({ workerId: this.config.workerId, leaseMs: this.config.leaseMs });
-        if (!job) break;
-        const task = this.process(job).finally(() => this.tasks.delete(task));
-        this.tasks.add(task);
+    await this.store.workerStarted?.({
+      workerId: this.config.workerId,
+      provider: this.config.aiProvider,
+      model: this.auditService.ai.model
+    });
+    const presence = setInterval(async () => {
+      try { await this.store.workerHeartbeat?.(this.config.workerId); }
+      catch (error) { log('error', 'worker.presence_heartbeat_failed', { workerId: this.config.workerId, error }); }
+    }, this.config.workerHeartbeatMs);
+    presence.unref();
+    log('info', 'worker.started', {
+      workerId: this.config.workerId,
+      concurrency: this.config.workerConcurrency,
+      provider: this.config.aiProvider,
+      model: this.auditService.ai.model
+    });
+    try {
+      while (!this.stopping) {
+        while (!this.stopping && this.tasks.size < this.config.workerConcurrency) {
+          const job = await this.store.claimJob({ workerId: this.config.workerId, leaseMs: this.config.leaseMs });
+          if (!job) break;
+          const task = this.process(job).finally(() => this.tasks.delete(task));
+          this.tasks.add(task);
+        }
+        if (!this.stopping) await sleep(this.config.pollMs);
       }
-      if (!this.stopping) await sleep(this.config.pollMs);
+      await Promise.allSettled([...this.tasks]);
+    } finally {
+      clearInterval(presence);
+      await this.store.workerStopped?.(this.config.workerId).catch(error => {
+        log('error', 'worker.presence_stop_failed', { workerId: this.config.workerId, error });
+      });
     }
-    await Promise.allSettled([...this.tasks]);
     log('info', 'worker.stopped', { workerId: this.config.workerId });
   }
 

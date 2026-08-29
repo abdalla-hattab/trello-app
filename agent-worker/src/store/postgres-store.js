@@ -25,6 +25,21 @@ export class PostgresStore {
     return result.rows[0].ok === 1;
   }
 
+  async workerStarted({ workerId, provider, model }) {
+    await this.pool.query(`INSERT INTO agent_workers(worker_id,provider,model,status,started_at,last_seen_at)
+      VALUES($1,$2,$3,'online',now(),now())
+      ON CONFLICT(worker_id) DO UPDATE SET provider=excluded.provider,model=excluded.model,status='online',
+        started_at=now(),last_seen_at=now(),updated_at=now()`, [workerId, provider, model]);
+  }
+
+  async workerHeartbeat(workerId) {
+    await this.pool.query("UPDATE agent_workers SET status='online',last_seen_at=now(),updated_at=now() WHERE worker_id=$1", [workerId]);
+  }
+
+  async workerStopped(workerId) {
+    await this.pool.query("UPDATE agent_workers SET status='offline',last_seen_at=now(),updated_at=now() WHERE worker_id=$1", [workerId]);
+  }
+
   rowToJob(row) {
     if (!row) return null;
     return {

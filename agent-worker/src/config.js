@@ -97,6 +97,7 @@ function postgresConfig(env) {
 
 export function loadConfig(env = process.env, { requireAI = false, requireAuth = true } = {}) {
   const nodeEnv = env.NODE_ENV || 'development';
+  const aiProvider = String(env.AI_PROVIDER || 'openai').trim().toLowerCase();
   const authMode = String(env.AUTH_MODE || 'token').trim().toLowerCase();
   const database = postgresConfig(env);
   const allowedOrigins = new Set(String(env.ALLOWED_ORIGINS || '').split(',').map(item => item.trim()).filter(Boolean));
@@ -105,7 +106,7 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
   if (nodeEnv === 'production' && !database) {
     throw new AppError('PostgreSQL configuration is required in production; SQLite is not accepted as the production system of record.', { code: 'CONFIG_INVALID' });
   }
-  if (nodeEnv === 'production' && (allowedOrigins.size === 0 || allowedOrigins.has('*'))) {
+  if (requireAuth && nodeEnv === 'production' && (allowedOrigins.size === 0 || allowedOrigins.has('*'))) {
     throw new AppError('Production requires an explicit ALLOWED_ORIGINS list.', { code: 'CONFIG_INVALID' });
   }
   if (requireAuth && authMode === 'token' && apiTokens.size === 0) throw new AppError('At least one AGENT_API_TOKENS entry is required in token mode.', { code: 'CONFIG_INVALID' });
@@ -113,7 +114,18 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     throw new AppError('Production requires OIDC authentication. Set AUTH_MODE=oidc, or explicitly accept static-token risk with ALLOW_STATIC_TOKEN_AUTH=true.', { code: 'CONFIG_INVALID' });
   }
   const oidc = requireAuth && authMode === 'oidc' ? oidcConfig(env) : null;
-  if (requireAI && !env.OPENAI_API_KEY) throw new AppError('OPENAI_API_KEY is required by the worker.', { code: 'CONFIG_INVALID' });
+  if (!['openai', 'codex'].includes(aiProvider)) {
+    throw new AppError('AI_PROVIDER must be openai or codex.', { code: 'CONFIG_INVALID' });
+  }
+  if (requireAI && aiProvider === 'openai' && !env.OPENAI_API_KEY) {
+    throw new AppError('OPENAI_API_KEY is required when AI_PROVIDER=openai.', { code: 'CONFIG_INVALID' });
+  }
+  const codexCommand = String(env.CODEX_COMMAND || 'codex').trim();
+  const codexModel = String(env.CODEX_MODEL || 'gpt-5.6-sol').trim();
+  const codexWorkdir = path.resolve(env.CODEX_WORKDIR || process.cwd());
+  if (!codexCommand || codexCommand.includes('\0') || !codexModel || codexModel.includes('\0')) {
+    throw new AppError('CODEX_COMMAND or CODEX_MODEL is invalid.', { code: 'CONFIG_INVALID' });
+  }
   const reasoningEffort = String(env.OPENAI_REASONING_EFFORT || 'medium').trim().toLowerCase();
   if (!['none', 'low', 'medium', 'high', 'xhigh', 'max'].includes(reasoningEffort)) {
     throw new AppError('OPENAI_REASONING_EFFORT is invalid.', { code: 'CONFIG_INVALID' });
@@ -135,6 +147,7 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     sqlitePath: path.resolve(env.SQLITE_PATH || './data/agent-memory.sqlite'),
     allowedOrigins,
     apiTokens,
+    aiProvider,
     openAIKey: env.OPENAI_API_KEY || '',
     openAIModel: env.OPENAI_MODEL || 'gpt-5.6',
     embeddingModel: env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
@@ -142,12 +155,17 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     reasoningEffort,
     maxOutputTokens: integer(env.OPENAI_MAX_OUTPUT_TOKENS, 24_000, { min: 2_000, max: 64_000 }),
     openAITimeoutMs: integer(env.OPENAI_TIMEOUT_MS, 90_000, { min: 5_000, max: 300_000 }),
+    codexCommand,
+    codexModel,
+    codexWorkdir,
+    codexTimeoutMs: integer(env.CODEX_TIMEOUT_MS, 900_000, { min: 30_000, max: 1_800_000 }),
     browserTimeoutMs: integer(env.BROWSER_TIMEOUT_MS, 30_000, { min: 5_000, max: 120_000 }),
     maxAuditPages: integer(env.MAX_AUDIT_PAGES, 4, { min: 1, max: 12 }),
     maxNetworkHosts: integer(env.MAX_NETWORK_HOSTS, 40, { min: 1, max: 200 }),
     maxScreenshotBytes: integer(env.MAX_SCREENSHOT_BYTES, 3_500_000, { min: 100_000, max: 10_000_000 }),
     workerId: env.WORKER_ID || `worker-${process.pid}`,
     workerConcurrency: integer(env.WORKER_CONCURRENCY, 2, { min: 1, max: 12 }),
+    workerHeartbeatMs: integer(env.WORKER_HEARTBEAT_MS, 30_000, { min: 5_000, max: 300_000 }),
     pollMs: integer(env.JOB_POLL_MS, 1_000, { min: 200, max: 30_000 }),
     leaseMs: integer(env.JOB_LEASE_MS, 120_000, { min: 30_000, max: 900_000 }),
     maxAttempts: integer(env.JOB_MAX_ATTEMPTS, 3, { min: 1, max: 10 })

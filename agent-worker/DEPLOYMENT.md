@@ -8,7 +8,8 @@ Run the API and worker as separate processes from the same release artifact:
 - Worker: `npm run worker`
 - PostgreSQL with the `pgvector` extension and automated backups
 - an OIDC identity provider that issues short-lived access tokens
-- an OpenAI API project with budget and usage alerts
+- either an OpenAI API project with budget alerts or a dedicated always-on Mac
+  signed in to Codex with sufficient plan allowance
 
 The API may scale horizontally. Workers may also scale horizontally; database
 leases prevent two workers from completing the same job. SQLite is for local
@@ -30,6 +31,32 @@ services need the private PostgreSQL URL. Render supports background workers,
 Docker builds, and PostgreSQL `pgvector`; keep the database and worker on private
 networking.
 
+## Low-cost worker: always-on macOS
+
+Keep the authenticated API hosted initially, but move browser and model work to
+the always-on Mac:
+
+1. Install Node.js 24+ and sign in to the Codex desktop app with the intended
+   ChatGPT account.
+2. Clone the public repository and check out the reviewed production branch.
+3. From `agent-worker`, run `npm run install:macos` and enter the Supabase owner
+   password when prompted. It is used once to migrate and provision a restricted
+   worker role.
+4. Run `~/Library/Application Support/Masarat Website Agent/app/scripts/macos/status-worker.sh`
+   and confirm the LaunchAgent is running without database or Codex errors.
+5. Queue one canary check, review its evidence, then pilot 10 sites per day for
+   three days before raising volume.
+
+The installer stores the generated worker password in macOS Keychain and only
+non-secret settings in an owner-readable file. The LaunchAgent starts after that
+macOS user logs in, restarts after failures, polls Supabase outbound-only, and
+uses `gpt-5.6-sol` through `codex exec`. It does not expose a port on the Mac.
+
+Codex plan allowance is finite. If the CLI reports a usage limit, queued jobs
+remain durable in PostgreSQL and resume after the allowance resets. Do not add
+an API key as an automatic fallback unless API spend has been explicitly
+approved.
+
 ## Release sequence
 
 1. Build one immutable release from a reviewed commit and run `npm ci`.
@@ -49,8 +76,10 @@ networking.
 Store all secrets in the hosting platform's encrypted environment store. Never
 put them in `agent-executor.js`, Git, screenshots, logs, or support messages.
 
-- `OPENAI_API_KEY` is available only to the worker (and optionally the API if
-  lesson embeddings are enabled there).
+- `OPENAI_API_KEY` is available only to an OpenAI-backed worker (and optionally
+  the API if lesson embeddings are enabled there). A Codex-backed worker has no
+  API key and performs lexical/recent verified-memory retrieval without paid
+  embeddings.
 - `DATABASE_URL` is available to the API, migration job, and worker. Alternatively,
   set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` separately so
   passwords containing URI-reserved characters never need manual encoding.

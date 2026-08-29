@@ -34,6 +34,27 @@ test('migration configuration does not require API authentication secrets', () =
   assert.equal(config.apiTokens.size, 0);
 });
 
+test('Codex worker configuration does not require an OpenAI API key or browser auth settings', () => {
+  const config = loadConfig({
+    DATABASE_URL: base.DATABASE_URL,
+    NODE_ENV: 'production',
+    AI_PROVIDER: 'codex',
+    CODEX_COMMAND: '/Applications/ChatGPT.app/Contents/Resources/codex',
+    CODEX_MODEL: 'gpt-5.6-sol'
+  }, { requireAI: true, requireAuth: false });
+  assert.equal(config.aiProvider, 'codex');
+  assert.equal(config.codexModel, 'gpt-5.6-sol');
+  assert.equal(config.allowedOrigins.size, 0);
+  assert.equal(config.openAIKey, '');
+});
+
+test('OpenAI worker configuration still requires its API key', () => {
+  assert.throws(() => loadConfig({
+    DATABASE_URL: base.DATABASE_URL,
+    AI_PROVIDER: 'openai'
+  }, { requireAI: true, requireAuth: false }), /OPENAI_API_KEY/);
+});
+
 test('PostgreSQL accepts separate connection settings without URL-encoding the password', () => {
   const config = loadConfig({
     ALLOWED_ORIGINS: 'https://app.example',

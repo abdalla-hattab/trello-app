@@ -58,7 +58,30 @@ export class SqliteStore {
         id INTEGER PRIMARY KEY AUTOINCREMENT, organization_id TEXT NOT NULL,
         job_id TEXT, event_type TEXT NOT NULL, data TEXT NOT NULL, created_at TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS workers (
+        worker_id TEXT PRIMARY KEY, provider TEXT NOT NULL, model TEXT NOT NULL,
+        status TEXT NOT NULL, started_at TEXT NOT NULL, last_seen_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
     `);
+  }
+
+  async workerStarted({ workerId, provider, model }) {
+    const now = nowIso();
+    this.db.prepare(`INSERT INTO workers(worker_id,provider,model,status,started_at,last_seen_at,updated_at)
+      VALUES(?,?,?,'online',?,?,?) ON CONFLICT(worker_id) DO UPDATE SET provider=excluded.provider,
+      model=excluded.model,status='online',started_at=excluded.started_at,last_seen_at=excluded.last_seen_at,
+      updated_at=excluded.updated_at`).run(workerId, provider, model, now, now, now);
+  }
+
+  async workerHeartbeat(workerId) {
+    const now = nowIso();
+    this.db.prepare("UPDATE workers SET status='online',last_seen_at=?,updated_at=? WHERE worker_id=?").run(now, now, workerId);
+  }
+
+  async workerStopped(workerId) {
+    const now = nowIso();
+    this.db.prepare("UPDATE workers SET status='offline',last_seen_at=?,updated_at=? WHERE worker_id=?").run(now, now, workerId);
   }
 
   async health() {
