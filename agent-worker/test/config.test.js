@@ -30,5 +30,36 @@ test('production accepts a fully constrained OIDC verifier without static tokens
 test('migration configuration does not require API authentication secrets', () => {
   const config = loadConfig({ ...base, NODE_ENV: 'production' }, { requireAuth: false });
   assert.equal(config.databaseUrl, base.DATABASE_URL);
+  assert.deepEqual(config.database, { connectionString: base.DATABASE_URL });
   assert.equal(config.apiTokens.size, 0);
+});
+
+test('PostgreSQL accepts separate connection settings without URL-encoding the password', () => {
+  const config = loadConfig({
+    ALLOWED_ORIGINS: 'https://app.example',
+    DB_HOST: 'pooler.example.com',
+    DB_PORT: '5432',
+    DB_NAME: 'postgres',
+    DB_USER: 'postgres.company',
+    DB_PASSWORD: 'raw password %:/ remains unchanged'
+  }, { requireAuth: false });
+  assert.deepEqual(config.database, {
+    host: 'pooler.example.com',
+    port: 5432,
+    database: 'postgres',
+    user: 'postgres.company',
+    password: 'raw password %:/ remains unchanged'
+  });
+  assert.equal(config.databaseUrl, '');
+});
+
+test('PostgreSQL rejects incomplete or ambiguous connection settings', () => {
+  assert.throws(() => loadConfig({
+    ...base,
+    DB_PASSWORD: 'also-set'
+  }, { requireAuth: false }), /either DATABASE_URL or the separate DB_\*/);
+  assert.throws(() => loadConfig({
+    ALLOWED_ORIGINS: 'https://app.example',
+    DB_HOST: 'pooler.example.com'
+  }, { requireAuth: false }), /Incomplete PostgreSQL configuration/);
 });

@@ -9,7 +9,7 @@ const store = await createStore(config);
 const embeddings = config.openAIKey ? new OpenAIClient(config) : null;
 const server = createApiServer({ config, store, embeddings });
 
-server.listen(config.port, config.host, () => log('info', 'api.started', { host: config.host, port: config.port, database: config.databaseUrl ? 'postgres' : 'sqlite' }));
+server.listen(config.port, config.host, () => log('info', 'api.started', { host: config.host, port: config.port, database: config.database ? 'postgres' : 'sqlite' }));
 
 const shutdown = async signal => {
   log('info', 'api.stopping', { signal });

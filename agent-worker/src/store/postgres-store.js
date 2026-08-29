@@ -10,9 +10,9 @@ const parseVector = value => typeof value === 'string' && value.startsWith('[')
 export class PostgresStore {
   constructor(pool) { this.pool = pool; }
 
-  static async connect({ connectionString, ssl }) {
+  static async connect({ connection, ssl }) {
     const { Pool } = await import('pg');
-    const pool = new Pool({ connectionString, max: 20, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000, ssl: ssl ? { rejectUnauthorized: true } : false });
+    const pool = new Pool({ ...connection, max: 20, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000, ssl: ssl ? { rejectUnauthorized: true } : false });
     const store = new PostgresStore(pool);
     await store.health();
     return store;

@@ -5,9 +5,9 @@ import { createHash } from 'node:crypto';
 import { loadConfig } from './config.js';
 
 const config = loadConfig(process.env, { requireAuth: false });
-if (!config.databaseUrl) throw new Error('DATABASE_URL is required for PostgreSQL migrations.');
+if (!config.database) throw new Error('PostgreSQL configuration is required for migrations.');
 const { Client } = await import('pg');
-const client = new Client({ connectionString: config.databaseUrl, ssl: config.databaseSsl ? { rejectUnauthorized: true } : false });
+const client = new Client({ ...config.database, ssl: config.databaseSsl ? { rejectUnauthorized: true } : false });
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const directory = path.join(root, 'migrations');
 const filenames = (await fs.readdir(directory)).filter(name => /^\d+_[a-z0-9_-]+\.sql$/i.test(name)).sort();

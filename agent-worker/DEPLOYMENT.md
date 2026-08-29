@@ -51,7 +51,9 @@ put them in `agent-executor.js`, Git, screenshots, logs, or support messages.
 
 - `OPENAI_API_KEY` is available only to the worker (and optionally the API if
   lesson embeddings are enabled there).
-- `DATABASE_URL` is available to the API, migration job, and worker.
+- `DATABASE_URL` is available to the API, migration job, and worker. Alternatively,
+  set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` separately so
+  passwords containing URI-reserved characters never need manual encoding.
 - Use `AUTH_MODE=oidc` in production. Configure the exact issuer, audience, JWKS
   URL, accepted asymmetric algorithm, and organization mapping.
 - Set `ALLOWED_ORIGINS=https://managing.masaratkobra.com`.

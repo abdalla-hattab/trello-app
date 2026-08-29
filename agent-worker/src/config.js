@@ -64,15 +64,46 @@ function oidcConfig(env) {
   });
 }
 
+function postgresConfig(env) {
+  const connectionString = String(env.DATABASE_URL || '').trim();
+  const componentNames = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+  const hasComponents = componentNames.some(name => env[name] !== undefined && env[name] !== '');
+  if (connectionString && hasComponents) {
+    throw new AppError('Use either DATABASE_URL or the separate DB_* settings, not both.', { code: 'CONFIG_INVALID' });
+  }
+  if (connectionString) return Object.freeze({ connectionString });
+  if (!hasComponents) return null;
+
+  const missing = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']
+    .filter(name => env[name] === undefined || env[name] === '');
+  if (missing.length) {
+    throw new AppError(`Incomplete PostgreSQL configuration; missing ${missing.join(', ')}.`, { code: 'CONFIG_INVALID' });
+  }
+
+  const host = String(env.DB_HOST).trim();
+  const database = String(env.DB_NAME).trim();
+  const user = String(env.DB_USER).trim();
+  if (!host || /[\s/:]/.test(host) || !database || !user) {
+    throw new AppError('DB_HOST, DB_NAME, or DB_USER is invalid.', { code: 'CONFIG_INVALID' });
+  }
+  return Object.freeze({
+    host,
+    port: integer(env.DB_PORT, 5432, { max: 65535 }),
+    database,
+    user,
+    password: String(env.DB_PASSWORD)
+  });
+}
+
 export function loadConfig(env = process.env, { requireAI = false, requireAuth = true } = {}) {
   const nodeEnv = env.NODE_ENV || 'development';
   const authMode = String(env.AUTH_MODE || 'token').trim().toLowerCase();
-  const databaseUrl = env.DATABASE_URL?.trim() || '';
+  const database = postgresConfig(env);
   const allowedOrigins = new Set(String(env.ALLOWED_ORIGINS || '').split(',').map(item => item.trim()).filter(Boolean));
   const apiTokens = requireAuth ? tokens(env.AGENT_API_TOKENS) : new Map();
   if (requireAuth && !['token', 'oidc'].includes(authMode)) throw new AppError('AUTH_MODE must be token or oidc.', { code: 'CONFIG_INVALID' });
-  if (nodeEnv === 'production' && !databaseUrl) {
-    throw new AppError('DATABASE_URL is required in production; SQLite is not accepted as the production system of record.', { code: 'CONFIG_INVALID' });
+  if (nodeEnv === 'production' && !database) {
+    throw new AppError('PostgreSQL configuration is required in production; SQLite is not accepted as the production system of record.', { code: 'CONFIG_INVALID' });
   }
   if (nodeEnv === 'production' && (allowedOrigins.size === 0 || allowedOrigins.has('*'))) {
     throw new AppError('Production requires an explicit ALLOWED_ORIGINS list.', { code: 'CONFIG_INVALID' });
@@ -88,7 +119,7 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     throw new AppError('OPENAI_REASONING_EFFORT is invalid.', { code: 'CONFIG_INVALID' });
   }
   const embeddingDimensions = integer(env.OPENAI_EMBEDDING_DIMENSIONS, 1536, { min: 256, max: 4096 });
-  if (databaseUrl && embeddingDimensions !== 1536) {
+  if (database && embeddingDimensions !== 1536) {
     throw new AppError('The current PostgreSQL schema requires OPENAI_EMBEDDING_DIMENSIONS=1536.', { code: 'CONFIG_INVALID' });
   }
 
@@ -98,7 +129,8 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     oidc,
     host: env.HOST || '127.0.0.1',
     port: integer(env.PORT, 8787, { max: 65535 }),
-    databaseUrl,
+    database,
+    databaseUrl: database?.connectionString || '',
     databaseSsl: String(env.DATABASE_SSL ?? 'true').toLowerCase() === 'true',
     sqlitePath: path.resolve(env.SQLITE_PATH || './data/agent-memory.sqlite'),
     allowedOrigins,
