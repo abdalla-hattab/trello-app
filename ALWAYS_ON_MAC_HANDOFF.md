@@ -91,13 +91,17 @@ The `agent-worker` package now includes:
 - a restricted Supabase worker database role;
 - password-safe separate database settings so special characters do not need
   to be embedded in a connection URL;
-- AWS RDS/Supabase PostgreSQL CA handling;
+- pinned Supabase Root 2021 CA handling for verified pooler TLS;
 - tests for the Codex client and configuration.
 
 Compatibility update: on macOS Ventura 13 the Playwright installer no longer
 provides a compatible bundled Chromium. The macOS installer now detects and
 uses the installed Google Chrome executable instead. Do not downgrade TLS or
 Playwright to work around this limitation.
+
+The Supabase shared pooler presents Supabase's own certificate chain, not the
+AWS RDS chain. The installer pins the public Supabase Root 2021 CA and keeps
+certificate verification enabled.
 
 Verification already completed on the original Mac:
 

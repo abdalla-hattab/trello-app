@@ -64,14 +64,17 @@ approved.
    or install the matching runtime with `npx playwright install chromium`. Use
    installed Google Chrome on macOS 13, where current Playwright releases no
    longer distribute a compatible bundled Chromium.
-3. Run `npm test` and `npm run check`.
-4. Back up PostgreSQL, then run `npm run migrate`. Migration files are applied in
+3. Trust the checked-in public Supabase Root 2021 CA when connecting through the
+   shared pooler. Do not substitute the AWS RDS bundle; it cannot verify the
+   Supabase pooler's certificate chain.
+4. Run `npm test` and `npm run check`.
+5. Back up PostgreSQL, then run `npm run migrate`. Migration files are applied in
    order, checksummed, and protected by a PostgreSQL advisory lock.
-5. Deploy the API with no worker traffic and verify `/health/live` and
+6. Deploy the API with no worker traffic and verify `/health/live` and
    `/health/ready`.
-6. Deploy the worker. Run one internal canary store and review its evidence,
+7. Deploy the worker. Run one internal canary store and review its evidence,
    scores, and memory correction flow before opening normal traffic.
-7. Roll back the application image if the canary fails. Do not reverse a schema
+8. Roll back the application image if the canary fails. Do not reverse a schema
    migration by editing an applied SQL file; add a new forward migration.
 
 ## Secrets and identity

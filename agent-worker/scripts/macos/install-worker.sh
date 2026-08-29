@@ -80,9 +80,10 @@ elif [[ ! -x "$BROWSER_EXECUTABLE_PATH" ]]; then
   fail "BROWSER_EXECUTABLE_PATH is not executable: $BROWSER_EXECUTABLE_PATH"
 fi
 
-CA_FILE="$APP_ROOT/aws-rds-global-bundle.pem"
-/usr/bin/curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
-  "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" -o "$CA_FILE"
+CA_SOURCE="$APP_DIR/certs/supabase-root-2021-ca.pem"
+CA_FILE="$APP_ROOT/supabase-root-2021-ca.pem"
+[[ -f "$CA_SOURCE" ]] || fail "The bundled Supabase root CA certificate is missing."
+/bin/cp "$CA_SOURCE" "$CA_FILE"
 chmod 600 "$CA_FILE"
 
 printf 'Applying database migrations...\n'
