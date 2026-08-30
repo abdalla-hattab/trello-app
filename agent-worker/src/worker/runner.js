@@ -23,7 +23,7 @@ export class WorkerRunner {
       log('info', 'worker.job_started', { jobId: job.id, attempt: job.attempts, storeId: job.storeId });
       const result = await this.auditService.execute(job);
       await this.store.completeJob(job, result);
-      log('info', 'worker.job_completed', { jobId: job.id, overallScore: result.overallScore });
+      log('info', 'worker.job_completed', { jobId: job.id, kind: result.kind || 'audit', overallScore: result.overallScore });
     } catch (raw) {
       const error = raw instanceof AppError ? raw : new AppError(raw.message || 'Check failed.', { code: 'CHECK_FAILED', retryable: true });
       const retryAt = new Date(Date.now() + backoffMs(job.attempts)).toISOString();

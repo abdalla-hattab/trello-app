@@ -1,7 +1,11 @@
 import http from 'node:http';
 import { createAuthenticator } from '../security/auth.js';
 import { assertPublicUrl } from '../security/url-policy.js';
-import { parseCheckRequest, parseFeedbackRequest, parseLessonRequest } from '../domain/validation.js';
+import {
+  parseCheckRequest, parseDiscussionRequest, parseFeedbackRequest, parseLessonRequest,
+  parseRuleSkillRequest
+} from '../domain/validation.js';
+import { decodeRuleSkill, encodeRuleSkill } from '../domain/rule-skills.js';
 import { AppError, publicError } from '../lib/errors.js';
 import { log } from '../lib/logger.js';
 
@@ -94,6 +98,64 @@ export function createApiServer({ config, store, embeddings }) {
         const embedding = text && embeddings ? await embeddings.embed(text) : null;
         const result = await store.applyFeedback({ organizationId: identity.organizationId, jobId: feedbackMatch[1], feedback, actorId: identity.actorId, embedding });
         return send(response, 200, result, origin, config.allowedOrigins);
+      }
+
+      const discussionMatch = /^\/v1\/checks\/([a-f0-9-]+)\/discussions$/.exec(requestUrl.pathname);
+      if (request.method === 'POST' && discussionMatch) {
+        const discussion = parseDiscussionRequest(await readJson(request));
+        const source = await store.getRuleContext({
+          organizationId: identity.organizationId, jobId: discussionMatch[1], ruleId: discussion.ruleId
+        });
+        const payload = Object.freeze({
+          kind: 'discussion', requestId: discussion.requestId, storeId: source.storeId,
+          storeName: source.storeName, website: source.website, rubricHash: source.rubricHash,
+          sourceJobId: discussionMatch[1], ruleId: source.ruleId, ruleText: source.ruleText,
+          finding: {
+            score: source.score, explanation: source.explanation, recommendation: source.recommendation,
+            evidence: source.evidence, verificationStatus: source.verificationStatus
+          },
+          message: discussion.message, history: discussion.history
+        });
+        const idempotencyKey = String(request.headers['idempotency-key'] || discussion.requestId).trim();
+        if (!idempotencyKey || idempotencyKey.length > 256) throw new AppError('Idempotency-Key is invalid.', { code: 'VALIDATION_ERROR', status: 400 });
+        const queued = await store.createJob({ organizationId: identity.organizationId, payload, idempotencyKey, maxAttempts: config.maxAttempts });
+        return send(response, queued.job.status === 'completed' ? 200 : queued.created ? 202 : 200, {
+          requestId: queued.job.requestId, jobId: queued.job.id, status: queued.job.status,
+          statusUrl: `/v1/discussions/${queued.job.id}`, ...(queued.job.response || {})
+        }, origin, config.allowedOrigins);
+      }
+
+      const discussionJobMatch = /^\/v1\/discussions\/([a-f0-9-]+)$/.exec(requestUrl.pathname);
+      if (request.method === 'GET' && discussionJobMatch) {
+        const job = await store.getJob(identity.organizationId, discussionJobMatch[1]);
+        if (!job || job.payload.kind !== 'discussion') throw new AppError('Discussion job not found.', { code: 'JOB_NOT_FOUND', status: 404 });
+        return send(response, 200, job.response || {
+          requestId: job.requestId, jobId: job.id, status: job.status, attempts: job.attempts,
+          ...(job.error ? { error: job.error } : {})
+        }, origin, config.allowedOrigins);
+      }
+
+      if (request.method === 'POST' && requestUrl.pathname === '/v1/skills') {
+        const skill = parseRuleSkillRequest(await readJson(request));
+        const existing = await store.listSkills({
+          organizationId: identity.organizationId, storeId: skill.storeId, ruleId: skill.ruleId, limit: 1
+        });
+        const content = encodeRuleSkill(skill);
+        const added = await store.addLesson({
+          organizationId: identity.organizationId, storeId: skill.storeId, ruleId: skill.ruleId,
+          content, source: 'rule_skill', embedding: null, actorId: identity.actorId,
+          supersedesId: existing[0]?.id || null
+        });
+        const result = decodeRuleSkill({ ...added, source: 'rule_skill', updatedAt: added.createdAt });
+        return send(response, existing.length ? 200 : 201, result, origin, config.allowedOrigins);
+      }
+
+      if (request.method === 'GET' && requestUrl.pathname === '/v1/skills') {
+        const storeId = String(requestUrl.searchParams.get('storeId') || '').trim();
+        const ruleId = requestUrl.searchParams.get('ruleId')?.trim() || null;
+        if (!storeId || storeId.length > 256 || (ruleId && ruleId.length > 128)) throw new AppError('storeId or ruleId is invalid.', { code: 'VALIDATION_ERROR', status: 400 });
+        const skills = await store.listSkills({ organizationId: identity.organizationId, storeId, ruleId });
+        return send(response, 200, { skills }, origin, config.allowedOrigins);
       }
 
       if (request.method === 'POST' && requestUrl.pathname === '/v1/lessons') {

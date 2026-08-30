@@ -113,9 +113,18 @@ Do not commit `.env`, API keys, database passwords, or browser session data.
 - `POST /v1/checks` queues an idempotent check.
 - `GET /v1/checks/:jobId` returns status and completed results.
 - `POST /v1/checks/:jobId/feedback` confirms or corrects one finding.
+- `POST /v1/checks/:jobId/discussions` queues a bounded conversation about one completed rule result.
+- `GET /v1/discussions/:jobId` returns the AI explanation and an optional unsaved rule-skill proposal.
+- `POST /v1/skills` saves or replaces the verified skill for one store rule.
+- `GET /v1/skills?storeId=...&ruleId=...` lists verified rule skills.
 - `POST /v1/lessons` teaches an explicit company lesson.
 - `GET /v1/lessons?storeId=...` lists company and store memory.
 - `DELETE /v1/lessons/:lessonId` revokes an incorrect lesson without erasing its audit trail.
+
+The normal audit samples `MAX_AUDIT_PAGES` pages. A verified rule skill may request
+all discoverable product pages or all discoverable internal pages. Exhaustive
+coverage is bounded by `MAX_SKILL_PAGES` (250 by default), and every report tells
+the model whether the crawler reached that limit.
 - `GET /health/live` is process liveness.
 - `GET /health/ready` checks database readiness.
 

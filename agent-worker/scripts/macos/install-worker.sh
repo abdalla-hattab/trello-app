@@ -128,6 +128,7 @@ write_setting JOB_LEASE_MS 900000
 write_setting JOB_MAX_ATTEMPTS 2
 write_setting BROWSER_TIMEOUT_MS 45000
 write_setting MAX_AUDIT_PAGES 4
+write_setting MAX_SKILL_PAGES 250
 write_setting MAX_NETWORK_HOSTS 40
 write_setting MAX_SCREENSHOT_BYTES 3500000
 write_setting KEYCHAIN_ACCOUNT "$KEYCHAIN_ACCOUNT"

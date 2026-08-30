@@ -5,6 +5,7 @@ import { AppError } from '../lib/errors.js';
 import { newId } from '../lib/ids.js';
 import { nowIso } from '../lib/time.js';
 import { rankLessons } from '../memory/rank.js';
+import { decodeRuleSkill } from '../domain/rule-skills.js';
 
 const parse = value => value === null || value === undefined ? null : JSON.parse(value);
 
@@ -161,6 +162,17 @@ export class SqliteStore {
   async completeJob(job, result) {
     return this.transaction(() => {
       const now = nowIso();
+      if (job.payload.kind === 'discussion' || result.kind === 'discussion') {
+        const response = {
+          kind: 'discussion', requestId: job.requestId, jobId: job.id, status: 'completed',
+          reply: result.reply, proposedSkill: result.proposedSkill || null
+        };
+        const changed = this.db.prepare("UPDATE jobs SET status='completed',response=?,lease_owner=NULL,lease_expires_at=NULL,updated_at=?,completed_at=? WHERE id=? AND status='running' AND lease_owner=?")
+          .run(JSON.stringify(response), now, now, job.id, job.leaseOwner).changes;
+        if (!changed) throw new AppError('The job lease was lost before completion.', { code: 'JOB_LEASE_LOST', retryable: true });
+        this.event(job.organizationId, job.id, 'discussion.completed', { ruleId: job.payload.ruleId });
+        return response;
+      }
       const runId = newId();
       const response = { requestId: job.requestId, jobId: job.id, runId, status: 'completed', overallScore: result.overallScore, summary: result.summary, results: result.results };
       const changed = this.db.prepare("UPDATE jobs SET status='completed',response=?,lease_owner=NULL,lease_expires_at=NULL,updated_at=?,completed_at=? WHERE id=? AND status='running' AND lease_owner=?")
@@ -222,6 +234,31 @@ export class SqliteStore {
       content: row.content, source: row.source, status: row.status, supersedesId: row.supersedes_id,
       createdBy: row.created_by, createdAt: row.created_at, updatedAt: row.updated_at
     }));
+  }
+
+  async listSkills({ organizationId, storeId, ruleId = null, limit = 100 }) {
+    const rows = ruleId
+      ? this.db.prepare(`SELECT * FROM lessons WHERE organization_id=? AND store_id=? AND rule_id=? AND source='rule_skill' AND status='verified' ORDER BY updated_at DESC LIMIT ?`).all(organizationId, storeId, ruleId, limit)
+      : this.db.prepare(`SELECT * FROM lessons WHERE organization_id=? AND store_id=? AND source='rule_skill' AND status='verified' ORDER BY updated_at DESC LIMIT ?`).all(organizationId, storeId, limit);
+    return rows.map(row => decodeRuleSkill({
+      id: row.id, storeId: row.store_id, ruleId: row.rule_id, content: row.content,
+      source: row.source, status: row.status, createdAt: row.created_at, updatedAt: row.updated_at
+    })).filter(Boolean);
+  }
+
+  async getRuleContext({ organizationId, jobId, ruleId }) {
+    const row = this.db.prepare(`SELECT r.store_id,r.website,r.rubric_hash,j.payload,rr.rule_id,rr.rule_text,rr.score,
+      rr.explanation,rr.recommendation,rr.evidence,rr.verification_status
+      FROM runs r JOIN jobs j ON j.id=r.job_id JOIN rule_results rr ON rr.run_id=r.id
+      WHERE r.organization_id=? AND r.job_id=? AND rr.rule_id=?`).get(organizationId, jobId, ruleId);
+    if (!row) throw new AppError('The completed rule result was not found.', { code: 'RESULT_NOT_FOUND', status: 404 });
+    const payload = parse(row.payload) || {};
+    return {
+      storeId: row.store_id, storeName: payload.storeName || row.store_id, website: row.website,
+      rubricHash: row.rubric_hash, ruleId: row.rule_id, ruleText: row.rule_text,
+      score: row.score, explanation: row.explanation, recommendation: row.recommendation,
+      evidence: parse(row.evidence) || [], verificationStatus: row.verification_status
+    };
   }
 
   async revokeLesson({ organizationId, lessonId, actorId }) {

@@ -1,6 +1,7 @@
 import { AppError } from '../lib/errors.js';
 import { newId } from '../lib/ids.js';
 import { rankLessons } from '../memory/rank.js';
+import { decodeRuleSkill } from '../domain/rule-skills.js';
 
 const vector = value => Array.isArray(value) ? `[${value.join(',')}]` : null;
 const parseVector = value => typeof value === 'string' && value.startsWith('[')
@@ -102,6 +103,18 @@ export class PostgresStore {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
+      if (job.payload.kind === 'discussion' || result.kind === 'discussion') {
+        const response = {
+          kind: 'discussion', requestId: job.requestId, jobId: job.id, status: 'completed',
+          reply: result.reply, proposedSkill: result.proposedSkill || null
+        };
+        const updated = await client.query(`UPDATE agent_jobs SET status='completed',response=$1,lease_owner=NULL,lease_expires_at=NULL,updated_at=now(),completed_at=now()
+          WHERE id=$2 AND status='running' AND lease_owner=$3`, [response, job.id, job.leaseOwner]);
+        if (!updated.rowCount) throw new AppError('The job lease was lost before completion.', { code: 'JOB_LEASE_LOST', retryable: true });
+        await this.event(client, job.organizationId, job.id, 'discussion.completed', { ruleId: job.payload.ruleId });
+        await client.query('COMMIT');
+        return response;
+      }
       const runId = newId();
       const response = { requestId: job.requestId, jobId: job.id, runId, status: 'completed', overallScore: result.overallScore, summary: result.summary, results: result.results };
       const updated = await client.query(`UPDATE agent_jobs SET status='completed',response=$1,lease_owner=NULL,lease_expires_at=NULL,updated_at=now(),completed_at=now()
@@ -180,6 +193,29 @@ export class PostgresStore {
           supersedes_id AS "supersedesId",created_by AS "createdBy",created_at AS "createdAt",updated_at AS "updatedAt"
           FROM agent_lessons WHERE organization_id=$1 AND store_id IS NULL ORDER BY updated_at DESC LIMIT $2`, [organizationId, limit]);
     return result.rows;
+  }
+
+  async listSkills({ organizationId, storeId, ruleId = null, limit = 100 }) {
+    const result = ruleId
+      ? await this.pool.query(`SELECT id,store_id AS "storeId",rule_id AS "ruleId",content,source,status,created_at AS "createdAt",updated_at AS "updatedAt"
+          FROM agent_lessons WHERE organization_id=$1 AND store_id=$2 AND rule_id=$3 AND source='rule_skill' AND status='verified' ORDER BY updated_at DESC LIMIT $4`, [organizationId, storeId, ruleId, limit])
+      : await this.pool.query(`SELECT id,store_id AS "storeId",rule_id AS "ruleId",content,source,status,created_at AS "createdAt",updated_at AS "updatedAt"
+          FROM agent_lessons WHERE organization_id=$1 AND store_id=$2 AND source='rule_skill' AND status='verified' ORDER BY updated_at DESC LIMIT $3`, [organizationId, storeId, limit]);
+    return result.rows.map(decodeRuleSkill).filter(Boolean);
+  }
+
+  async getRuleContext({ organizationId, jobId, ruleId }) {
+    const result = await this.pool.query(`SELECT r.store_id AS "storeId",r.website,r.rubric_hash AS "rubricHash",j.payload,
+      rr.rule_id AS "ruleId",rr.rule_text AS "ruleText",rr.score,rr.explanation,rr.recommendation,rr.evidence,
+      rr.verification_status AS "verificationStatus"
+      FROM agent_runs r JOIN agent_jobs j ON j.id=r.job_id JOIN agent_rule_results rr ON rr.run_id=r.id
+      WHERE r.organization_id=$1 AND r.job_id=$2 AND rr.rule_id=$3`, [organizationId, jobId, ruleId]);
+    if (!result.rowCount) throw new AppError('The completed rule result was not found.', { code: 'RESULT_NOT_FOUND', status: 404 });
+    const row = result.rows[0];
+    return {
+      ...row, storeName: row.payload?.storeName || row.storeId,
+      evidence: Array.isArray(row.evidence) ? row.evidence : []
+    };
   }
 
   async revokeLesson({ organizationId, lessonId, actorId }) {

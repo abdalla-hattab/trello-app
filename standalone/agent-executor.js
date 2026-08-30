@@ -47,7 +47,7 @@
     'use strict';
 
     const AGENT_API_URL = 'https://masarat-agent-api.onrender.com/v1/checks';
-    const REQUEST_TIMEOUT_MS = 300000;
+    const REQUEST_TIMEOUT_MS = 900000;
     const SCORE_THRESHOLDS = { green: 97, yellow: 70 };
     let activeRun = null;
 
@@ -181,6 +181,20 @@
         .correction input { width: 100%; border: 1px solid #dce5df; border-radius: 9px; padding: 9px; font: inherit; font-size: 11px; }
         .correction-buttons { grid-column: 1 / -1; display: flex; gap: 8px; }
         .feedback-status, .teach-status { margin: 8px 0 0; color: #65746b; font-size: 10px; line-height: 1.5; }
+        .discuss { color: #176b4d !important; border-color: #bfe0cf !important; background: #f5fbf7 !important; }
+        .discussion-panel { margin-top: 12px; padding: 13px; border: 1px solid #dce9e1; border-radius: 11px; background: #fafcfb; }
+        .discussion-intro { margin: 0 0 10px; color: #65746b; font-size: 10px; line-height: 1.6; }
+        .discussion-messages { display: grid; gap: 8px; max-height: 260px; overflow-y: auto; margin-bottom: 9px; }
+        .discussion-message { max-width: 92%; margin: 0; padding: 8px 10px; border-radius: 9px; font-size: 11px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .discussion-message[data-role="user"] { justify-self: end; background: #e8f7ee; color: #24533e; }
+        .discussion-message[data-role="assistant"] { justify-self: start; background: #fff; border: 1px solid #e1e8e3; color: #4d5d53; }
+        .discussion-panel textarea { resize: vertical; min-height: 68px; width: 100%; border: 1px solid #dce5df; border-radius: 9px; padding: 9px 10px; font: inherit; font-size: 11px; color: #25332b; background: #fff; }
+        .discussion-buttons { display: flex; gap: 8px; margin-top: 8px; }
+        .discussion-status { min-height: 15px; margin: 8px 0 0; color: #65746b; font-size: 10px; line-height: 1.5; }
+        .skill-proposal { margin-top: 10px; padding: 11px; border: 1px solid #bfe0cf; border-radius: 9px; background: #f2faf5; }
+        .skill-proposal strong { display: block; color: #176b4d; font-size: 11px; margin-bottom: 5px; }
+        .skill-proposal p { margin: 0 0 7px; color: #4e6156; font-size: 10px; line-height: 1.6; white-space: pre-wrap; }
+        .skill-proposal small { display: block; margin-bottom: 8px; color: #758178; font-size: 9px; line-height: 1.5; }
         .teach-box { margin-top: 22px; border: 1px solid #dce9e0; border-radius: 14px; padding: 18px; background: #fafcfb; }
         .teach-box h3 { margin: 0 0 5px; font-size: 14px; }
         .teach-box p { color: #758178; font-size: 11px; line-height: 1.6; margin: 0 0 11px; }
@@ -484,16 +498,20 @@
             const row = document.createElement('li');
             row.className = 'rule';
             row.dataset.ruleId = run.ruleIds[index];
-            row.innerHTML = `<div class="rule-top"><div class="rule-body"><div class="rule-number">CHECK ${String(index + 1).padStart(2, '0')}</div><p class="rule-name" dir="auto"></p><div class="rule-state"><span class="rule-icon" aria-hidden="true"></span><span class="rule-status"></span></div></div>${gaugeMarkup('small')}</div><p class="explanation" dir="auto" hidden></p><p class="recommendation" dir="auto" hidden></p><details class="evidence" hidden><summary>View captured evidence</summary><ul></ul></details><div class="feedback" hidden><div class="feedback-actions"><button class="confirm" type="button">Confirm finding</button><button class="correct" type="button">Correct & teach</button></div><div class="correction" hidden><textarea maxlength="4000" dir="auto" placeholder="Tell the agent what is correct and what it should remember."></textarea><input type="number" min="0" max="100" step="0.1" aria-label="Correct score" placeholder="Score 0–100"><div class="correction-buttons"><button class="save-correction" type="button">Save correction</button><button class="cancel-correction" type="button">Cancel</button></div></div><p class="feedback-status" role="status" aria-live="polite"></p></div>`;
+            row.innerHTML = `<div class="rule-top"><div class="rule-body"><div class="rule-number">CHECK ${String(index + 1).padStart(2, '0')}</div><p class="rule-name" dir="auto"></p><div class="rule-state"><span class="rule-icon" aria-hidden="true"></span><span class="rule-status"></span></div></div>${gaugeMarkup('small')}</div><p class="explanation" dir="auto" hidden></p><p class="recommendation" dir="auto" hidden></p><details class="evidence" hidden><summary>View captured evidence</summary><ul></ul></details><div class="feedback" hidden><div class="feedback-actions"><button class="confirm" type="button">Confirm finding</button><button class="correct" type="button">Correct & teach</button><button class="discuss" type="button">Discuss with AI</button></div><div class="correction" hidden><textarea maxlength="4000" dir="auto" placeholder="Tell the agent what is correct and what it should remember."></textarea><input type="number" min="0" max="100" step="0.1" aria-label="Correct score" placeholder="Score 0–100"><div class="correction-buttons"><button class="save-correction" type="button">Save correction</button><button class="cancel-correction" type="button">Cancel</button></div></div><div class="discussion-panel" hidden><p class="discussion-intro">Ask what this check inspected, why it reached this result, or tell it how this rule should work next time.</p><div class="discussion-messages" aria-live="polite"></div><textarea maxlength="4000" dir="auto" placeholder="Example: Why did you check only three products? Next time, check every product page."></textarea><div class="discussion-buttons"><button class="send-discussion" type="button">Send</button><button class="close-discussion" type="button">Close</button></div><p class="discussion-status" role="status" aria-live="polite"></p><div class="skill-proposal" hidden><strong></strong><p dir="auto"></p><small></small><button class="save-skill" type="button">Save as this rule’s skill</button></div></div><p class="feedback-status" role="status" aria-live="polite"></p></div>`;
             row.querySelector('.rule-name').textContent = rule;
             find('ol').appendChild(row);
             ui.rows.push({
                 element: row, icon: row.querySelector('.rule-icon'), status: row.querySelector('.rule-status'),
                 explanation: row.querySelector('.explanation'), gauge: row.querySelector('.gauge-small'), recommendation: row.querySelector('.recommendation'),
                 evidence: row.querySelector('.evidence'), evidenceList: row.querySelector('.evidence ul'),
-                feedback: row.querySelector('.feedback'), confirm: row.querySelector('.confirm'), correct: row.querySelector('.correct'),
+                feedback: row.querySelector('.feedback'), confirm: row.querySelector('.confirm'), correct: row.querySelector('.correct'), discuss: row.querySelector('.discuss'),
                 correction: row.querySelector('.correction'), correctionText: row.querySelector('.correction textarea'), correctionScore: row.querySelector('.correction input'),
-                saveCorrection: row.querySelector('.save-correction'), cancelCorrection: row.querySelector('.cancel-correction'), feedbackStatus: row.querySelector('.feedback-status')
+                saveCorrection: row.querySelector('.save-correction'), cancelCorrection: row.querySelector('.cancel-correction'), feedbackStatus: row.querySelector('.feedback-status'),
+                discussion: row.querySelector('.discussion-panel'), discussionMessages: row.querySelector('.discussion-messages'), discussionInput: row.querySelector('.discussion-panel textarea'),
+                sendDiscussion: row.querySelector('.send-discussion'), closeDiscussion: row.querySelector('.close-discussion'), discussionStatus: row.querySelector('.discussion-status'),
+                skillProposal: row.querySelector('.skill-proposal'), skillName: row.querySelector('.skill-proposal strong'), skillInstructions: row.querySelector('.skill-proposal p'),
+                skillCoverage: row.querySelector('.skill-proposal small'), saveSkill: row.querySelector('.save-skill'), discussionHistory: [], proposedSkill: null
             });
         });
         if (run.description) {
@@ -545,6 +563,13 @@
                 row.feedbackStatus.textContent = '';
             });
             row.confirm.addEventListener('click', () => saveFeedback(run, row, { action: 'confirm' }));
+            row.discuss.addEventListener('click', () => {
+                row.discussion.hidden = false;
+                row.discussionInput.focus();
+            });
+            row.closeDiscussion.addEventListener('click', () => { row.discussion.hidden = true; });
+            row.sendDiscussion.addEventListener('click', () => sendDiscussion(run, row));
+            row.saveSkill.addEventListener('click', () => saveRuleSkill(run, row));
             row.saveCorrection.addEventListener('click', () => {
                 const lesson = row.correctionText.value.trim();
                 const rawScore = row.correctionScore.value.trim();
@@ -666,6 +691,106 @@
             body: JSON.stringify(body)
         }, mutationId, true);
         return responseJson(response, run.controller);
+    }
+
+    function serviceUrl(config, pathname) {
+        const endpoint = new URL(config.url);
+        endpoint.pathname = endpoint.pathname.replace(/\/v1\/checks\/?$/, `/v1/${pathname.replace(/^\//, '')}`);
+        endpoint.search = '';
+        return endpoint;
+    }
+
+    function appendDiscussionMessage(row, role, text) {
+        const message = document.createElement('p');
+        message.className = 'discussion-message';
+        message.dataset.role = role;
+        message.dir = 'auto';
+        message.textContent = text;
+        row.discussionMessages.appendChild(message);
+        row.discussionMessages.scrollTop = row.discussionMessages.scrollHeight;
+    }
+
+    async function waitForDiscussion(initial, run, requestId) {
+        let payload = initial;
+        const queued = new Set(['queued', 'running', 'retry']);
+        if (!queued.has(payload?.status)) return payload;
+        if (typeof payload.statusUrl !== 'string' || !payload.statusUrl.trim()) throw new Error('The agent queued the discussion without returning a status URL.');
+        const statusUrl = new URL(payload.statusUrl, run.config.url);
+        if (statusUrl.origin !== new URL(run.config.url).origin) throw new Error('The agent returned an unsafe discussion status URL.');
+        while (queued.has(payload.status)) {
+            await delay(run.config.pollIntervalMs, run.controller.signal);
+            if (run.closed) throw new DOMException('Cancelled', 'AbortError');
+            const response = await authenticatedFetch(run.config, statusUrl.href, {
+                method: 'GET', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+                redirect: 'error', signal: run.controller.signal
+            }, requestId);
+            payload = await responseJson(response, run.controller);
+        }
+        if (payload?.status === 'failed') throw new Error(payload?.error?.message || 'The agent could not finish this discussion.');
+        return payload;
+    }
+
+    async function sendDiscussion(run, row) {
+        const message = row.discussionInput.value.trim();
+        if (!message) {
+            row.discussionStatus.textContent = 'Write your question or instruction first.';
+            return;
+        }
+        const previousHistory = row.discussionHistory.slice(-18);
+        const requestId = window.crypto?.randomUUID ? window.crypto.randomUUID() : `discussion-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        row.sendDiscussion.disabled = true;
+        row.discuss.disabled = true;
+        row.discussionStatus.textContent = 'The AI is reviewing this check…';
+        row.discussionInput.value = '';
+        appendDiscussionMessage(row, 'user', message);
+        try {
+            let result = await postAgent(run, apiUrl(run.config, `/${encodeURIComponent(run.jobId)}/discussions`), {
+                requestId, ruleId: row.element.dataset.ruleId, message, history: previousHistory
+            });
+            result = await waitForDiscussion(result, run, requestId);
+            if (typeof result.reply !== 'string' || !result.reply.trim()) throw new Error('The AI returned no explanation.');
+            appendDiscussionMessage(row, 'assistant', result.reply);
+            row.discussionHistory.push({ role: 'user', text: message }, { role: 'assistant', text: result.reply });
+            row.discussionHistory = row.discussionHistory.slice(-20);
+            row.discussionStatus.textContent = result.proposedSkill
+                ? 'Review the proposed skill below. It is not saved until you press Save.'
+                : 'You can ask another question here.';
+            row.proposedSkill = result.proposedSkill || null;
+            row.skillProposal.hidden = !row.proposedSkill;
+            if (row.proposedSkill) {
+                row.skillName.textContent = row.proposedSkill.name;
+                row.skillInstructions.textContent = row.proposedSkill.instructions;
+                const coverage = row.proposedSkill.scopeMode === 'all_product_pages'
+                    ? 'Coverage: every discoverable product page'
+                    : row.proposedSkill.scopeMode === 'all_discovered_pages'
+                        ? 'Coverage: every discoverable internal page'
+                        : 'Coverage: representative sample';
+                row.skillCoverage.textContent = `${coverage}${row.proposedSkill.maximumPages ? ` · safety limit ${row.proposedSkill.maximumPages} pages` : ''}`;
+                row.saveSkill.disabled = false;
+                row.saveSkill.textContent = 'Save as this rule’s skill';
+            }
+        } catch (error) {
+            row.discussionStatus.textContent = error.message || 'The discussion could not be completed.';
+        } finally {
+            row.sendDiscussion.disabled = false;
+            row.discuss.disabled = false;
+        }
+    }
+
+    async function saveRuleSkill(run, row) {
+        if (!row.proposedSkill) return;
+        row.saveSkill.disabled = true;
+        row.discussionStatus.textContent = 'Saving this rule’s skill…';
+        try {
+            await postAgent(run, serviceUrl(run.config, 'skills'), {
+                storeId: run.storeId, ruleId: row.element.dataset.ruleId, ...row.proposedSkill
+            });
+            row.saveSkill.textContent = 'Skill saved';
+            row.discussionStatus.textContent = 'Saved. Future runs will apply this skill only to this rule.';
+        } catch (error) {
+            row.saveSkill.disabled = false;
+            row.discussionStatus.textContent = error.message || 'The skill could not be saved.';
+        }
     }
 
     async function saveFeedback(run, row, feedback) {
@@ -833,10 +958,17 @@
             setRule(row, 'checking');
             row.feedback.hidden = true;
             row.correction.hidden = true;
+            row.discussion.hidden = true;
+            row.discussionMessages.replaceChildren();
+            row.discussionHistory = [];
+            row.proposedSkill = null;
+            row.skillProposal.hidden = true;
+            row.discussionInput.value = '';
+            row.discussionStatus.textContent = '';
             row.feedbackStatus.textContent = '';
             row.correctionText.value = '';
             row.correctionScore.value = '';
-            [row.confirm, row.correct, row.saveCorrection, row.cancelCorrection].forEach(button => {
+            [row.confirm, row.correct, row.discuss, row.saveCorrection, row.cancelCorrection, row.sendDiscussion, row.closeDiscussion, row.saveSkill].forEach(button => {
                 button.disabled = false;
                 button.hidden = false;
             });

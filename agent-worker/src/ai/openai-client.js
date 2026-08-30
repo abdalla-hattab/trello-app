@@ -1,5 +1,8 @@
 import { AppError } from '../lib/errors.js';
-import { AUDIT_DEVELOPER_INSTRUCTIONS, AUDIT_SCHEMA, buildAuditEvidence } from './audit-prompt.js';
+import {
+  AUDIT_DEVELOPER_INSTRUCTIONS, AUDIT_SCHEMA, DISCUSSION_DEVELOPER_INSTRUCTIONS,
+  DISCUSSION_SCHEMA, buildAuditEvidence, buildDiscussionEvidence
+} from './audit-prompt.js';
 
 function outputText(response) {
   const parts = [];
@@ -85,5 +88,22 @@ export class OpenAIClient {
     const text = outputText(response);
     try { return JSON.parse(text); }
     catch { throw new AppError('The model response was not valid structured JSON.', { code: 'MODEL_RESULT_INVALID', retryable: true }); }
+  }
+
+  async discuss({ payload, memory }) {
+    const response = await this.request('responses', {
+      model: this.model,
+      store: false,
+      reasoning: { effort: this.reasoningEffort },
+      max_output_tokens: Math.min(this.maxOutputTokens, 8_000),
+      input: [
+        { role: 'developer', content: [{ type: 'input_text', text: DISCUSSION_DEVELOPER_INSTRUCTIONS }] },
+        { role: 'user', content: [{ type: 'input_text', text: JSON.stringify(buildDiscussionEvidence({ payload, memory })) }] }
+      ],
+      text: { format: { type: 'json_schema', name: 'rule_discussion', strict: true, schema: DISCUSSION_SCHEMA } }
+    });
+    const text = outputText(response);
+    try { return JSON.parse(text); }
+    catch { throw new AppError('The model discussion was not valid structured JSON.', { code: 'MODEL_RESULT_INVALID', retryable: true }); }
   }
 }

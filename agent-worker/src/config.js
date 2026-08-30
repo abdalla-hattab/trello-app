@@ -166,6 +166,7 @@ export function loadConfig(env = process.env, { requireAI = false, requireAuth =
     browserExecutablePath,
     browserTimeoutMs: integer(env.BROWSER_TIMEOUT_MS, 30_000, { min: 5_000, max: 120_000 }),
     maxAuditPages: integer(env.MAX_AUDIT_PAGES, 4, { min: 1, max: 12 }),
+    maxSkillPages: integer(env.MAX_SKILL_PAGES, 250, { min: 4, max: 250 }),
     maxNetworkHosts: integer(env.MAX_NETWORK_HOSTS, 40, { min: 1, max: 200 }),
     maxScreenshotBytes: integer(env.MAX_SCREENSHOT_BYTES, 3_500_000, { min: 100_000, max: 10_000_000 }),
     workerId: env.WORKER_ID || `worker-${process.pid}`,

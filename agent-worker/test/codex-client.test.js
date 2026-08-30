@@ -49,3 +49,27 @@ test('disables paid embeddings while preserving lexical and recent memory retrie
   const client = new CodexClient(config);
   assert.equal(await client.embed('remember this rule'), null);
 });
+
+test('uses bounded structured Codex output for per-rule discussions', async () => {
+  let invocation;
+  const runImpl = async details => {
+    invocation = details;
+    const outputIndex = details.args.indexOf('--output-last-message');
+    await writeFile(details.args[outputIndex + 1], JSON.stringify({
+      reply: 'Only three product pages were present in the captured evidence.',
+      proposedSkill: { name: 'All product descriptions', instructions: 'Inspect every discoverable product page.', scopeMode: 'all_product_pages', maximumPages: 100 }
+    }));
+  };
+  const client = new CodexClient(config, { runImpl });
+  const result = await client.discuss({
+    payload: {
+      storeId: 's1', storeName: 'Store', website: 'https://example.com', ruleId: 'r1',
+      ruleText: 'Check product descriptions', finding: { score: 35, evidence: ['Three pages'] }, message: 'Why only three?', history: []
+    },
+    memory: { lessons: [], history: [], skills: [] }
+  });
+  assert.equal(result.proposedSkill.maximumPages, 100);
+  assert.equal(invocation.args.includes('--image'), false);
+  assert.match(invocation.input, /bounded explanation task/);
+  assert.match(invocation.input, /Why only three/);
+});

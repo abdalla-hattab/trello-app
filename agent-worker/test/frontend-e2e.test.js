@@ -91,6 +91,17 @@ test('popup queues, polls, renders scores, and teaches verified memory', async t
       requestId = body.requestId;
       return json(route, { requestId, jobId: '11111111-1111-4111-8111-111111111111', status: 'queued', statusUrl: '/v1/checks/11111111-1111-4111-8111-111111111111' }, 202);
     }
+    if (request.method() === 'POST' && url.pathname.endsWith('/discussions')) {
+      return json(route, { requestId: body.requestId, jobId: '22222222-2222-4222-8222-222222222222', status: 'queued', statusUrl: '/v1/discussions/22222222-2222-4222-8222-222222222222' }, 202);
+    }
+    if (request.method() === 'GET' && url.pathname.startsWith('/v1/discussions/')) {
+      return json(route, {
+        requestId: calls.find(call => call.path.endsWith('/discussions'))?.body.requestId,
+        jobId: '22222222-2222-4222-8222-222222222222', status: 'completed',
+        reply: 'The normal run sampled three product pages.',
+        proposedSkill: { name: 'All products', instructions: 'Inspect every discoverable product page.', scopeMode: 'all_product_pages', maximumPages: 100 }
+      });
+    }
     if (request.method() === 'GET') {
       pollCount += 1;
       if (pollCount === 1) return json(route, { requestId, jobId: '11111111-1111-4111-8111-111111111111', status: 'running' });
@@ -104,6 +115,7 @@ test('popup queues, polls, renders scores, and teaches verified memory', async t
     }
     if (url.pathname.endsWith('/feedback')) return json(route, { verificationStatus: body.action === 'correct' ? 'corrected' : 'confirmed' });
     if (url.pathname === '/v1/lessons') return json(route, { id: 'lesson-1', status: 'verified' }, 201);
+    if (url.pathname === '/v1/skills') return json(route, { id: 'skill-1', status: 'verified', ...body }, 201);
     return json(route, { error: { message: 'Unexpected fixture route' } }, 404);
   });
   await page.evaluate(() => {
@@ -130,6 +142,16 @@ test('popup queues, polls, renders scores, and teaches verified memory', async t
   await page.waitForFunction(() => document.querySelector('#agency-agent-executor')?.shadowRoot?.querySelector('.teach-status')?.textContent.includes('Lesson saved'));
   assert.ok(calls.some(call => call.path.endsWith('/feedback') && call.body.action === 'confirm'));
   assert.ok(calls.some(call => call.path === '/v1/lessons' && call.body.content.includes('approved')));
+
+  await page.locator('#agency-agent-executor .discuss').first().click();
+  await page.locator('#agency-agent-executor .discussion-panel textarea').first().fill('Why only three? Next time check every product page.');
+  await page.locator('#agency-agent-executor .send-discussion').first().click();
+  await page.waitForFunction(() => document.querySelector('#agency-agent-executor')?.shadowRoot?.querySelector('.skill-proposal')?.hidden === false);
+  assert.match(await page.locator('#agency-agent-executor .discussion-message[data-role="assistant"]').first().textContent(), /sampled three/i);
+  await page.locator('#agency-agent-executor .save-skill').first().click();
+  await page.waitForFunction(() => document.querySelector('#agency-agent-executor')?.shadowRoot?.querySelector('.save-skill')?.textContent === 'Skill saved');
+  assert.ok(calls.some(call => call.path.endsWith('/discussions') && call.body.message.includes('every product page')));
+  assert.ok(calls.some(call => call.path === '/v1/skills' && call.body.scopeMode === 'all_product_pages' && call.body.maximumPages === 100));
   await page.setViewportSize({ width: 390, height: 844 });
   const bounds = await page.locator('#agency-agent-executor dialog').boundingBox();
   assert.ok(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= 390 && bounds.y + bounds.height <= 844);

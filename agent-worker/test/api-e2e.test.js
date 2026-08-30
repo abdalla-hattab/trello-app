@@ -51,10 +51,39 @@ test('authenticated API queues, returns, and learns from a completed check', asy
   assert.equal(feedbackResponse.status, 200);
   const feedback = await feedbackResponse.json();
   assert.equal(feedback.verificationStatus, 'corrected');
+
+  const discussionResponse = await fetch(`${base}/v1/checks/${queued.jobId}/discussions`, {
+    method: 'POST', headers: { ...headers, 'Idempotency-Key': 'discussion-e2e-1' },
+    body: JSON.stringify({ requestId: 'discussion-e2e-1', ruleId: 'payment', message: 'Why did you inspect only a sample?', history: [] })
+  });
+  assert.equal(discussionResponse.status, 202);
+  const discussionQueued = await discussionResponse.json();
+  const discussionJob = await store.claimJob({ workerId: 'worker', leaseMs: 60_000 });
+  assert.equal(discussionJob.payload.kind, 'discussion');
+  assert.equal(discussionJob.payload.finding.score, 100);
+  await store.completeJob(discussionJob, {
+    kind: 'discussion', reply: 'The normal run uses a representative sample.',
+    proposedSkill: { name: 'All products', instructions: 'Inspect every discoverable product page.', scopeMode: 'all_product_pages', maximumPages: 100 }
+  });
+  const discussionStatus = await fetch(`${base}${discussionQueued.statusUrl}`, { headers });
+  assert.equal((await discussionStatus.json()).proposedSkill.scopeMode, 'all_product_pages');
+
+  const skillResponse = await fetch(`${base}/v1/skills`, {
+    method: 'POST', headers,
+    body: JSON.stringify({
+      storeId: 'store', ruleId: 'payment', name: 'All products',
+      instructions: 'Inspect every discoverable product page.', scopeMode: 'all_product_pages', maximumPages: 100
+    })
+  });
+  assert.equal(skillResponse.status, 201);
+  const skillsResponse = await fetch(`${base}/v1/skills?storeId=store&ruleId=payment`, { headers });
+  const skills = await skillsResponse.json();
+  assert.equal(skills.skills[0].maximumPages, 100);
+
   const lessonsResponse = await fetch(`${base}/v1/lessons?storeId=store`, { headers });
   assert.equal(lessonsResponse.status, 200);
   const lessons = await lessonsResponse.json();
-  assert.equal(lessons.lessons[0].content, 'Footer icons are approved.');
+  assert.equal(lessons.lessons.some(item => item.content === 'Footer icons are approved.'), true);
   const revokeResponse = await fetch(`${base}/v1/lessons/${feedback.lesson.id}`, { method: 'DELETE', headers });
   assert.equal(revokeResponse.status, 200);
   assert.equal((await revokeResponse.json()).status, 'revoked');

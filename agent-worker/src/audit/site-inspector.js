@@ -8,16 +8,97 @@ const sha256 = buffer => createHash('sha256').update(buffer).digest('hex');
 function rankLink(url, label, rules) {
   const value = `${url.pathname} ${label}`.toLowerCase();
   const ruleTerms = rules.join(' ').toLowerCase().match(/[a-z0-9\p{L}]{3,}/gu) || [];
-  const known = ['product', 'collection', 'shop', 'contact', 'about', 'service', 'category'];
+  const known = ['product', 'products', 'collection', 'shop', 'category', 'catalog', 'منتج', 'منتجات', 'تصنيف'];
   return known.reduce((score, term) => score + (value.includes(term) ? 3 : 0), 0) +
     ruleTerms.reduce((score, term) => score + (value.includes(term) ? 1 : 0), 0);
+}
+
+function inspectionPlan(config, skills) {
+  const exhaustive = (skills || []).filter(skill => skill.scopeMode !== 'sample');
+  if (!exhaustive.length) return { mode: 'sample', maximumPages: config.maxAuditPages };
+  const mode = exhaustive.some(skill => skill.scopeMode === 'all_discovered_pages')
+    ? 'all_discovered_pages'
+    : 'all_product_pages';
+  const requested = Math.max(...exhaustive.map(skill => skill.maximumPages || config.maxSkillPages));
+  return { mode, maximumPages: Math.min(config.maxSkillPages, requested) };
+}
+
+function normalizedInternalLink(raw, root) {
+  try {
+    const url = new URL(raw, root);
+    if (url.origin !== root.origin || !['http:', 'https:'].includes(url.protocol)) return null;
+    if (/(logout|signout|delete|remove|unsubscribe|admin|wp-admin|cart|checkout|account|login|register)/i.test(url.pathname)) return null;
+    if (/\.(?:jpg|jpeg|png|gif|webp|svg|pdf|zip|mp4|mp3|css|js|xml)$/i.test(url.pathname)) return null;
+    url.hash = '';
+    for (const key of [...url.searchParams.keys()]) {
+      if (/^(?:utm_|fbclid|gclid|ref|source)/i.test(key)) url.searchParams.delete(key);
+    }
+    return url;
+  } catch { return null; }
+}
+
+function xmlLocations(xml) {
+  return [...String(xml || '').matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map(match => match[1]
+    .replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').trim());
+}
+
+async function fetchPublicText(rawUrl, timeoutMs) {
+  let current = new URL(rawUrl);
+  for (let redirects = 0; redirects <= 3; redirects += 1) {
+    await assertPublicUrl(current.toString());
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(current, {
+        redirect: 'manual', signal: controller.signal,
+        headers: { 'User-Agent': 'MasaratWebsiteAgent/1.0 read-only-audit' }
+      });
+      if (response.status >= 300 && response.status < 400 && response.headers.get('location')) {
+        current = new URL(response.headers.get('location'), current);
+        continue;
+      }
+      if (!response.ok) return '';
+      const length = Number(response.headers.get('content-length') || 0);
+      if (length > 3_000_000) return '';
+      const text = await response.text();
+      return text.slice(0, 3_000_000);
+    } catch { return ''; }
+    finally { clearTimeout(timer); }
+  }
+  return '';
+}
+
+async function sitemapLinks(root, mode, maximumPages, timeoutMs) {
+  if (mode === 'sample') return [];
+  const sitemapUrl = new URL('/sitemap.xml', root);
+  const rootXml = await fetchPublicText(sitemapUrl, timeoutMs);
+  if (!rootXml) return [];
+  const first = xmlLocations(rootXml).map(value => normalizedInternalLink(value, root)).filter(Boolean);
+  const sitemapDocuments = first.filter(url => /\.xml(?:$|\?)/i.test(url.pathname + url.search));
+  const directPages = first.filter(url => !/\.xml(?:$|\?)/i.test(url.pathname + url.search));
+  const productDocuments = sitemapDocuments.filter(url => /product|منتج/i.test(url.pathname));
+  const selectedDocuments = mode === 'all_product_pages'
+    ? (productDocuments.length ? productDocuments : sitemapDocuments).slice(0, 12)
+    : sitemapDocuments.slice(0, 12);
+  const pages = [...directPages];
+  for (const documentUrl of selectedDocuments) {
+    const xml = await fetchPublicText(documentUrl, timeoutMs);
+    for (const value of xmlLocations(xml)) {
+      const url = normalizedInternalLink(value, root);
+      if (url) pages.push(url);
+      if (pages.length >= maximumPages * 3) break;
+    }
+    if (pages.length >= maximumPages * 3) break;
+  }
+  return pages;
 }
 
 export class SiteInspector {
   constructor(config) { this.config = config; }
 
-  async inspect({ website, rules }) {
+  async inspect({ website, rules, skills = [] }) {
     const root = await assertPublicUrl(website);
+    const plan = inspectionPlan(this.config, skills);
     let chromium;
     try { ({ chromium } = await import('playwright')); }
     catch { throw new AppError('Playwright is not installed. Run npm install and install Chromium.', { code: 'BROWSER_NOT_INSTALLED' }); }
@@ -83,23 +164,37 @@ export class SiteInspector {
         forms: Array.from(document.forms).slice(0, 50).map(form => ({ action: form.action, method: form.method, controls: form.elements.length })),
         metadata: {
           description: document.querySelector('meta[name="description"]')?.content || '',
-          viewport: document.querySelector('meta[name="viewport"]')?.content || ''
-        }
+          viewport: document.querySelector('meta[name="viewport"]')?.content || '',
+          type: document.querySelector('meta[property="og:type"]')?.content || ''
+        },
+        structuredTypes: Array.from(document.querySelectorAll('script[type="application/ld+json"]')).flatMap(node => {
+          try {
+            const value = JSON.parse(node.textContent || 'null');
+            const items = Array.isArray(value) ? value : value?.['@graph'] || [value];
+            return items.flatMap(item => Array.isArray(item?.['@type']) ? item['@type'] : item?.['@type'] ? [item['@type']] : []);
+          } catch { return []; }
+        }).slice(0, 40),
+        hasProductMicrodata: Boolean(document.querySelector('[itemtype*="schema.org/Product"], [itemtype$="/Product"]'))
       }));
-      let screenshot = await page.screenshot({ type: 'jpeg', quality: 72, fullPage: false, animations: 'disabled' });
-      if (totalScreenshotBytes + screenshot.length > this.config.maxScreenshotBytes) screenshot = null;
+      let screenshot = captures.length < this.config.maxAuditPages
+        ? await page.screenshot({ type: 'jpeg', quality: 72, fullPage: false, animations: 'disabled' })
+        : null;
+      if (screenshot && totalScreenshotBytes + screenshot.length > this.config.maxScreenshotBytes) screenshot = null;
       if (screenshot) totalScreenshotBytes += screenshot.length;
       const pageEvidence = {
         url: finalUrl,
         status: response?.status() ?? null,
         title: clip(details.title, 500),
         language: clip(details.language, 30),
-        headings: details.headings.map(item => ({ level: item.level, text: clip(item.text, 500) })).filter(item => item.text),
-        text: clip(details.text, 45_000),
-        links: details.links.map(item => ({ href: clip(item.href, 2048), label: clip(item.label, 300) })).filter(item => item.href),
-        images: details.images.map(item => ({ ...item, src: clip(item.src, 2048), alt: clip(item.alt, 500), linkedTo: item.linkedTo ? clip(item.linkedTo, 2048) : null })),
+        headings: details.headings.slice(0, plan.mode === 'sample' ? 80 : 30).map(item => ({ level: item.level, text: clip(item.text, 500) })).filter(item => item.text),
+        text: clip(details.text, plan.mode === 'sample' ? 45_000 : 3_500),
+        links: details.links.slice(0, plan.mode === 'sample' ? 400 : 40).map(item => ({ href: clip(item.href, 2048), label: clip(item.label, 300) })).filter(item => item.href),
+        images: details.images.slice(0, plan.mode === 'sample' ? 250 : 30).map(item => ({ ...item, src: clip(item.src, 2048), alt: clip(item.alt, 500), linkedTo: item.linkedTo ? clip(item.linkedTo, 2048) : null })),
         forms: details.forms,
         metadata: details.metadata,
+        pageTypes: details.structuredTypes.map(value => clip(value, 100)),
+        isProductPage: details.hasProductMicrodata || details.structuredTypes.some(value => String(value).toLowerCase() === 'product') ||
+          /(?:\/products?\/|\/p\/|\/p\d+|\/product-)/i.test(new URL(finalUrl).pathname) || String(details.metadata.type).toLowerCase() === 'product',
         screenshotDataUrl: screenshot ? `data:image/jpeg;base64,${screenshot.toString('base64')}` : null
       };
       captures.push(pageEvidence);
@@ -112,26 +207,50 @@ export class SiteInspector {
 
     try {
       const home = await visit(root.toString());
-      const candidates = home.links
-        .map(link => {
-          try { return { url: new URL(link.href, root), label: link.label }; } catch { return null; }
-        })
-        .filter(item => item && item.url.origin === root.origin && ['http:', 'https:'].includes(item.url.protocol))
-        .filter(item => !/(logout|signout|delete|remove|unsubscribe|admin|wp-admin)/i.test(item.url.pathname))
-        .map(item => ({ ...item, score: rankLink(item.url, item.label, rules) }))
-        .sort((left, right) => right.score - left.score);
-      const seen = new Set([new URL(home.url).pathname]);
-      for (const candidate of candidates) {
-        if (captures.length >= this.config.maxAuditPages) break;
-        const key = `${candidate.url.pathname}${candidate.url.search}`;
+      const seen = new Set([new URL(home.url).toString()]);
+      const queued = new Set();
+      const candidates = [];
+      const enqueue = links => {
+        for (const link of links) {
+          const url = normalizedInternalLink(link.href, root);
+          if (!url) continue;
+          const key = url.toString();
+          if (seen.has(key) || queued.has(key)) continue;
+          if (seen.size + queued.size >= plan.maximumPages * 30) break;
+          queued.add(key);
+          candidates.push({ url, label: link.label, score: rankLink(url, link.label, rules) });
+        }
+        candidates.sort((left, right) => right.score - left.score);
+      };
+      const sitemapCandidates = await sitemapLinks(root, plan.mode, plan.maximumPages, this.config.browserTimeoutMs);
+      enqueue(sitemapCandidates.map(url => ({ href: url.toString(), label: plan.mode === 'all_product_pages' ? 'product sitemap' : 'website sitemap' })));
+      enqueue(home.links);
+      while (candidates.length && captures.length < plan.maximumPages) {
+        const candidate = candidates.shift();
+        const key = candidate.url.toString();
+        queued.delete(key);
         if (seen.has(key)) continue;
         seen.add(key);
-        try { await visit(candidate.url.toString()); }
-        catch (error) {
-          manifest.push({ url: candidate.url.toString(), error: error.code || 'PAGE_CAPTURE_FAILED' });
+        try {
+          const captured = await visit(key);
+          if (plan.mode !== 'sample') enqueue(captured.links);
+        } catch (error) {
+          manifest.push({ url: key, error: error.code || 'PAGE_CAPTURE_FAILED' });
         }
       }
-      return { pages: captures, manifest };
+      const productPages = captures.filter(item => item.isProductPage).length;
+      return {
+        pages: captures,
+        manifest,
+        coverage: {
+          mode: plan.mode,
+          safetyLimit: plan.maximumPages,
+          discoveredUrls: seen.size + queued.size,
+          visitedPages: captures.length,
+          productPages,
+          truncated: candidates.length > 0 && captures.length >= plan.maximumPages
+        }
+      };
     } finally {
       await context.close().catch(() => {});
       await browser.close().catch(() => {});

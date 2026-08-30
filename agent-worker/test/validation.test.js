@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCheckRequest, parseFeedbackRequest, validateAuditResults } from '../src/domain/validation.js';
+import {
+  parseCheckRequest, parseDiscussionRequest, parseFeedbackRequest, parseRuleSkillRequest,
+  validateAuditResults, validateDiscussionResult
+} from '../src/domain/validation.js';
 
 test('normalizes a complete check and versions its rubric', () => {
   const value = parseCheckRequest({
@@ -42,4 +45,26 @@ test('does not invent an overall score when one rule is unscored', () => {
 
 test('a correction requires a lesson', () => {
   assert.throws(() => parseFeedbackRequest({ ruleId: 'one', action: 'correct', correctedScore: 90 }), /lesson/);
+});
+
+test('discussion history and structured rule skills are bounded', () => {
+  const discussion = parseDiscussionRequest({
+    requestId: 'discussion-1', ruleId: 'products', message: 'Check every product.',
+    history: [{ role: 'assistant', text: 'The earlier run used a sample.' }]
+  });
+  assert.equal(discussion.history[0].role, 'assistant');
+  const skill = parseRuleSkillRequest({
+    storeId: 'store', ruleId: 'products', name: 'All products', instructions: 'Inspect every product.',
+    scopeMode: 'all_product_pages', maximumPages: 100
+  });
+  assert.equal(skill.maximumPages, 100);
+  assert.throws(() => parseRuleSkillRequest({ ...skill, maximumPages: 251 }), /between 1 and 250/);
+});
+
+test('discussion results never imply that a proposal was already saved', () => {
+  const result = validateDiscussionResult({
+    reply: 'I can turn that into a skill for your review.',
+    proposedSkill: { name: 'All products', instructions: 'Inspect every product.', scopeMode: 'all_product_pages', maximumPages: 100 }
+  });
+  assert.equal(result.proposedSkill.scopeMode, 'all_product_pages');
 });

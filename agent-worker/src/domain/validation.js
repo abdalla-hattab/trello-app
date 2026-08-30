@@ -1,5 +1,6 @@
 import { AppError } from '../lib/errors.js';
 import { stableHash } from '../lib/ids.js';
+import { RULE_SKILL_SCOPES } from './rule-skills.js';
 
 const text = (value, field, { min = 1, max = 1000, optional = false } = {}) => {
   if ((value === undefined || value === null) && optional) return '';
@@ -81,6 +82,60 @@ export function parseFeedbackRequest(input) {
     correctedScore,
     lesson: text(input.lesson, 'lesson', { max: 4000, optional: action !== 'correct' }),
     note: text(input.note, 'note', { max: 2000, optional: true })
+  };
+}
+
+export function parseDiscussionRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AppError('A JSON request body is required.', { code: 'VALIDATION_ERROR', status: 400 });
+  const history = input.history === undefined ? [] : input.history;
+  if (!Array.isArray(history) || history.length > 20) throw new AppError('history must contain at most 20 messages.', { code: 'VALIDATION_ERROR', status: 400 });
+  return {
+    requestId: text(input.requestId, 'requestId', { max: 128 }),
+    ruleId: text(input.ruleId, 'ruleId', { max: 128 }),
+    message: text(input.message, 'message', { max: 4000 }),
+    history: history.map((item, index) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) throw new AppError(`history[${index}] is invalid.`, { code: 'VALIDATION_ERROR', status: 400 });
+      const role = text(item.role, `history[${index}].role`, { max: 20 });
+      if (!['user', 'assistant'].includes(role)) throw new AppError(`history[${index}].role must be user or assistant.`, { code: 'VALIDATION_ERROR', status: 400 });
+      return { role, text: text(item.text, `history[${index}].text`, { max: 4000 }) };
+    })
+  };
+}
+
+export function parseRuleSkillRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AppError('A JSON request body is required.', { code: 'VALIDATION_ERROR', status: 400 });
+  const scopeMode = text(input.scopeMode || 'sample', 'scopeMode', { max: 40 });
+  if (!RULE_SKILL_SCOPES.has(scopeMode)) throw new AppError('scopeMode is invalid.', { code: 'VALIDATION_ERROR', status: 400 });
+  const maximumPages = input.maximumPages === undefined || input.maximumPages === null
+    ? null
+    : Number(input.maximumPages);
+  if (maximumPages !== null && (!Number.isInteger(maximumPages) || maximumPages < 1 || maximumPages > 250)) {
+    throw new AppError('maximumPages must be a whole number between 1 and 250.', { code: 'VALIDATION_ERROR', status: 400 });
+  }
+  return {
+    storeId: text(input.storeId, 'storeId', { max: 256 }),
+    ruleId: text(input.ruleId, 'ruleId', { max: 128 }),
+    name: text(input.name, 'name', { max: 300 }),
+    instructions: text(input.instructions, 'instructions', { min: 3, max: 4000 }),
+    scopeMode,
+    maximumPages
+  };
+}
+
+export function validateDiscussionResult(value) {
+  if (!value || typeof value !== 'object') throw new AppError('The model returned an invalid discussion response.', { code: 'MODEL_RESULT_INVALID', retryable: true });
+  let proposedSkill = null;
+  if (value.proposedSkill !== null && value.proposedSkill !== undefined) {
+    proposedSkill = parseRuleSkillRequest({
+      storeId: 'discussion', ruleId: 'discussion',
+      ...value.proposedSkill
+    });
+    delete proposedSkill.storeId;
+    delete proposedSkill.ruleId;
+  }
+  return {
+    reply: text(value.reply, 'reply', { max: 8000 }),
+    proposedSkill
   };
 }
 

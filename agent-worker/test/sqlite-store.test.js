@@ -69,3 +69,34 @@ test('lessons can be reviewed and revoked without deleting their audit record', 
   const context = await store.findContext({ organizationId: 'org', storeId: 'store-1', query: 'Arabic spelling', embedding: null });
   assert.equal(context.lessons.length, 0);
 });
+
+test('discussion jobs complete without creating audit runs and rule skills can be replaced', async t => {
+  const store = await setup(t);
+  const queued = await store.createJob({
+    organizationId: 'org', idempotencyKey: 'discussion-1', maxAttempts: 3,
+    payload: { kind: 'discussion', requestId: 'discussion-1', storeId: 'store-1', ruleId: 'products' }
+  });
+  const job = await store.claimJob({ workerId: 'worker', leaseMs: 60_000 });
+  await store.completeJob(job, {
+    kind: 'discussion', reply: 'The earlier run sampled three product pages.',
+    proposedSkill: { name: 'All products', instructions: 'Inspect every product page.', scopeMode: 'all_product_pages', maximumPages: 100 }
+  });
+  const completed = await store.getJob('org', queued.job.id);
+  assert.equal(completed.response.kind, 'discussion');
+  assert.equal(completed.response.proposedSkill.scopeMode, 'all_product_pages');
+  const history = await store.findContext({ organizationId: 'org', storeId: 'store-1', query: 'products', embedding: null });
+  assert.equal(history.history.length, 0);
+
+  const { encodeRuleSkill } = await import('../src/domain/rule-skills.js');
+  const first = await store.addLesson({
+    organizationId: 'org', storeId: 'store-1', ruleId: 'products', actorId: 'owner', source: 'rule_skill', embedding: null,
+    content: encodeRuleSkill({ name: 'All products', instructions: 'Inspect every product page.', scopeMode: 'all_product_pages', maximumPages: 100 })
+  });
+  await store.addLesson({
+    organizationId: 'org', storeId: 'store-1', ruleId: 'products', actorId: 'owner', source: 'rule_skill', embedding: null, supersedesId: first.id,
+    content: encodeRuleSkill({ name: 'All products', instructions: 'Inspect every discovered product.', scopeMode: 'all_product_pages', maximumPages: 80 })
+  });
+  const skills = await store.listSkills({ organizationId: 'org', storeId: 'store-1', ruleId: 'products' });
+  assert.equal(skills.length, 1);
+  assert.equal(skills[0].maximumPages, 80);
+});
