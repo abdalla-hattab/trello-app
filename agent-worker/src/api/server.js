@@ -10,6 +10,7 @@ import { AppError, publicError } from '../lib/errors.js';
 import { log } from '../lib/logger.js';
 
 const MAX_BODY_BYTES = 1_000_000;
+const CAPABILITIES = ['rule-discussions-v1', 'rule-skills-v1', 'sitemap-product-coverage-v1'];
 
 async function readJson(request) {
   const chunks = [];
@@ -57,7 +58,7 @@ export function createApiServer({ config, store, embeddings }) {
         response.end();
         return;
       }
-      if (request.method === 'GET' && requestUrl.pathname === '/health/live') return send(response, 200, { status: 'ok' }, origin, config.allowedOrigins);
+      if (request.method === 'GET' && requestUrl.pathname === '/health/live') return send(response, 200, { status: 'ok', capabilities: CAPABILITIES }, origin, config.allowedOrigins);
       if (request.method === 'GET' && requestUrl.pathname === '/health/ready') {
         const ready = await store.health();
         return send(response, ready ? 200 : 503, { status: ready ? 'ready' : 'unavailable' }, origin, config.allowedOrigins);
