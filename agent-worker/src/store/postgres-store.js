@@ -108,10 +108,10 @@ export class PostgresStore {
         WHERE id=$2 AND status='running' AND lease_owner=$3`, [response, job.id, job.leaseOwner]);
       if (!updated.rowCount) throw new AppError('The job lease was lost before completion.', { code: 'JOB_LEASE_LOST', retryable: true });
       await client.query(`INSERT INTO agent_runs(id,job_id,organization_id,store_id,website,rubric_hash,model,overall_score,started_at,completed_at,evidence_manifest)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now(),$10)`, [runId, job.id, job.organizationId, job.storeId, job.payload.website, job.payload.rubricHash, result.model, result.overallScore, result.startedAt, result.evidenceManifest || []]);
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now(),$10)`, [runId, job.id, job.organizationId, job.storeId, job.payload.website, job.payload.rubricHash, result.model, result.overallScore, result.startedAt, JSON.stringify(result.evidenceManifest || [])]);
       for (const item of result.results) {
         await client.query(`INSERT INTO agent_rule_results(id,run_id,organization_id,store_id,rule_id,rule_text,score,explanation,recommendation,evidence)
-          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [newId(), runId, job.organizationId, job.storeId, item.ruleId, item.ruleText, item.score, item.explanation, item.recommendation, item.evidence]);
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [newId(), runId, job.organizationId, job.storeId, item.ruleId, item.ruleText, item.score, item.explanation, item.recommendation, JSON.stringify(item.evidence || [])]);
       }
       await this.event(client, job.organizationId, job.id, 'job.completed', { runId, overallScore: result.overallScore });
       await client.query('COMMIT');
