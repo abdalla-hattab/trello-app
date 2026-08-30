@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const executorPath = path.resolve(here, '../../standalone/agent-executor.js');
+const accessPath = path.resolve(here, '../../standalone/agent-access.js');
+const accessSource = readFileSync(accessPath, 'utf8');
 const card = { id: 'store-7', title: 'Store Seven', agentWebsite: 'https://store.example/' };
 const rules = ['Payment icons are visible', 'Product images open the correct collection'];
 
@@ -31,6 +34,48 @@ function json(route, body, status = 200) {
     body: JSON.stringify(body)
   });
 }
+
+test('access bridge restores only a session-scoped agent token', async t => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  t.after(() => browser.close());
+  await page.addInitScript(() => {
+    sessionStorage.setItem('masarat_agent_access_token', 'fixture-session-token');
+    localStorage.setItem('managing_masarat_pw', 'legacy-password-value');
+  });
+  await page.route('https://app.example/', route => route.fulfill({
+    status: 200,
+    contentType: 'text/html',
+    body: `<!doctype html><html><head><script>${accessSource}</script></head><body></body></html>`
+  }));
+  await page.goto('https://app.example/');
+
+  const config = await page.evaluate(async () => ({
+    apiUrl: window.AGENT_EXECUTOR_CONFIG.apiUrl,
+    token: await window.AGENT_EXECUTOR_CONFIG.getAccessToken(),
+    legacyPassword: localStorage.getItem('managing_masarat_pw')
+  }));
+  assert.equal(config.apiUrl, 'https://masarat-agent-api.onrender.com/v1/checks');
+  assert.equal(config.token, 'fixture-session-token');
+  assert.equal(config.legacyPassword, null);
+  assert.equal(await page.locator('#global-pw-overlay').count(), 0);
+});
+
+test('access bridge asks for a password when the browser session is new', async t => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  t.after(() => browser.close());
+  await page.route('https://app.example/', route => route.fulfill({
+    status: 200,
+    contentType: 'text/html',
+    body: `<!doctype html><html><head><script>${accessSource}</script></head><body></body></html>`
+  }));
+  await page.goto('https://app.example/');
+
+  assert.equal(await page.locator('#global-pw-overlay').isVisible(), true);
+  assert.equal(await page.locator('#global-pw-input').getAttribute('type'), 'password');
+  assert.equal(await page.evaluate(() => window.AGENT_EXECUTOR_CONFIG), undefined);
+});
 
 test('popup queues, polls, renders scores, and teaches verified memory', async t => {
   const page = await pageFixture(t);

@@ -46,7 +46,7 @@
 (() => {
     'use strict';
 
-    const AGENT_API_URL = 'https://YOUR-AGENT-HOST/v1/checks';
+    const AGENT_API_URL = 'https://masarat-agent-api.onrender.com/v1/checks';
     const REQUEST_TIMEOUT_MS = 300000;
     const SCORE_THRESHOLDS = { green: 97, yellow: 70 };
     let activeRun = null;
